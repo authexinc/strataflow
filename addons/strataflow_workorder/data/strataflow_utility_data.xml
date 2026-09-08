@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <!-- APWA uniform colour code -->
+    <record id="utility_gas" model="strataflow.utility">
+        <field name="name">Gas</field><field name="code">gas</field><field name="color">#f2b705</field><field name="sequence">10</field>
+    </record>
+    <record id="utility_power" model="strataflow.utility">
+        <field name="name">Power</field><field name="code">power</field><field name="color">#de2d26</field><field name="sequence">20</field>
+    </record>
+    <record id="utility_telecom" model="strataflow.utility">
+        <field name="name">Telecom</field><field name="code">telecom</field><field name="color">#e8721c</field><field name="sequence">30</field>
+    </record>
+    <record id="utility_water" model="strataflow.utility">
+        <field name="name">Water</field><field name="code">water</field><field name="color">#0f6ed8</field><field name="sequence">40</field>
+    </record>
+</odoo>

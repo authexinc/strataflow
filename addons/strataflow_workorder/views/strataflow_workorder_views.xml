@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- The product screen: OWL client action, fullscreen (own header, no Odoo navbar) -->
+    <record id="action_strataflow_workorders" model="ir.actions.client">
+        <field name="name">Work Orders</field>
+        <field name="tag">strataflow_workorders</field>
+    </record>
+
+    <!-- Plain views so records stay reachable from stock Odoo (imports, admin, debugging) -->
+    <record id="view_strataflow_workorder_list" model="ir.ui.view">
+        <field name="name">strataflow.workorder.list</field>
+        <field name="model">strataflow.workorder</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="address"/>
+                <field name="status"/>
+                <field name="dig_date"/>
+                <field name="requester_id"/>
+                <field name="locator_id"/>
+                <field name="utility_ids" widget="many2many_tags"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_strataflow_workorder_form" model="ir.ui.view">
+        <field name="name">strataflow.workorder.form</field>
+        <field name="model">strataflow.workorder</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <div class="oe_title"><h1><field name="name"/></h1></div>
+                    <group>
+                        <group>
+                            <field name="address"/>
+                            <field name="lld"/>
+                            <field name="status"/>
+                            <field name="dig_date"/>
+                            <field name="source"/>
+                        </group>
+                        <group>
+                            <field name="requester_id"/>
+                            <field name="locator_id"/>
+                            <field name="utility_ids" widget="many2many_tags"/>
+                            <field name="latitude"/>
+                            <field name="longitude"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="action_strataflow_workorder_records" model="ir.actions.act_window">
+        <field name="name">Work Order Records</field>
+        <field name="res_model">strataflow.workorder</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_strataflow_root" name="Strataflow" sequence="5" groups="group_strataflow_user"/>
+    <menuitem id="menu_strataflow_workorders" name="Work Orders" parent="menu_strataflow_root" action="action_strataflow_workorders" sequence="10"/>
+    <menuitem id="menu_strataflow_records" name="Records" parent="menu_strataflow_root" action="action_strataflow_workorder_records" sequence="90" groups="group_strataflow_manager"/>
+</odoo>

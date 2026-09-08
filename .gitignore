@@ -51,3 +51,7 @@ package.json
 /man/
 /share/
 /src/
+
+# local dev
+.venv/
+graphify-out/

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="seq_strataflow_workorder" model="ir.sequence">
+        <field name="name">Locate ticket</field>
+        <field name="code">strataflow.workorder</field>
+        <field name="prefix">T-%(y)s-</field>
+        <field name="padding">5</field>
+        <field name="number_next">4150</field>
+    </record>
+</odoo>

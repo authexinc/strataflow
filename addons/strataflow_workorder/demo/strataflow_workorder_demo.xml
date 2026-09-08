@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- locators -->
+    <record id="user_nguyen" model="res.users" context="{'no_reset_password': True}">
+        <field name="name">R. Nguyen</field><field name="login">rnguyen</field>
+        <field name="group_ids" eval="[(4, ref('strataflow_workorder.group_strataflow_user'))]"/>
+    </record>
+    <record id="user_kowalski" model="res.users" context="{'no_reset_password': True}">
+        <field name="name">D. Kowalski</field><field name="login">dkowalski</field>
+        <field name="group_ids" eval="[(4, ref('strataflow_workorder.group_strataflow_user'))]"/>
+    </record>
+    <record id="user_cardinal" model="res.users" context="{'no_reset_password': True}">
+        <field name="name">M. Cardinal</field><field name="login">mcardinal</field>
+        <field name="group_ids" eval="[(4, ref('strataflow_workorder.group_strataflow_user'))]"/>
+    </record>
+    <record id="user_braun" model="res.users" context="{'no_reset_password': True}">
+        <field name="name">S. Braun</field><field name="login">sbraun</field>
+        <field name="group_ids" eval="[(4, ref('strataflow_workorder.group_strataflow_user'))]"/>
+    </record>
+
+    <!-- requesters -->
+    <record id="partner_ledcor" model="res.partner"><field name="name">Ledcor Group</field><field name="is_company" eval="True"/></record>
+    <record id="partner_homeowner" model="res.partner"><field name="name">Homeowner</field></record>
+    <record id="partner_calgary" model="res.partner"><field name="name">City of Calgary</field><field name="is_company" eval="True"/></record>
+    <record id="partner_enmax" model="res.partner"><field name="name">Enmax</field><field name="is_company" eval="True"/></record>
+    <record id="partner_shane" model="res.partner"><field name="name">Shane Homes</field><field name="is_company" eval="True"/></record>
+    <record id="partner_telus" model="res.partner"><field name="name">Telus</field><field name="is_company" eval="True"/></record>
+    <record id="partner_graham" model="res.partner"><field name="name">Graham Construction</field><field name="is_company" eval="True"/></record>
+    <record id="partner_fortis" model="res.partner"><field name="name">Fortis Alberta</field><field name="is_company" eval="True"/></record>
+    <record id="partner_rogers" model="res.partner"><field name="name">Rogers</field><field name="is_company" eval="True"/></record>
+    <record id="partner_atco" model="res.partner"><field name="name">Atco Gas</field><field name="is_company" eval="True"/></record>
+
+    <!-- tickets, mirroring the design seed -->
+    <record id="wo_04187" model="strataflow.workorder">
+        <field name="name">T-26-04187</field><field name="address">2204 12 Ave SE</field><field name="status">new</field>
+        <field name="dig_date">2026-09-08</field><field name="source">usp</field><field name="requester_id" ref="partner_ledcor"/>
+        <field name="utility_ids" eval="[(6, 0, [ref('utility_gas'), ref('utility_power'), ref('utility_telecom')])]"/>
+        <field name="received_at">2026-09-05 20:12:00</field>
+    </record>
+    <record id="wo_04185" model="strataflow.workorder">
+        <field name="name">T-26-04185</field><field name="address">4511 Bowness Rd NW</field><field name="status">new</field>
+        <field name="dig_date">2026-09-10</field><field name="source">usp</field><field name="requester_id" ref="partner_homeowner"/>
+        <field name="utility_ids" eval="[(6, 0, [ref('utility_gas'), ref('utility_water')])]"/>
+        <field name="received_at">2026-09-06 15:02:00</field>
+    </record>
+    <record id="wo_04182" model="strataflow.workorder">
+        <field name="name">T-26-04182</field><field name="address">903 Centre St N</field><field name="status">assigned</field>
+        <field name="dig_date">2026-09-09</field><field name="source">usp</field><field name="requester_id" ref="partner_calgary"/>
+        <field name="locator_id" ref="user_kowalski"/><field name="assigned_by_id" ref="base.user_admin"/>
+        <field name="utility_ids" eval="[(6, 0, [ref('utility_power'), ref('utility_telecom')])]"/>
+        <field name="received_at">2026-09-05 20:12:00</field><field name="assigned_at">2026-09-06 14:40:00</field>
+    </record>
+    <record id="wo_04179" model="strataflow.workorder">
+        <field name="name">T-26-04179</field><field name="address">128 Heritage Dr SW</field><field name="status">onsite</field>
+        <field name="dig_date">2026-09-08</field><field name="source">manual</field><field name="requester_id" ref="partner_enmax"/>
+        <field name="locator_id" ref="user_nguyen"/><field name="assigned_by_id" ref="base.user_admin"/>
+        <field name="utility_ids" eval="[(6, 0, [ref('utility_power')])]"/>
+        <field name="received_at">2026-09-05 21:30:00</field><field name="assigned_at">2026-09-06 14:41:00</field><field name="onsite_at">2026-09-08 15:05:00</field>
+    </record>
+    <record id="wo_04175" model="strataflow.workorder">
+        <field name="name">T-26-04175</field><field name="address">77 Cranston Way SE</field><field name="status">assigned</field>
+        <field name="dig_date">2026-09-11</field><field name="source">usp</field><field name="requester_id" ref="partner_shane"/>
+        <field name="locator_id" ref="user_cardinal"/><field name="assigned_by_id" ref="base.user_admin"/>
+        <field name="utility_ids" eval="[(6, 0, [ref('utility_gas'), ref('utility_power'), ref('utility_water')])]"/>
+        <field name="received_at">2026-09-06 09:10:00</field><field name="assigned_at">2026-09-06 14:45:00</field>
+    </record>
+    <record id="wo_04171" model="strataflow.workorder">
+        <field name="name">T-26-04171</field><field name="address">3020 17 Ave SW</field><field name="status">onsite</field>
+        <field name="dig_date">2026-09-08</field><field name="source">usp</field><field name="requester_id" ref="partner_telus"/>
+        <field name="locator_id" ref="user_braun"/><field name="assigned_by_id" ref="base.user_admin"/>
+        <field name="utility_ids" eval="[(6, 0, [ref('utility_telecom')])]"/>
+        <field name="received_at">2026-09-05 19:00:00</field><field name="assigned_at">2026-09-06 14:50:00</field><field name="onsite_at">2026-09-08 14:20:00</field>
+    </record>
+    <record id="wo_04168" model="strataflow.workorder">
+        <field name="name">T-26-04168</field><field name="address">1440 9 Ave SE</field><field name="status">located</field>
+        <field name="dig_date">2026-09-07</field><field name="source">usp</field><field name="requester_id" ref="partner_graham"/>
+        <field name="locator_id" ref="user_kowalski"/><field name="assigned_by_id" ref="base.user_admin"/>
+        <field name="utility_ids" eval="[(6, 0, [ref('utility_gas'), ref('utility_telecom')])]"/>
+        <field name="received_at">2026-09-04 16:00:00</field><field name="assigned_at">2026-09-05 13:00:00</field><field name="onsite_at">2026-09-07 15:00:00</field><field name="located_at">2026-09-07 17:32:00</field>
+    </record>
+    <record id="wo_04166" model="strataflow.workorder">
+        <field name="name">T-26-04166</field><field name="address">240 Midpark Blvd SE</field><field name="status">new</field>
+        <field name="dig_date">2026-09-12</field><field name="source">manual</field><field name="requester_id" ref="partner_fortis"/>
+        <field name="utility_ids" eval="[(6, 0, [ref('utility_power')])]"/>
+        <field name="received_at">2026-09-06 18:30:00</field>
+    </record>
+    <record id="wo_04163" model="strataflow.workorder">
+        <field name="name">T-26-04163</field><field name="address">5710 Signal Hill Ctr SW</field><field name="status">located</field>
+        <field name="dig_date">2026-09-07</field><field name="source">usp</field><field name="requester_id" ref="partner_rogers"/>
+        <field name="locator_id" ref="user_nguyen"/><field name="assigned_by_id" ref="base.user_admin"/>
+        <field name="utility_ids" eval="[(6, 0, [ref('utility_telecom'), ref('utility_water')])]"/>
+        <field name="received_at">2026-09-04 14:00:00</field><field name="assigned_at">2026-09-05 13:05:00</field><field name="onsite_at">2026-09-07 14:10:00</field><field name="located_at">2026-09-07 16:45:00</field>
+    </record>
+    <record id="wo_04159" model="strataflow.workorder">
+        <field name="name">T-26-04159</field><field name="address">812 Edmonton Tr NE</field><field name="status">invoiced</field>
+        <field name="dig_date">2026-09-04</field><field name="source">usp</field><field name="requester_id" ref="partner_atco"/>
+        <field name="locator_id" ref="user_cardinal"/><field name="assigned_by_id" ref="base.user_admin"/>
+        <field name="utility_ids" eval="[(6, 0, [ref('utility_gas')])]"/>
+        <field name="received_at">2026-09-02 15:00:00</field><field name="assigned_at">2026-09-02 17:00:00</field><field name="onsite_at">2026-09-04 14:00:00</field><field name="located_at">2026-09-04 16:00:00</field><field name="closed_at">2026-09-04 22:20:00</field>
+    </record>
+</odoo>

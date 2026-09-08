@@ -1,0 +1,5 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_strataflow_workorder_user,strataflow.workorder user,model_strataflow_workorder,group_strataflow_user,1,1,1,0
+access_strataflow_workorder_manager,strataflow.workorder manager,model_strataflow_workorder,group_strataflow_manager,1,1,1,1
+access_strataflow_utility_user,strataflow.utility user,model_strataflow_utility,group_strataflow_user,1,0,0,0
+access_strataflow_utility_manager,strataflow.utility manager,model_strataflow_utility,group_strataflow_manager,1,1,1,1
