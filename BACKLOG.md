@@ -14,9 +14,17 @@ Locked product decisions are in `ARCHITECTURE.md` › "Product decisions" and ar
       Need: the feed's transport (poll, push, email, portal scrape), its record shape, auth, and cadence, then
       a decision on whether it lands in Odoo directly or through the strataline API. Blocks any real ticket
       intake and gates "How are tickets created?" below.
-- [ ] **How are tickets created?** Document the current path end to end (model, action, who triggers it, what
-      fields are required) and decide the target path once the USP feed answer lands. Today's answer is the
-      baseline, not the design.
+- [ ] **How are tickets created?** *Baseline answered from the code 2026-09-08 — the product decision is
+      still open.* Today there is **no create path in the Strataflow UI at all**: CRM and Invoices have
+      "+ New" buttons, Work Orders and Dispatch have none. A ticket can only be made through the stock Odoo
+      form (`views/strataflow_workorder_views.xml`, reachable via the avatar's "Open Odoo"), by demo data,
+      or over RPC. `create()` (`models/strataflow_workorder.py:58`) stamps the `strataflow.workorder`
+      sequence and, when a requester is set, auto-links that partner's most recent won `crm.lead`.
+      `address` and `dig_date` are the required fields. The `source` selection already offers
+      `usp` / `manual` but nothing ever writes `usp` — it defaults to `manual`, which is why every screen
+      footer reads "USP feed · not connected · manual entry".
+      **Decide:** does a dispatcher get a "+ New ticket" button in the Strataflow shell (matching CRM and
+      Invoices), or is manual entry only ever a fallback because real volume arrives via the USP feed?
 - [ ] **How can "Auto-assign" actually work?** Currently a stub. Needs an assignment rule — nearest available
       locator, load balance, skill/zone match, or a mix — plus a source of truth for locator position.
       `screens/dispatch.js:95` `crewAnchors` derives distance from each locator's *current ticket*, not GPS,
