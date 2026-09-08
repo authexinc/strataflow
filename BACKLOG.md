@@ -15,14 +15,14 @@ Locked product decisions are in `ARCHITECTURE.md` › "Product decisions" and ar
       a decision on whether it lands in Odoo directly or through the strataline API. Blocks any real ticket
       intake: until it exists, `source` is always `manual` and every screen footer reads "USP feed · not
       connected". The manual "+ New ticket" path below is settled independently of this.
-- [ ] **How can "Auto-assign" actually work?** Currently a stub. Needs an assignment rule — nearest available
-      locator, load balance, skill/zone match, or a mix — plus a source of truth for locator position.
-      `screens/dispatch.js:95` `crewAnchors` derives distance from each locator's *current ticket*, not GPS,
-      and `planRoutes` (`core/geo.js:45`) is greedy nearest-neighbour presented as a suggestion. Decide whether
-      real locator GPS is in scope before building this. **Asked 2026-09-08, not yet answered** — the
-      options put to Stefan were: keep the current-ticket approximation; add real locator GPS (needs a
-      position source, a field, and a staff-tracking privacy call); assign by workload or zone/skill
-      instead of distance; or leave it stubbed.
+      **Where the ingest code lives is a second, dependent decision** (asked 2026-09-08, deliberately not
+      answered): tenancy is DB-per-tenant, so tickets must reach *each* tenant's own DB. Either an
+      `ir.cron` inside `strataflow_workorder` fetches per tenant (no new service; credentials and parsing
+      duplicated per DB, and a parser fix means updating every tenant), or one strataline-side service
+      fetches once and writes into tenant DBs over JSON-RPC (one place to fix and watch, same shape as the
+      Phase 2 provisioner; another service, needing write access into every tenant). Answering this before
+      the transport is guesswork — an email-in alias has no fetch step at all and is Odoo-side by
+      definition.
 
 ## Behaviour / correctness
 
@@ -32,6 +32,24 @@ Locked product decisions are in `ARCHITECTURE.md` › "Product decisions" and ar
       dialog — so the same treatment on Work Orders, and probably Dispatch too. Required fields are
       `address` and `dig_date`; `create()` stamps the sequence and auto-links the requester's won
       `crm.lead`. It should write `source = 'manual'` (the default), leaving `usp` for the feed.
+
+- [ ] **Rebuild Auto-assign as zone-first, workload-tiebreak** (Stefan, 2026-09-08 — locked in
+      `ARCHITECTURE.md` › "Product decisions"). **Correction to this file's earlier note: Auto-assign is
+      not a stub.** It is built and it really assigns — `planRoutes` (`core/geo.js:45`) is greedy
+      nearest-neighbour from `crewAnchors`, the toggle draws the routes, and `applyRoutes`
+      (`screens/dispatch.js:192`) calls `action_assign` per stop. So this is a replacement of the rule,
+      not a first build. Zone filter first, then least-loaded among the matches, then pure workload when
+      no zone matches. Two things fall out of dropping distance: `crewAnchors` is no longer an
+      assignment input (it can stay for the drawn routes), and the current silent exclusion of tickets
+      without `latitude`/`longitude` from auto-assign goes away — those are exactly the hand-entered
+      tickets. `get_board_data` already ships each locator's `open` count, so the workload half needs no
+      new data. **Still to decide before building: how a zone is represented and how a ticket gets one.**
+      The options, so the next session does not re-derive them: (a) a `strataflow.zone` model, many2many
+      on `res.users`, matched to the ticket by postal-code prefix; (b) the same model matched by ATS
+      township/range off the existing `lld` field, which suits the rural dispatch this app is aimed at;
+      (c) a bbox per zone matched against `latitude`/`longitude`, which reintroduces the coordinate
+      dependency the decision just removed; (d) a plain Char zone on both ticket and locator that the
+      dispatcher types, which is the cheapest and the easiest to get wrong.
 
 ## UI / design language
 

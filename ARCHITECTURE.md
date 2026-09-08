@@ -19,7 +19,8 @@ relitigate without him.
 | Data layer | Stock `crm.lead`, `account.move`, `mail.thread`, `res.partner` with smart buttons | Real modules, not stand-ins. |
 
 ## Product decisions (Stefan, 2026-09-08)
-Answers to the six questions that sat open in HANDOFF. Same rule as above: do not relitigate without him.
+Answers to the six questions that sat open in HANDOFF, plus ticket creation and the auto-assign rule
+settled since. Same rule as above: do not relitigate without him.
 
 | Question | Choice | Rationale / where it lives |
 |---|---|---|
@@ -29,6 +30,7 @@ Answers to the six questions that sat open in HANDOFF. Same rule as above: do no
 | Locate pricing | **Flat per ticket** ($250, product "Locate service") | Simplest to invoice and explain; a second product can be added later without touching the close-to-invoice path. No code. |
 | Fonts | **Ship Public Sans + JetBrains Mono locally** | Variable woff2, latin subset, 27 KB + 40 KB in `static/fonts/` with their OFL licences, `font-display: swap`. Self-hosted rather than a font CDN: a tenant subdomain should not call a third party to render its own UI. |
 | Ticket creation in the shell | **Yes — a "+ New ticket" button, matching CRM and Invoices** | Answered 2026-09-08. Today there is no create path in the Strataflow UI at all: CRM and Invoices carry "+ New" buttons, Work Orders and Dispatch carry none, so a ticket can only come from the stock Odoo form, demo data or RPC. Manual entry becomes a first-class path in the shell rather than a trip out to Odoo. Not built — see `BACKLOG.md`. |
+| Auto-assign rule | **Zone first, workload as tiebreak** — locator GPS is out of scope | Answered 2026-09-08. Filter to the locators whose zone covers the ticket, then give it to the least-loaded among them; fall back to pure workload when no zone matches. This rules out both alternatives that needed a position source: real staff GPS (and the privacy call that comes with it) and the current-ticket approximation in `screens/dispatch.js:95` `crewAnchors`. Today's auto-assign is distance-greedy (`core/geo.js:45` `planRoutes`), so this is a replacement, not a first build — see `BACKLOG.md`. |
 | Equipment / Timesheets / Reports | **Stay "coming soon"** | Finish the six screens, the MapLibre swap and tenancy first. Each extra module is more install time and more surface per tenant before there is a paying tenant asking for it. |
 
 ## Provisioner flow (Phase 2, not built)
