@@ -38,6 +38,7 @@
   --shadow: 0 1px 1px rgba(0,0,0,.04), 0 4px 14px rgba(0,0,0,.06), 0 16px 40px rgba(0,0,0,.08);
   --shadow-hi: 0 1px 1px rgba(0,0,0,.05), 0 6px 20px rgba(0,0,0,.10), 0 24px 60px rgba(0,0,0,.14);
   --sk-bone: rgba(28,33,36,.08); --sk-bone-hi: rgba(28,33,36,.16); --sk-sheen: rgba(255,255,255,.4);
+  --sk-map-line: rgba(28,33,36,.08); --sk-map-block: rgba(28,33,36,.035);
   --focus: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent);
 }
 @mixin tokens-dark {
@@ -53,6 +54,7 @@
   --shadow: 0 1px 1px rgba(0,0,0,.4), 0 6px 20px rgba(0,0,0,.45);
   --shadow-hi: 0 1px 1px rgba(0,0,0,.5), 0 8px 24px rgba(0,0,0,.55), 0 28px 70px rgba(0,0,0,.65);
   --sk-bone: rgba(255,255,255,.07); --sk-bone-hi: rgba(255,255,255,.17); --sk-sheen: rgba(255,255,255,.045);
+  --sk-map-line: rgba(255,255,255,.055); --sk-map-block: rgba(255,255,255,.028);
 }
 .o_sf, .o_sf_pop, .o_sf_menu { @include tokens-light; }
 .o_sf[data-theme="dark"], .o_sf_pop[data-theme="dark"], .o_sf_menu.o_sf_theme_dark { @include tokens-dark; }
@@ -340,6 +342,11 @@
 @keyframes o_sf_sk_sweep { 0% { background-position: 135% 0; } 100% { background-position: -35% 0; } }
 @keyframes o_sf_sk_in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 .o_sf_skeleton { position: absolute; inset: 0; z-index: 999; background: var(--bg); overflow: hidden;
+  transition: opacity .45s ease;
+  &.sk-done { opacity: 0; pointer-events: none; }
+  .sk-map { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .sk-map-line { stroke: var(--sk-map-line); fill: none; }
+  .sk-map-block { fill: var(--sk-map-block); }
   .sk-sheen { position: absolute; inset: 0; background: linear-gradient(105deg, transparent 40%, var(--sk-sheen) 50%, transparent 60%) 0 0/240% 100%; animation: o_sf_sk_sweep 2.6s linear infinite; }
   .sk-bone { display: block; flex: none; border-radius: 6px; background: linear-gradient(100deg, var(--sk-bone) 38%, var(--sk-bone-hi) 50%, var(--sk-bone) 62%) 0 0/220% 100%; animation: o_sf_sk_sweep 1.5s linear infinite; }
   .sk-dot { border-radius: 50%; } .sk-chip { height: 28px; border-radius: 999px; } .sk-spacer { flex: 1; }
@@ -376,7 +383,7 @@
   .o_sf_app:hover .o_sf_app_icon { transform: none; }
   .o_sf { animation: none; }
   .o_sf_glow::before, .o_sf_glow::after { animation: none; }
-  .o_sf_skeleton { .sk-sheen, .sk-bone, .sk-sect, .sk-row, .sk-tile { animation: none; } }
+  .o_sf_skeleton { transition: none; .sk-sheen, .sk-bone, .sk-sect, .sk-row, .sk-tile { animation: none; } }
 }
 @media (max-width: 1180px) {
   .o_sf_search { width: 220px; }

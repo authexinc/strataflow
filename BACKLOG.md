@@ -27,9 +27,12 @@ Locked product decisions are in `ARCHITECTURE.md` › "Product decisions" and ar
 
 - [ ] Port the strataline login screen style to strataflow (`~/map-sys/web/login.js` + `app.css` tokens).
       Consume the design, do not copy map-sys source into this repo.
-- [ ] Use the strataline loading skeleton + animation (`~/map-sys/web/index.html#skeleton`) in place of the
-      current shell skeleton. Note `core/shell.js:43` hides the skeleton after 4 s regardless — that fence
-      stays until screen `load()` is properly awaited.
+- [ ] **Verify the skeleton fade in a browser.** The strataline fade-out and map ground landed 2026-09-08
+      but could not be seen running: Odoo's boot dies on `Access to storage is not allowed from this
+      context` in the automation tab. Confirmed not to be our code (stashing the change reproduced the
+      same failure). Check the skeleton fades rather than pops, and that the map ground lines up with the
+      real background. `core/shell.js` still hides the skeleton after 4 s regardless — that fence stays
+      until screen `load()` is properly awaited.
 - [ ] Revamp every internal screen — individual invoices, the CRM record views, and the rest of the stock
       form/list views — into the strataflow language. Swap Odoo styling out across all pages, not just the six
       fullscreen OWL screens.

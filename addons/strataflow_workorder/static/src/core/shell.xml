@@ -67,7 +67,28 @@
         <footer t-if="props.slots and props.slots.footer" class="o_sf_foot"><t t-slot="footer"/></footer>
 
         <!-- generic skeleton shell (strataline "stagger-sweep") until the first payload paints -->
-        <div class="o_sf_skeleton" t-if="showSkeleton" aria-hidden="true">
+        <div class="o_sf_skeleton" t-if="showSkeleton" t-att-class="{ 'sk-done': skeletonDone }" aria-hidden="true">
+            <!-- the same street ground the real screen paints, so the handover isn't a jump -->
+            <svg class="sk-map" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice">
+                <g class="sk-map-line" stroke-width="2">
+                    <line x1="0" y1="150" x2="1440" y2="150"/><line x1="0" y1="330" x2="1440" y2="330"/>
+                    <line x1="0" y1="520" x2="1440" y2="520"/><line x1="0" y1="700" x2="1440" y2="700"/>
+                    <line x1="0" y1="840" x2="1440" y2="840"/><line x1="180" y1="0" x2="180" y2="900"/>
+                    <line x1="420" y1="0" x2="420" y2="900"/><line x1="660" y1="0" x2="660" y2="900"/>
+                    <line x1="940" y1="0" x2="940" y2="900"/><line x1="1180" y1="0" x2="1180" y2="900"/>
+                    <line x1="300" y1="0" x2="900" y2="900"/><line x1="1440" y1="80" x2="700" y2="900"/>
+                </g>
+                <g class="sk-map-line" stroke-width="6">
+                    <line x1="0" y1="430" x2="1440" y2="430"/><line x1="540" y1="0" x2="540" y2="900"/>
+                    <line x1="1060" y1="0" x2="1440" y2="480"/>
+                </g>
+                <g class="sk-map-block">
+                    <rect x="200" y="170" width="200" height="140" rx="6"/><rect x="680" y="170" width="230" height="140" rx="6"/>
+                    <rect x="960" y="340" width="200" height="70" rx="6"/><rect x="200" y="540" width="180" height="140" rx="6"/>
+                    <rect x="680" y="450" width="240" height="230" rx="6"/><rect x="1200" y="540" width="180" height="140" rx="6"/>
+                    <rect x="440" y="340" width="80" height="70" rx="6"/>
+                </g>
+            </svg>
             <div class="sk-sheen"/>
             <div class="sk-sect sk-topbar">
                 <div class="sk-pill sk-brand"><i class="sk-bone" style="width:28px;height:28px;border-radius:9px"/><i class="sk-bone" style="width:88px;height:13px"/></div>

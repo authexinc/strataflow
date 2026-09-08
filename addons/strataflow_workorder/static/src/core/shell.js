@@ -1,4 +1,4 @@
-import { Component, onMounted, onWillUnmount, useRef, useState } from "@odoo/owl";
+import { Component, onMounted, onWillUnmount, useEffect, useRef, useState } from "@odoo/owl";
 import { registry } from "@web/core/registry";
 import { _t } from "@web/core/l10n/translation";
 import { useService } from "@web/core/utils/hooks";
@@ -43,11 +43,31 @@ export class StrataflowShell extends Component {
         // safety: a stalled first request must never leave the opaque skeleton on screen
         this.guard = useState({ expired: false });
         onMounted(() => (this._skTimer = setTimeout(() => (this.guard.expired = true), 4000)));
-        onWillUnmount(() => clearTimeout(this._skTimer));
+        // strataline fades its skeleton out (app.css `#skeleton.sk-done`) rather than cutting it.
+        // A `t-if` alone unmounts the node instantly, so hold it one transition longer: mark it
+        // done, let the opacity run, then drop it.
+        this.sk = useState({ mounted: true, done: false });
+        useEffect(
+            () => {
+                if ((!this.props.loading || this.guard.expired) && !this.sk.done) {
+                    this.sk.done = true;
+                    this._skFade = setTimeout(() => (this.sk.mounted = false), 450);
+                }
+            },
+            () => [this.props.loading, this.guard.expired]
+        );
+        onWillUnmount(() => {
+            clearTimeout(this._skTimer);
+            clearTimeout(this._skFade);
+        });
     }
 
     get showSkeleton() {
-        return this.props.loading && !this.guard.expired;
+        return this.sk.mounted;
+    }
+
+    get skeletonDone() {
+        return this.sk.done;
     }
 
     get nav() {

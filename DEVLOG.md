@@ -3,6 +3,39 @@
 Newest first. Read the last 3–5 entries at session start. Failures are recorded on purpose; a
 workaround is labelled as one so it does not become permanent by accident.
 
+### 2026-09-08 — Skeleton fade (item 11), and the automation tab stopped mounting
+
+**Item 11 was already three-quarters done.** The shell skeleton is an existing port of strataline's
+"stagger-sweep": same `sk-*` class names, and the keyframes and tokens match `~/map-sys/web/app.css`
+exactly (sweep 2.6 s / 1.5 s, `sk-in` .45 s `translateY(10px)`, identical bone and sheen values).
+Comparing the two turned up only two real gaps, both now closed:
+
+1. **It popped instead of fading.** Strataline transitions `#skeleton` to `opacity: 0` via a `sk-done`
+   class over .45 s. Ours was a bare `t-if`, which unmounts the node instantly. The fix has to keep the
+   node mounted one transition longer than the data needs it, so the shell now tracks `{mounted, done}`
+   and a `useEffect` marks it done, lets the opacity run, then drops it.
+2. **It had no map ground.** Strataline's skeleton carries the street-grid SVG behind the bones, so the
+   handover to the real map is seamless; ours sat on flat `--bg`, so the background appeared abruptly.
+   Added the same `sk-map` SVG plus the `--sk-map-line` / `--sk-map-block` tokens from strataline.
+
+**FAILURE — could not verify it running, and the earlier browser workaround has stopped working.**
+Earlier today the automation tab mounted the web client reliably (prime storage at `/web/login`, inject
+a JSON-RPC session cookie, then navigate), and items 4, 5, 9, 10, 13, 7, 8, 12 and 14 were all checked
+that way. Partway through this item it began failing consistently: `.o_web_client` present, `document.body`
+24 characters, console showing only `Error: Access to storage is not allowed from this context`. Odoo's
+boot needs `localStorage` and the page context is being denied it. A fresh tab did not help, nor did a
+real click for a user gesture, nor `/odoo` before the action route.
+
+**It is not our code.** Stashing the whole skeleton change and restarting reproduced the identical
+failure, so the regression is environmental. Worth doing that check before believing an "it broke when I
+touched it" story. What *is* verified: all four edited JS files parse as ES modules, `skeletonDone`
+reaches the served bundle, and the module updates with zero server errors. The visual behaviour is
+recorded as unverified in `BACKLOG.md` rather than claimed.
+
+**Note for the next session:** the storage-permission diagnosis is still the right one and the priming
+recipe did work for most of today, so retry it before assuming the tab is unusable — but budget for it
+failing, and fall back to JSON-RPC for anything that is not purely visual.
+
 ### 2026-09-08 — Motion and the ink/accent split (backlog items 7, 8, 12, 14)
 
 Reviewed with the `apple-design` skill first, as CLAUDE.md requires; the Liquid Glass and Motion
