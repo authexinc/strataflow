@@ -30,8 +30,7 @@ Session closed after writing DEVLOG.md. No task in flight. Last code change: Loc
    workaround, DEVLOG 2026-09-08 "Work Orders screen").
 5. Add `tests/` for `action_invoice_closed` (`models/strataflow_workorder.py:84`) and
    `action_complete_locate` (`:120`) — one `TransactionCase` each.
-6. Tenancy Phase 2 (DB-per-tenant provisioner, `dbfilter=^%d$`) — design is in memory
-   `strataflow-tenancy-decisions`; nothing built yet.
+6. Tenancy Phase 2 (DB-per-tenant provisioner, `dbfilter=^%d$`) — design in `ARCHITECTURE.md`; nothing built yet.
 
 ## Landmines
 - After editing JS under `static/src`, a plain reload can serve a stale bundle mixing old and new module copies
@@ -51,6 +50,10 @@ Session closed after writing DEVLOG.md. No task in flight. Last code change: Loc
   First-paint screenshots of the blurred panels come back blank; probe the DOM.
 
 ## Environment / setup
+- Read `CLAUDE.md` (session protocol) and `ARCHITECTURE.md` (locked tenancy decisions) — both in the repo root.
+- The dev server was left running in a background shell of the previous session; assume it is gone and start it
+  with the command below. Sessions are invalidated by restarts.
+- Reading the Claude Design project again needs `/design-login` (DesignSync auth is per session).
 - `~/strataflow/.venv` (gitignored). Postgres via Homebrew; DB `strataflow_dev` with demo.
 - Run: `.venv/bin/python odoo-bin -d strataflow_dev --db_host=localhost --addons-path=addons --dev=xml --http-port=8069 --log-level=warn`
   (add `-u strataflow_workorder` after Python/XML/JS changes). Fresh DB: `dropdb strataflow_dev`, then the same
