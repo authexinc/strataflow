@@ -29,32 +29,35 @@ Nothing in flight; working tree clean. I had just asked Stefan three questions, 
 the first thing to raise next session:** the USP feed hookup, and what Auto-assign should do.
 
 ## Repo state
-- Branch `feat/strataflow-workorder`, working tree clean, **6 commits ahead of
-  `origin/feat/strataflow-workorder` — not yet pushed.** HEAD before this wrap was
-  `18f11b73c14 [DOC] strataflow: lock the ticket-creation decision, restructure BACKLOG`.
+- Branch `feat/strataflow-workorder`, working tree clean, **pushed** to
+  `origin/feat/strataflow-workorder` (7 commits this session, through
+  `980a0d01c9f [DOC] strataflow: session wrap`).
 - This session's commits, oldest first: `9d7377398cc` (BACKLOG.md added), `e4141c08975` (five fixes),
   `92227039d6e` (ink/accent split + motion), `2306d5045a7` (skeleton fade), `a53ab0cf4e3` (ticket-creation
   baseline), `18f11b73c14` (decision locked).
 - Not merged into `19.0`. Merge is Stefan's call.
-- `~/map-sys` is untouched this session: still on `feat/search-key-scope`, in sync with its origin, still
-  carrying that one **unrelated uncommitted edit to `README.md`** (manage_users → manage_access). Left alone
-  a third time; either commit it or discard it.
+- `~/map-sys` is on `feat/search-key-scope`, in sync with its origin. The long-dangling **uncommitted
+  `README.md` edit is resolved** — committed as `bccec7a` and pushed. It was a correct manage_users →
+  manage_access cleanup, verified against the code (`manage_access.py`'s subparsers really are
+  revoke/unrevoke/list/approve/unapprove/key) rather than taken on trust; I also fixed the one stale clause
+  it left behind, which still claimed `users.json` "remains for dev fallback only" when the script was
+  removed 2026-09-03, `data/users.json` was deleted from the VPS, and `serve.py` never references it.
+  That branch still awaits Stefan's review; pushing it does not deploy (that repo deploys on `main`).
 - Still no automated tests for this module.
 
 ## Next steps
 `BACKLOG.md` is the queue. In the order I would take them:
-1. **Push this branch** (6 commits) and get eyes on it.
-2. **Answer the two open questions** in `BACKLOG.md` › "Open questions". Auto-assign is blocked on one thing:
+1. **Answer the two open questions** in `BACKLOG.md` › "Open questions". Auto-assign is blocked on one thing:
    whether real locator GPS is in scope, since `screens/dispatch.js:95` `crewAnchors` infers a locator's
    position from their current ticket rather than a fix.
-3. **Verify the skeleton fade in a browser** — see Landmines; it is the one thing shipped unverified.
-4. **Add the "+ New ticket" button** (decided, not built). Mirror `screens/crm.js` `newLead` and
+2. **Verify the skeleton fade in a browser** — see Landmines; it is the one thing shipped unverified.
+3. **Add the "+ New ticket" button** (decided, not built). Mirror `screens/crm.js` `newLead` and
    `screens/invoices.js` `newInvoice`; required fields are `address` and `dig_date`; leave `source` at its
    `manual` default.
-5. **README** (`BACKLOG.md` › Platform) — the one fully unblocked item that needs no browser.
-6. **Odoo-free URLs** and **the internal-screen revamp** — both large; scope before touching. The revamp
+4. **README** (`BACKLOG.md` › Platform) — the one fully unblocked item that needs no browser.
+5. **Odoo-free URLs** and **the internal-screen revamp** — both large; scope before touching. The revamp
    should also settle `.o_sf_btn--primary`, which still uses the ink mixin.
-7. Still outstanding from before this session: MapLibre swap (`core/shell.xml` `FauxMap`,
+6. Still outstanding from before this session: MapLibre swap (`core/shell.xml` `FauxMap`,
    `screens/workorders.xml` ticket canvas), a stored sort key on `strataflow.workorder`, tests for
    `action_invoice_closed` and `action_complete_locate`, and tenancy Phase 2.
 
