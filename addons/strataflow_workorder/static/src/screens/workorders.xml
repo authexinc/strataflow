@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+<t t-name="strataflow_workorder.WorkOrders">
+    <StrataflowShell active="'workorders'" me="state.data.me" loading="state.loading" skeleton="'list'" searchPlaceholder="'Search work orders…'" onSearch.bind="onSearch">
+        <div class="o_sf_body" t-ref="root">
+            <aside class="o_sf_panel o_sf_list" aria-label="Work orders">
+                <div class="o_sf_chips" role="group" aria-label="Filter by status">
+                    <t t-foreach="chips" t-as="chip" t-key="chip.key">
+                        <button type="button" class="o_sf_chip" t-att-class="{ 'is-on': chip.on }" t-att-aria-pressed="chip.on" t-on-click="() => this.pickChip(chip.key)">
+                            <t t-esc="chip.label"/><span class="o_sf_chip_count" t-esc="chip.count"/>
+                        </button>
+                    </t>
+                </div>
+                <div class="o_sf_rows" t-on-keydown="onListKeydown">
+                    <p t-if="!visible.length" class="o_sf_empty">No work orders match.</p>
+                    <t t-foreach="visible" t-as="o" t-key="o.id">
+                        <button type="button" class="o_sf_row" t-att-class="{ 'is-selected': o.id === state.selId }"
+                                t-att-aria-current="o.id === state.selId ? 'true' : undefined" t-on-click="() => this.select(o.id)">
+                            <span class="o_sf_dot" t-attf-class="o_sf_dot--{{ o.status }}" aria-hidden="true"/>
+                            <span class="o_sf_row_text">
+                                <b t-esc="o.address"/>
+                                <small class="o_sf_mono"><t t-esc="o.name"/> · dig <t t-esc="fmtDate(o.dig_date).slice(0, 6)"/></small>
+                            </span>
+                            <span t-if="o.emergency" class="o_sf_status o_sf_status--danger">Emerg</span>
+                            <span class="o_sf_avatar" t-att-class="{ 'is-empty': !o.locator }" t-att-title="o.locator ? o.locator.name : 'Unassigned'" aria-hidden="true"><t t-esc="o.locator ? o.locator.initials : '·'"/></span>
+                            <span class="o_sf_status" t-attf-class="o_sf_status--{{ o.status }}"><t t-esc="statusLabel(o.status)"/></span>
+                        </button>
+                    </t>
+                </div>
+                <div class="o_sf_list_foot"><t t-esc="visible.length"/> work orders · emergencies first, then dig date</div>
+            </aside>
+
+            <section class="o_sf_panel o_sf_detail" t-if="sel" aria-labelledby="o_sf_sel_title">
+                <div class="o_sf_detail_head">
+                    <span class="o_sf_detail_title">
+                        <span class="o_sf_eyebrow o_sf_mono o_sf_eyebrow--accent"><t t-esc="sel.name"/><t t-if="sel.emergency"> · <span class="o_sf_danger_text">EMERGENCY</span></t></span>
+                        <span id="o_sf_sel_title" class="o_sf_h1" t-esc="sel.address"/>
+                    </span>
+                    <span class="o_sf_status o_sf_status--lg" t-attf-class="o_sf_status--{{ sel.status }}"><t t-esc="statusLabel(sel.status)"/></span>
+                    <span class="o_sf_actions">
+                        <button type="button" class="o_sf_btn o_sf_btn--primary" t-on-click="onPrimary"
+                                t-att-aria-haspopup="sel.status === 'new' ? 'dialog' : undefined"
+                                t-att-aria-expanded="sel.status === 'new' ? assignPopover.isOpen : undefined"><t t-esc="primaryAction"/></button>
+                        <Dropdown menuClass="menuClass" position="'bottom-end'">
+                            <button type="button" class="o_sf_btn" aria-label="Export">Export <span class="o_sf_caret" aria-hidden="true">▾</span></button>
+                            <t t-set-slot="content">
+                                <DropdownItem class="'o_sf_menu_item'" onSelected="() => this.exportPdf()"><b>PDF</b><small>Locate print with ticket details</small></DropdownItem>
+                                <DropdownItem class="'o_sf_menu_item'" onSelected="() => this.exportPng()"><b>PNG</b><small>Drawing only, 2× raster</small></DropdownItem>
+                                <DropdownItem class="'o_sf_menu_item'" onSelected="() => this.exportCsv()"><b>CSV</b><small>Ticket fields + drawn segments</small></DropdownItem>
+                                <DropdownItem class="'o_sf_menu_item'" onSelected="() => this.openRecord()"><b>Open record</b><small>Chatter, attachments, full form</small></DropdownItem>
+                            </t>
+                        </Dropdown>
+                    </span>
+                </div>
+                <div class="o_sf_detail_body">
+                    <div>
+                        <div class="o_sf_eyebrow">Details</div>
+                        <dl class="o_sf_kv">
+                            <dt>Dig date</dt><dd class="o_sf_mono" t-esc="fmtDate(sel.dig_date)"/>
+                            <dt>Source</dt><dd class="o_sf_mono" t-esc="sel.source"/>
+                            <dt>Requested by</dt><dd class="o_sf_mono" t-esc="sel.requester || '—'"/>
+                            <dt>Locator</dt><dd class="o_sf_mono" t-esc="sel.locator ? sel.locator.name : '— unassigned'"/>
+                            <t t-if="sel.parcel"><dt>Parcel</dt><dd class="o_sf_mono" t-esc="sel.parcel"/></t>
+                            <t t-if="sel.lld"><dt>LLD</dt><dd class="o_sf_mono" t-esc="sel.lld"/></t>
+                            <t t-if="sel.invoice"><dt>Invoice</dt><dd><a href="#" class="o_sf_link o_sf_mono" t-on-click.prevent="() => this.openInvoice(sel.move_id)" t-esc="sel.invoice"/></dd></t>
+                            <dt class="o_sf_kv_top">Utilities</dt>
+                            <dd class="o_sf_utils">
+                                <t t-foreach="selUtilities" t-as="u" t-key="u.id">
+                                    <span class="o_sf_util"><span class="o_sf_dot" t-attf-style="background: {{ u.color }}" aria-hidden="true"/><t t-esc="u.name"/></span>
+                                </t>
+                            </dd>
+                            <t t-if="sel.scope_note"><dt class="o_sf_kv_top">Scope</dt><dd t-esc="sel.scope_note"/></t>
+                        </dl>
+                        <div class="o_sf_eyebrow o_sf_eyebrow--gap">Activity</div>
+                        <ol class="o_sf_timeline">
+                            <t t-foreach="activity" t-as="a" t-key="a_index">
+                                <li t-att-class="{ 'is-done': a.done }">
+                                    <span class="o_sf_tl_rail" aria-hidden="true"><span class="o_sf_tl_dot"/><span class="o_sf_tl_line" t-if="!a.last"/></span>
+                                    <span class="o_sf_tl_text"><b t-esc="a.what"/><small class="o_sf_mono" t-esc="a.when"/></span>
+                                </li>
+                            </t>
+                        </ol>
+                    </div>
+                    <div class="o_sf_draw">
+                        <div class="o_sf_draw_head">
+                            <span class="o_sf_eyebrow">Locate drawing</span>
+                            <a href="#" class="o_sf_link" t-on-click.prevent="() => this.action.doAction({ type: 'ir.actions.client', tag: 'strataflow_dispatch', context: { active_id: sel.id } })">Open in Dispatch →</a>
+                            <span class="o_sf_spacer"/>
+                            <span class="o_sf_note">desktop &amp; tablet only</span>
+                        </div>
+                        <LocateCanvas utilities="state.data.utilities" drawing="sel.drawing" onChange.bind="onDrawingChange" t-key="sel.id"/>
+                        <p class="o_sf_note">Drawn lines and measurements save to the ticket as the locate print — no more marking up map screenshots. Locators get this same canvas in their view.</p>
+                    </div>
+                </div>
+            </section>
+            <section class="o_sf_panel o_sf_detail o_sf_detail--empty" t-else=""><p class="o_sf_empty">Select a work order to see its details.</p></section>
+        </div>
+    </StrataflowShell>
+</t>
+
+<t t-name="strataflow_workorder.AssignLocatorPopover">
+    <div class="o_sf_pop" t-att-data-theme="props.theme" role="dialog" aria-label="Assign locator" t-ref="root">
+        <div class="o_sf_pop_head">
+            <span class="o_sf_eyebrow">Assign locator</span>
+            <span class="o_sf_spacer"/>
+            <span class="o_sf_note">sorted by open load</span>
+        </div>
+        <t t-foreach="options" t-as="p" t-key="p.id">
+            <button type="button" class="o_sf_pop_row" t-att-class="{ 'is-suggested': p.suggested }" t-on-click="() => this.pick(p)">
+                <span class="o_sf_avatar o_sf_avatar--md" aria-hidden="true" t-esc="p.initials"/>
+                <span class="o_sf_row_text"><b t-esc="p.name"/><small class="o_sf_mono" t-esc="p.meta"/></span>
+                <span t-if="p.tag" class="o_sf_status" t-att-class="{ 'o_sf_status--assigned': p.busy, 'o_sf_status--new': !p.busy }" t-esc="p.tag"/>
+            </button>
+        </t>
+        <p t-if="!options.length" class="o_sf_empty">No locators yet — add users to the Locator group.</p>
+        <div class="o_sf_pop_foot">Suggestion ranks by open load. Drive distance joins the ranking once locator GPS lands — same engine as Dispatch auto-assign.</div>
+    </div>
+</t>
+
+<t t-name="strataflow_workorder.LocateCanvas">
+    <div class="o_sf_tools" role="toolbar" aria-label="Drawing tools">
+        <t t-foreach="tools" t-as="tool" t-key="tool.code">
+            <button type="button" class="o_sf_chip o_sf_tool" t-att-class="{ 'is-on': tool.on, 'o_sf_tool--note': tool.code === 'note' }"
+                    t-att-aria-pressed="tool.on" t-attf-style="--tool: {{ tool.color || 'var(--ink)' }}" t-on-click="() => (this.state.tool = tool.code)">
+                <span class="o_sf_dot" aria-hidden="true"/><t t-esc="tool.name"/>
+            </button>
+        </t>
+        <span class="o_sf_spacer"/>
+        <button type="button" class="o_sf_chip" t-on-click="undo" t-att-disabled="!segments.length">Undo</button>
+        <button type="button" class="o_sf_chip" t-on-click="clear" t-att-disabled="!segments.length and !notes.length">Clear</button>
+    </div>
+    <div class="o_sf_canvas" t-att-class="{ 'is-satellite': state.basemap === 'satellite' }">
+        <svg t-if="state.basemap === 'satellite'" class="o_sf_canvas_map" viewBox="0 0 400 330" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+            <rect x="0" y="0" width="400" height="160" fill="#28301f" opacity="0.55"/><rect x="0" y="160" width="400" height="170" fill="#2b3327" opacity="0.5"/>
+            <g stroke="rgba(235,230,215,.22)" stroke-width="2.5" fill="none"><line x1="0" y1="85" x2="400" y2="85"/><line x1="0" y1="230" x2="400" y2="230"/><line x1="90" y1="0" x2="90" y2="330"/><line x1="230" y1="0" x2="230" y2="330"/><line x1="330" y1="0" x2="330" y2="330"/></g>
+            <rect x="105" y="108" width="70" height="90" rx="3" fill="#4a4f43"/><rect x="245" y="108" width="60" height="90" rx="3" fill="#4a4f43"/><rect x="105" y="250" width="90" height="60" rx="3" fill="#4a4f43"/>
+            <g stroke="rgba(190,165,235,.55)" stroke-width="1.2" stroke-dasharray="6 4" fill="none"><rect x="95" y="95" width="95" height="115"/><rect x="235" y="95" width="85" height="115"/><rect x="95" y="238" width="115" height="85"/></g>
+            <path d="M0 178 C 120 168, 260 192, 400 172" fill="none" stroke="#f2b705" stroke-width="2.5" stroke-dasharray="1 8" stroke-linecap="round" opacity="0.45"/><path d="M160 0 C 168 110, 156 220, 164 330" fill="none" stroke="#f5964a" stroke-width="2.5" opacity="0.45"/>
+        </svg>
+        <svg t-else="" class="o_sf_canvas_map" viewBox="0 0 400 330" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+            <g class="o_sf_bgmap_line" stroke-width="2"><line x1="0" y1="85" x2="400" y2="85"/><line x1="0" y1="230" x2="400" y2="230"/><line x1="90" y1="0" x2="90" y2="330"/><line x1="230" y1="0" x2="230" y2="330"/><line x1="330" y1="0" x2="330" y2="330"/></g>
+            <rect class="o_sf_bgmap_block" x="105" y="108" width="70" height="90" rx="4"/><rect class="o_sf_bgmap_block" x="245" y="108" width="60" height="90" rx="4"/><rect class="o_sf_bgmap_block" x="105" y="250" width="90" height="60" rx="4"/>
+            <g class="o_sf_cadastral" stroke-width="1.2" stroke-dasharray="6 4" fill="none"><rect x="95" y="95" width="95" height="115"/><rect x="235" y="95" width="85" height="115"/><rect x="95" y="238" width="115" height="85"/></g>
+            <path d="M0 178 C 120 168, 260 192, 400 172" fill="none" stroke="#f2b705" stroke-width="2.5" stroke-dasharray="1 8" stroke-linecap="round" opacity="0.6"/><path d="M160 0 C 168 110, 156 220, 164 330" fill="none" stroke="#e8721c" stroke-width="2.5" opacity="0.6"/>
+        </svg>
+        <span class="o_sf_bm" role="group" aria-label="Basemap">
+            <t t-foreach="basemaps" t-as="bm" t-key="bm.key">
+                <button type="button" class="o_sf_bm_btn" t-att-class="{ 'is-on': bm.on }" t-att-aria-pressed="bm.on" t-on-click="() => (this.state.basemap = bm.key)" t-esc="bm.label"/>
+            </t>
+        </span>
+        <svg class="o_sf_ink" t-ref="svg" t-on-pointerdown="onPointerDown" t-on-pointermove="onPointerMove" t-on-pointerup="onPointerUp" t-on-pointercancel="onPointerCancel" t-on-pointerleave="onPointerCancel" aria-label="Locate drawing surface" role="img">
+            <t t-foreach="segments" t-as="s" t-key="s_index">
+                <line t-att-x1="s.x1" t-att-y1="s.y1" t-att-x2="s.x2" t-att-y2="s.y2" t-att-stroke="color(s.util)" stroke-width="3" stroke-linecap="round" t-att-stroke-dasharray="dash(s, false)"/>
+                <text class="o_sf_ink_label" t-att-x="(s.x1 + s.x2) / 2" t-att-y="(s.y1 + s.y2) / 2 - 7" text-anchor="middle" t-att-fill="color(s.util)" t-esc="label(s)"/>
+            </t>
+            <t t-if="state.live">
+                <line t-att-x1="state.live.x1" t-att-y1="state.live.y1" t-att-x2="state.live.x2" t-att-y2="state.live.y2" t-att-stroke="color(state.live.util)" stroke-width="3" stroke-linecap="round" t-att-stroke-dasharray="dash(state.live, true)"/>
+                <text class="o_sf_ink_label" t-att-x="(state.live.x1 + state.live.x2) / 2" t-att-y="(state.live.y1 + state.live.y2) / 2 - 7" text-anchor="middle" t-att-fill="color(state.live.util)" t-esc="label(state.live)"/>
+            </t>
+            <t t-foreach="notes" t-as="n" t-key="n_index">
+                <circle t-att-cx="n.x" t-att-cy="n.y" r="4" class="o_sf_ink_pin"/><text class="o_sf_ink_label o_sf_ink_note" t-att-x="n.x + 8" t-att-y="n.y + 3" t-esc="n.text"/>
+            </t>
+        </svg>
+        <input t-if="state.noteDraft" t-ref="note" type="text" class="o_sf_note_input" aria-label="Note text" placeholder="e.g. hand dig only" t-model="state.noteDraft.text"
+               t-attf-style="left: {{ state.noteDraft.x + 8 }}px; top: {{ state.noteDraft.y - 12 }}px" t-on-keydown="onNoteKeydown" t-on-blur="commitNote"/>
+        <span class="o_sf_canvas_cap o_sf_mono">strataline · utilities layer · 1 px ≈ 0.15 m</span>
+        <span class="o_sf_canvas_hint o_sf_mono" aria-live="polite" t-esc="hint"/>
+    </div>
+</t>
+
+</templates>

@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+<t t-name="strataflow_workorder.Locator">
+    <StrataflowShell active="'locator'" me="state.data.me" loading="state.loading" skeleton="'list'" bgmap="state.view === 'map' ? 'none' : 'grid'">
+        <t t-set-slot="nav">
+            <nav class="o_sf_pill o_sf_nav" aria-label="Locator view">
+                <button type="button" class="o_sf_navbtn" t-att-class="{ 'is-on': state.view === 'route' }" t-att-aria-current="state.view === 'route' ? 'page' : undefined" t-on-click="() => { state.view = 'route'; state.mapFocus = false; }">My Route</button>
+                <button type="button" class="o_sf_navbtn" t-att-class="{ 'is-on': state.view === 'map' }" t-att-aria-current="state.view === 'map' ? 'page' : undefined" t-on-click="() => (state.view = 'map')">Map</button>
+            </nav>
+        </t>
+        <t t-set-slot="headerRight">
+            <button type="button" class="o_sf_pill o_sf_pillbtn" t-on-click="() => this.action.doAction({ type: 'ir.actions.client', tag: 'strataflow_home' }, { clearBreadcrumbs: true })">← Office view</button>
+        </t>
+
+        <!-- MAP MODE: unobstructed map -->
+        <t t-if="state.view === 'map'">
+            <FauxMap basemap="state.basemap">
+                <span class="o_sf_bm o_sf_bm--top" role="group" aria-label="Basemap">
+                    <button type="button" class="o_sf_bm_btn" t-att-class="{ 'is-on': state.basemap === 'streets' }" t-att-aria-pressed="state.basemap === 'streets'" t-on-click="() => (state.basemap = 'streets')">Map</button>
+                    <button type="button" class="o_sf_bm_btn" t-att-class="{ 'is-on': state.basemap === 'satellite' }" t-att-aria-pressed="state.basemap === 'satellite'" t-on-click="() => (state.basemap = 'satellite')">Satellite</button>
+                </span>
+                <t t-if="state.mapFocus and selPin">
+                    <span class="o_sf_pin is-on" t-attf-style="left: {{ selPin.x }}%; top: {{ selPin.y }}%" aria-hidden="true"><span class="o_sf_dot" t-attf-class="o_sf_dot--{{ selPin.status }}"/></span>
+                    <div class="o_sf_pin_label" t-attf-style="left: {{ selPin.x }}%; top: {{ selPin.y }}%"><span class="o_sf_mono o_sf_note" t-esc="selPin.name"/><b t-esc="selPin.address"/></div>
+                    <button type="button" class="o_sf_btn o_sf_btn--primary o_sf_btn--float" t-on-click="() => { state.view = 'route'; state.mapFocus = false; }">← Back to ticket</button>
+                </t>
+            </FauxMap>
+            <nav class="o_sf_rail" aria-label="Map controls">
+                <button type="button" class="o_sf_rail_btn" title="Zoom in" disabled="disabled">+</button>
+                <button type="button" class="o_sf_rail_btn" title="Zoom out" disabled="disabled">−</button>
+                <button type="button" class="o_sf_rail_btn is-on" title="Utility layers"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" aria-hidden="true"><polygon points="10,2 18,6.5 10,11 2,6.5"/><polyline points="2,10.5 10,15 18,10.5"/><polyline points="2,14.5 10,19 18,14.5"/></svg></button>
+            </nav>
+        </t>
+
+        <!-- ROUTE MODE -->
+        <div t-else="" class="o_sf_body">
+            <aside t-if="state.panelOpen" class="o_sf_panel o_sf_route" aria-label="My route">
+                <div class="o_sf_route_head">
+                    <span><span class="o_sf_eyebrow">Today</span><span class="o_sf_note o_sf_route_sub"><t t-esc="stops.length"/> stops</span></span>
+                    <button type="button" class="o_sf_x" title="Collapse panel" aria-label="Collapse panel" t-on-click="() => (state.panelOpen = false)">‹</button>
+                </div>
+                <div class="o_sf_rows">
+                    <p t-if="!stops.length" class="o_sf_empty">No tickets on the route yet — dispatch assigns them.</p>
+                    <t t-foreach="stops" t-as="s" t-key="s.id">
+                        <button type="button" class="o_sf_row o_sf_row--stop" t-att-class="{ 'is-selected': s.id === state.selId }" t-on-click="() => this.selectStop(s.id)">
+                            <span class="o_sf_stop_n o_sf_mono" t-att-class="{ 'is-done': s.done }" t-esc="s.n"/>
+                            <span class="o_sf_row_text"><b t-esc="s.address"/><small class="o_sf_mono" t-esc="s.meta"/></span>
+                            <span class="o_sf_status" t-attf-class="o_sf_status--{{ s.stopStatus }}" t-esc="s.stopLabel"/>
+                        </button>
+                    </t>
+                </div>
+                <div class="o_sf_list_foot" t-esc="routeFoot"/>
+            </aside>
+
+            <section class="o_sf_panel o_sf_detail" t-if="sel">
+                <div class="o_sf_detail_head o_sf_detail_head--loc">
+                    <button t-if="!state.panelOpen" type="button" class="o_sf_x" title="Show route" aria-label="Show route" t-on-click="() => (state.panelOpen = true)">›</button>
+                    <span class="o_sf_detail_title">
+                        <span class="o_sf_eyebrow o_sf_mono o_sf_eyebrow--accent"><t t-esc="sel.name"/> · dig <t t-esc="fmtDate(sel.dig_date)"/><t t-if="sel.emergency"> · <span class="o_sf_danger_text">EMERGENCY</span></t></span>
+                        <span class="o_sf_h1" t-esc="sel.address"/>
+                    </span>
+                    <span class="o_sf_steps" aria-label="Progress">
+                        <t t-foreach="steps" t-as="stp" t-key="stp.key"><span class="o_sf_step" t-att-class="{ 'is-on': stp.on, 'is-done': stp.done }" t-esc="stp.label"/></t>
+                    </span>
+                    <span class="o_sf_utils"><t t-foreach="selUtilities" t-as="u" t-key="u.id"><span class="o_sf_util"><span class="o_sf_dot" t-attf-style="background: {{ u.color }}" aria-hidden="true"/><t t-esc="u.name"/></span></t></span>
+                </div>
+
+                <!-- STAGE 1: on-site map -->
+                <t t-if="state.stage === 'map'">
+                    <div class="o_sf_site">
+                        <div class="o_sf_canvas o_sf_canvas--site" t-att-class="{ 'is-satellite': state.basemap === 'satellite' }">
+                            <svg class="o_sf_canvas_map" viewBox="0 0 400 330" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+                                <g class="o_sf_bgmap_line" stroke-width="2"><line x1="0" y1="85" x2="400" y2="85"/><line x1="0" y1="230" x2="400" y2="230"/><line x1="90" y1="0" x2="90" y2="330"/><line x1="230" y1="0" x2="230" y2="330"/><line x1="330" y1="0" x2="330" y2="330"/></g>
+                                <rect class="o_sf_bgmap_block" x="105" y="108" width="70" height="90" rx="4"/><rect class="o_sf_bgmap_block" x="245" y="108" width="60" height="90" rx="4"/><rect class="o_sf_bgmap_block" x="105" y="250" width="90" height="60" rx="4"/>
+                                <g class="o_sf_cadastral" stroke-width="1.2" stroke-dasharray="6 4" fill="none"><rect x="95" y="95" width="95" height="115"/><rect x="235" y="95" width="85" height="115"/><rect x="95" y="238" width="115" height="85"/></g>
+                                <path d="M0 178 C 120 168, 260 192, 400 172" fill="none" stroke="#f2b705" stroke-width="2.5" stroke-dasharray="1 8" stroke-linecap="round" opacity="0.6"/><path d="M160 0 C 168 110, 156 220, 164 330" fill="none" stroke="#e8721c" stroke-width="2.5" opacity="0.6"/>
+                            </svg>
+                            <span class="o_sf_bm" role="group" aria-label="Basemap">
+                                <button type="button" class="o_sf_bm_btn" t-att-class="{ 'is-on': state.basemap === 'streets' }" t-on-click="() => (state.basemap = 'streets')">Map</button>
+                                <button type="button" class="o_sf_bm_btn" t-att-class="{ 'is-on': state.basemap === 'satellite' }" t-on-click="() => (state.basemap = 'satellite')">Satellite</button>
+                            </span>
+                            <div class="o_sf_site_card">
+                                <div class="o_sf_eyebrow">Strataline · at this address</div>
+                                <t t-foreach="selUtilities" t-as="u" t-key="u.id">
+                                    <div class="o_sf_site_row"><span class="o_sf_dot" t-attf-style="background: {{ u.color }}" aria-hidden="true"/><span t-esc="u.name"/><span class="o_sf_status o_sf_status--located">on ticket</span></div>
+                                </t>
+                                <div class="o_sf_site_row"><span class="o_sf_dot o_sf_dot--cadastral" aria-hidden="true"/><span>Property lines · cadastral</span><span class="o_sf_status">layer on</span></div>
+                                <div class="o_sf_note o_sf_mt-s">Live Strataline utility layer joins this card with the tile integration — verify on-site records before digging clearance.</div>
+                                <button type="button" class="o_sf_chip o_sf_chip--wide" t-on-click="() => (state.detailsOpen = !state.detailsOpen)" t-att-aria-expanded="state.detailsOpen"><t t-esc="state.detailsOpen ? 'Hide details' : 'View all details'"/></button>
+                                <dl t-if="state.detailsOpen" class="o_sf_kv o_sf_kv--card">
+                                    <dt>Requested by</dt><dd class="o_sf_mono" t-esc="sel.requester || '—'"/>
+                                    <dt>Source</dt><dd class="o_sf_mono" t-esc="sel.source"/>
+                                    <dt>Priority</dt><dd class="o_sf_mono" t-att-class="{ 'o_sf_danger_text': sel.emergency }" t-esc="sel.emergency ? 'EMERGENCY' : 'Standard'"/>
+                                    <dt>Contact</dt><dd class="o_sf_mono" t-esc="sel.contact || '—'"/>
+                                    <dt>Parcel</dt><dd class="o_sf_mono" t-esc="sel.parcel || '—'"/>
+                                    <dt class="o_sf_kv_top">Scope note</dt><dd t-esc="sel.scope_note || '—'"/>
+                                </dl>
+                            </div>
+                            <span class="o_sf_canvas_cap o_sf_mono">strataline · utilities + cadastral layers</span>
+                        </div>
+                    </div>
+                    <div class="o_sf_stage_actions">
+                        <button type="button" class="o_sf_btn" t-on-click="navigate">Navigate ↗</button>
+                        <button type="button" class="o_sf_btn" t-on-click="() => { state.view = 'map'; state.mapFocus = true; }">Open in map ↗</button>
+                        <button t-if="sel.status === 'assigned'" type="button" class="o_sf_btn" t-on-click="markOnSite">I'm on site</button>
+                        <span class="o_sf_spacer"/>
+                        <span class="o_sf_note">Locate on site first, then draw it up</span>
+                        <button type="button" class="o_sf_btn o_sf_btn--primary" t-att-disabled="sel.done" t-on-click="() => (state.stage = 'draw')">Start locate drawing →</button>
+                    </div>
+                </t>
+
+                <!-- STAGE 2: drawing -->
+                <t t-elif="state.stage === 'draw'">
+                    <div class="o_sf_site o_sf_site--draw">
+                        <LocateCanvas utilities="state.data.utilities" drawing="sel.drawing" onChange.bind="onDrawingChange" t-key="sel.id"/>
+                        <div t-if="state.auditOpen" class="o_sf_audit" role="status">
+                            <div class="o_sf_audit_head"><span class="o_sf_eyebrow">Auto audit</span><span class="o_sf_spacer"/><button type="button" class="o_sf_x o_sf_x--sm" aria-label="Close audit" t-on-click="() => (state.auditOpen = false)">✕</button></div>
+                            <t t-foreach="audit" t-as="f" t-key="f_index"><div class="o_sf_finding"><span class="o_sf_dot" t-attf-class="o_sf_dot--f-{{ f.level }}" aria-hidden="true"/><span t-esc="f.text"/></div></t>
+                        </div>
+                    </div>
+                    <div class="o_sf_stage_actions">
+                        <button type="button" class="o_sf_btn" t-on-click="() => { state.stage = 'map'; state.auditOpen = false; }">← Back to site</button>
+                        <button type="button" class="o_sf_btn" t-on-click="runAudit">Run audit</button>
+                        <span class="o_sf_spacer"/>
+                        <button type="button" class="o_sf_btn o_sf_btn--primary" t-on-click="toReview">Review &amp; confirm →</button>
+                    </div>
+                </t>
+
+                <!-- STAGE 3: review + confirm -->
+                <t t-else="">
+                    <div class="o_sf_review">
+                        <div>
+                            <div class="o_sf_eyebrow">Confirm ticket details</div>
+                            <dl class="o_sf_kv">
+                                <dt>Ticket</dt><dd class="o_sf_mono" t-esc="sel.name"/>
+                                <dt>Address</dt><dd class="o_sf_mono" t-esc="sel.address"/>
+                                <dt>Parcel</dt><dd class="o_sf_mono" t-esc="sel.parcel || '—'"/>
+                                <dt>Located by</dt><dd class="o_sf_mono"><t t-esc="sel.locator ? sel.locator.name : state.data.me.name"/><t t-if="sel.onsite_at"> · on site <t t-esc="fmtWhen(sel.onsite_at)"/></t></dd>
+                                <dt>GPS</dt><dd class="o_sf_mono" t-esc="sel.latitude ? sel.latitude.toFixed(4) + ', ' + sel.longitude.toFixed(4) + ' · ticket address' : '— no fix'"/>
+                            </dl>
+                            <div class="o_sf_eyebrow o_sf_eyebrow--gap">Locate print · drawn lines</div>
+                            <div t-if="hasLines" class="o_sf_lines">
+                                <t t-foreach="lines.rows" t-as="lr" t-key="lr.code"><div class="o_sf_line_row"><span class="o_sf_dot" t-attf-style="background: {{ lr.color }}" aria-hidden="true"/><span><t t-esc="lr.name"/> · <t t-esc="lr.count"/> line(s)</span><span class="o_sf_mono" t-esc="lr.metres.toFixed(1) + ' m'"/></div></t>
+                                <div class="o_sf_line_row o_sf_line_row--total"><span class="o_sf_eyebrow">Total marked · <t t-esc="(sel.drawing.notes || []).length"/> notes</span><span class="o_sf_mono" t-esc="lines.total.toFixed(1) + ' m'"/></div>
+                            </div>
+                            <p t-else="" class="o_sf_note o_sf_danger_text">No lines drawn yet — go back and draw the locate before closing.</p>
+                            <div class="o_sf_eyebrow o_sf_eyebrow--gap">Documents</div>
+                            <div class="o_sf_docs">
+                                <p t-if="!state.attachments.length" class="o_sf_note">No documents on this ticket yet.</p>
+                                <t t-foreach="state.attachments" t-as="a" t-key="a.id">
+                                    <div class="o_sf_doc"><span class="o_sf_doc_name" t-esc="a.name"/><span class="o_sf_note o_sf_mono" t-esc="fmtWhen(a.create_date)"/><button type="button" class="o_sf_chip" t-on-click="() => this.openAttachment(a)">View</button></div>
+                                </t>
+                                <input type="file" t-ref="file" multiple="multiple" hidden="hidden" t-on-change="upload"/>
+                                <button type="button" class="o_sf_chip o_sf_chip--wide" t-att-disabled="state.uploading" t-on-click="pickFile"><t t-esc="state.uploading ? 'Uploading…' : 'Upload completed docs'"/></button>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="o_sf_eyebrow">Locate print preview</div>
+                            <div class="o_sf_preview_box">
+                                <LocatePreview drawing="sel.drawing" utilities="state.data.utilities"/>
+                                <span class="o_sf_canvas_cap o_sf_mono"><t t-esc="sel.name"/> · locate print · 1 px ≈ 0.15 m</span>
+                            </div>
+                            <div class="o_sf_audit_head o_sf_mt"><span class="o_sf_eyebrow">Auto audit</span><span class="o_sf_spacer"/><button type="button" class="o_sf_chip" t-on-click="runAudit">Re-run</button></div>
+                            <div class="o_sf_findings"><t t-foreach="audit" t-as="f" t-key="f_index"><div class="o_sf_finding"><span class="o_sf_dot" t-attf-class="o_sf_dot--f-{{ f.level }}" aria-hidden="true"/><span t-esc="f.text"/></div></t></div>
+                            <p class="o_sf_note">Rule-based check against ticket scope and typical measurement ranges. Findings are advisory — the locator's judgment governs.</p>
+                        </div>
+                    </div>
+                    <div class="o_sf_stage_actions">
+                        <button type="button" class="o_sf_btn" t-on-click="() => { state.stage = 'draw'; state.auditOpen = false; }">← Back to drawing</button>
+                        <span class="o_sf_spacer"/>
+                        <button type="button" class="o_sf_btn o_sf_btn--primary" t-att-disabled="!hasLines or sel.done" t-on-click="confirmClose">Confirm &amp; close ticket</button>
+                    </div>
+                </t>
+            </section>
+            <section class="o_sf_panel o_sf_detail o_sf_detail--empty" t-else=""><p class="o_sf_empty">No ticket selected.</p></section>
+        </div>
+
+        <t t-set-slot="footer" t-if="state.view === 'map'">
+            <span class="o_sf_pill o_sf_pill--sm o_sf_pill--danger"><svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><g transform="translate(0 -1.4)"><path d="M10 3 L18 17 H2 Z" stroke-linejoin="round"/><line x1="10" y1="8.5" x2="10" y2="12.5"/><circle cx="10" cy="14.8" r="0.7" fill="currentColor" stroke="none"/></g></svg>Reference only — not a locate</span>
+            <span class="o_sf_pill o_sf_pill--sm o_sf_note">faux map · live Strataline tiles pending</span>
+        </t>
+    </StrataflowShell>
+</t>
+
+</templates>

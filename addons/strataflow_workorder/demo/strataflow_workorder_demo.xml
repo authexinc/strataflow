@@ -30,20 +30,35 @@
     <record id="partner_rogers" model="res.partner"><field name="name">Rogers</field><field name="is_company" eval="True"/></record>
     <record id="partner_atco" model="res.partner"><field name="name">Atco Gas</field><field name="is_company" eval="True"/></record>
 
+    <!-- CRM prospects and past customers -->
+    <record id="partner_bordos" model="res.partner"><field name="name">Bordos Excavating</field><field name="is_company" eval="True"/></record>
+    <record id="partner_cana" model="res.partner"><field name="name">Cana Construction</field><field name="is_company" eval="True"/></record>
+    <record id="partner_prairie" model="res.partner"><field name="name">Prairie Fence Co.</field><field name="is_company" eval="True"/></record>
+    <record id="partner_airdrie" model="res.partner"><field name="name">City of Airdrie</field><field name="is_company" eval="True"/></record>
+    <record id="partner_volker" model="res.partner"><field name="name">Volker Stevin</field><field name="is_company" eval="True"/></record>
+    <record id="partner_whissell" model="res.partner"><field name="name">Whissell Contracting</field><field name="is_company" eval="True"/></record>
+    <record id="partner_marigold" model="res.partner"><field name="name">Marigold Homes</field><field name="is_company" eval="True"/></record>
+
     <!-- tickets, mirroring the design seed -->
     <record id="wo_04187" model="strataflow.workorder">
+        <field name="latitude">51.0397</field><field name="longitude">-114.0186</field><field name="emergency" eval="True"/>
+        <field name="contact">403 555 0117</field><field name="parcel">PLAN 2010293 · BLK 7 · LOT 3</field><field name="scope_note">Water service repair — full lot clearance, hand expose within 1 m of marks.</field>
         <field name="name">T-26-04187</field><field name="address">2204 12 Ave SE</field><field name="status">new</field>
         <field name="dig_date">2026-09-08</field><field name="source">usp</field><field name="requester_id" ref="partner_ledcor"/>
         <field name="utility_ids" eval="[(6, 0, [ref('utility_gas'), ref('utility_power'), ref('utility_telecom')])]"/>
         <field name="received_at">2026-09-05 20:12:00</field>
     </record>
     <record id="wo_04185" model="strataflow.workorder">
+        <field name="latitude">51.0891</field><field name="longitude">-114.1607</field><field name="emergency" eval="False"/>
+        <field name="contact">403 555 0204</field><field name="parcel">PLAN 7810354 · BLK 3 · LOT 19</field><field name="scope_note">Rear garage pad; locate from alley to house.</field>
         <field name="name">T-26-04185</field><field name="address">4511 Bowness Rd NW</field><field name="status">new</field>
         <field name="dig_date">2026-09-10</field><field name="source">usp</field><field name="requester_id" ref="partner_homeowner"/>
         <field name="utility_ids" eval="[(6, 0, [ref('utility_gas'), ref('utility_water')])]"/>
         <field name="received_at">2026-09-06 15:02:00</field>
     </record>
     <record id="wo_04182" model="strataflow.workorder">
+        <field name="latitude">51.0645</field><field name="longitude">-114.0632</field><field name="emergency" eval="False"/>
+        <field name="contact">403 555 0341</field><field name="parcel">PLAN 0113562 · BLK 2 · LOT 8</field><field name="scope_note">Boulevard trenching, north side only.</field>
         <field name="name">T-26-04182</field><field name="address">903 Centre St N</field><field name="status">assigned</field>
         <field name="dig_date">2026-09-09</field><field name="source">usp</field><field name="requester_id" ref="partner_calgary"/>
         <field name="locator_id" ref="user_kowalski"/><field name="assigned_by_id" ref="base.user_admin"/>
@@ -51,6 +66,8 @@
         <field name="received_at">2026-09-05 20:12:00</field><field name="assigned_at">2026-09-06 14:40:00</field>
     </record>
     <record id="wo_04179" model="strataflow.workorder">
+        <field name="latitude">50.9612</field><field name="longitude">-114.0736</field><field name="emergency" eval="False"/>
+        <field name="contact">403 555 0188</field><field name="parcel">PLAN 6913JK · BLK 9 · LOT 4</field><field name="scope_note">Pole replacement, east boulevard.</field>
         <field name="name">T-26-04179</field><field name="address">128 Heritage Dr SW</field><field name="status">onsite</field>
         <field name="dig_date">2026-09-08</field><field name="source">manual</field><field name="requester_id" ref="partner_enmax"/>
         <field name="locator_id" ref="user_nguyen"/><field name="assigned_by_id" ref="base.user_admin"/>
@@ -58,6 +75,8 @@
         <field name="received_at">2026-09-05 21:30:00</field><field name="assigned_at">2026-09-06 14:41:00</field><field name="onsite_at">2026-09-08 15:05:00</field>
     </record>
     <record id="wo_04175" model="strataflow.workorder">
+        <field name="latitude">50.8760</field><field name="longitude">-113.9648</field><field name="emergency" eval="False"/>
+        <field name="contact">403 555 0290</field><field name="parcel">PLAN 1712846 · BLK 11 · LOT 22</field><field name="scope_note">New fence line along east property line.</field>
         <field name="name">T-26-04175</field><field name="address">77 Cranston Way SE</field><field name="status">assigned</field>
         <field name="dig_date">2026-09-11</field><field name="source">usp</field><field name="requester_id" ref="partner_shane"/>
         <field name="locator_id" ref="user_cardinal"/><field name="assigned_by_id" ref="base.user_admin"/>
@@ -65,6 +84,8 @@
         <field name="received_at">2026-09-06 09:10:00</field><field name="assigned_at">2026-09-06 14:45:00</field>
     </record>
     <record id="wo_04171" model="strataflow.workorder">
+        <field name="latitude">51.0378</field><field name="longitude">-114.1267</field><field name="emergency" eval="False"/>
+        <field name="contact">403 555 0152</field><field name="parcel">PLAN 4512P · BLK 12 · LOT 1</field><field name="scope_note">Fibre drop to building face.</field>
         <field name="name">T-26-04171</field><field name="address">3020 17 Ave SW</field><field name="status">onsite</field>
         <field name="dig_date">2026-09-08</field><field name="source">usp</field><field name="requester_id" ref="partner_telus"/>
         <field name="locator_id" ref="user_braun"/><field name="assigned_by_id" ref="base.user_admin"/>
@@ -72,6 +93,8 @@
         <field name="received_at">2026-09-05 19:00:00</field><field name="assigned_at">2026-09-06 14:50:00</field><field name="onsite_at">2026-09-08 14:20:00</field>
     </record>
     <record id="wo_04168" model="strataflow.workorder">
+        <field name="latitude">51.0419</field><field name="longitude">-114.0293</field><field name="emergency" eval="False"/>
+        <field name="contact">403 555 0182</field><field name="parcel">PLAN 9812AC · BLK 4 · LOT 12</field><field name="scope_note">Locate from property line to building face, full frontage.</field>
         <field name="name">T-26-04168</field><field name="address">1440 9 Ave SE</field><field name="status">located</field>
         <field name="dig_date">2026-09-07</field><field name="source">usp</field><field name="requester_id" ref="partner_graham"/>
         <field name="locator_id" ref="user_kowalski"/><field name="assigned_by_id" ref="base.user_admin"/>
@@ -79,12 +102,16 @@
         <field name="received_at">2026-09-04 16:00:00</field><field name="assigned_at">2026-09-05 13:00:00</field><field name="onsite_at">2026-09-07 15:00:00</field><field name="located_at">2026-09-07 17:32:00</field>
     </record>
     <record id="wo_04166" model="strataflow.workorder">
+        <field name="latitude">50.9285</field><field name="longitude">-114.0654</field><field name="emergency" eval="False"/>
+        <field name="contact">403 555 0261</field><field name="parcel">PLAN 8010724 · BLK 5 · LOT 6</field><field name="scope_note">Streetlight base, west side.</field>
         <field name="name">T-26-04166</field><field name="address">240 Midpark Blvd SE</field><field name="status">new</field>
         <field name="dig_date">2026-09-12</field><field name="source">manual</field><field name="requester_id" ref="partner_fortis"/>
         <field name="utility_ids" eval="[(6, 0, [ref('utility_power')])]"/>
         <field name="received_at">2026-09-06 18:30:00</field>
     </record>
     <record id="wo_04163" model="strataflow.workorder">
+        <field name="latitude">51.0353</field><field name="longitude">-114.1737</field><field name="emergency" eval="False"/>
+        <field name="contact">403 555 0199</field><field name="parcel">PLAN 0313071 · BLK 1 · LOT 2</field><field name="scope_note">Parking lot resurfacing, full frontage.</field>
         <field name="name">T-26-04163</field><field name="address">5710 Signal Hill Ctr SW</field><field name="status">located</field>
         <field name="dig_date">2026-09-07</field><field name="source">usp</field><field name="requester_id" ref="partner_rogers"/>
         <field name="locator_id" ref="user_nguyen"/><field name="assigned_by_id" ref="base.user_admin"/>
@@ -92,10 +119,64 @@
         <field name="received_at">2026-09-04 14:00:00</field><field name="assigned_at">2026-09-05 13:05:00</field><field name="onsite_at">2026-09-07 14:10:00</field><field name="located_at">2026-09-07 16:45:00</field>
     </record>
     <record id="wo_04159" model="strataflow.workorder">
+        <field name="latitude">51.0601</field><field name="longitude">-114.0517</field><field name="emergency" eval="False"/>
+        <field name="contact">403 555 0142</field><field name="parcel">PLAN 2211AB · BLK 6 · LOT 9</field><field name="scope_note">Meter relocation.</field>
         <field name="name">T-26-04159</field><field name="address">812 Edmonton Tr NE</field><field name="status">invoiced</field>
         <field name="dig_date">2026-09-04</field><field name="source">usp</field><field name="requester_id" ref="partner_atco"/>
         <field name="locator_id" ref="user_cardinal"/><field name="assigned_by_id" ref="base.user_admin"/>
         <field name="utility_ids" eval="[(6, 0, [ref('utility_gas')])]"/>
         <field name="received_at">2026-09-02 15:00:00</field><field name="assigned_at">2026-09-02 17:00:00</field><field name="onsite_at">2026-09-04 14:00:00</field><field name="located_at">2026-09-04 16:00:00</field><field name="closed_at">2026-09-04 22:20:00</field>
     </record>
+    <!-- pipeline, mirroring the design's CRM seed (stock crm.lead) -->
+    <record id="lead_bordos" model="crm.lead">
+        <field name="name">Locate coverage for SE Calgary jobs</field><field name="type">opportunity</field><field name="partner_id" ref="partner_bordos"/>
+        <field name="stage_id" ref="crm.stage_lead1"/><field name="expected_revenue">18000</field><field name="recurring_revenue">18000</field><field name="recurring_plan" ref="crm.crm_recurring_plan_yearly"/>
+        <field name="tag_ids" eval="[(6, 0, [ref('tag_annual')])]"/><field name="user_id" ref="base.user_admin"/>
+    </record>
+    <record id="lead_cana" model="crm.lead">
+        <field name="name">Stampede grounds expansion — phase 1</field><field name="type">opportunity</field><field name="partner_id" ref="partner_cana"/>
+        <field name="stage_id" ref="crm.stage_lead1"/><field name="expected_revenue">6200</field>
+        <field name="tag_ids" eval="[(6, 0, [ref('tag_project')])]"/><field name="user_id" ref="base.user_admin"/>
+    </record>
+    <record id="lead_prairie" model="crm.lead">
+        <field name="name">Residential fence line, Tuscany</field><field name="type">opportunity</field><field name="partner_id" ref="partner_prairie"/>
+        <field name="stage_id" ref="crm.stage_lead1"/><field name="expected_revenue">450</field>
+        <field name="tag_ids" eval="[(6, 0, [ref('tag_oneoff')])]"/><field name="user_id" ref="user_kowalski"/>
+    </record>
+    <record id="lead_airdrie" model="crm.lead">
+        <field name="name">Parks dept — standing locate agreement</field><field name="type">opportunity</field><field name="partner_id" ref="partner_airdrie"/>
+        <field name="stage_id" ref="crm.stage_lead2"/><field name="expected_revenue">32000</field><field name="recurring_revenue">32000</field><field name="recurring_plan" ref="crm.crm_recurring_plan_yearly"/>
+        <field name="tag_ids" eval="[(6, 0, [ref('tag_municipal')])]"/><field name="user_id" ref="base.user_admin"/>
+    </record>
+    <record id="lead_volker" model="crm.lead">
+        <field name="name">Deerfoot sound-wall piles, 4 km corridor</field><field name="type">opportunity</field><field name="partner_id" ref="partner_volker"/>
+        <field name="stage_id" ref="crm.stage_lead2"/><field name="expected_revenue">9800</field>
+        <field name="tag_ids" eval="[(6, 0, [ref('tag_project')])]"/><field name="user_id" ref="base.user_admin"/>
+    </record>
+    <record id="lead_whissell" model="crm.lead">
+        <field name="name">Utility relocation support, 17 Ave BRT</field><field name="type">opportunity</field><field name="partner_id" ref="partner_whissell"/>
+        <field name="stage_id" ref="crm.stage_lead3"/><field name="expected_revenue">14500</field>
+        <field name="tag_ids" eval="[(6, 0, [ref('tag_project')])]"/><field name="user_id" ref="user_kowalski"/>
+    </record>
+    <record id="lead_marigold" model="crm.lead">
+        <field name="name">8-lot subdivision, Cochrane</field><field name="type">opportunity</field><field name="partner_id" ref="partner_marigold"/>
+        <field name="stage_id" ref="crm.stage_lead3"/><field name="expected_revenue">2100</field>
+        <field name="tag_ids" eval="[(6, 0, [ref('tag_project')])]"/><field name="user_id" ref="base.user_admin"/>
+    </record>
+    <record id="lead_ledcor" model="crm.lead">
+        <field name="name">Master service agreement renewed</field><field name="type">opportunity</field><field name="partner_id" ref="partner_ledcor"/>
+        <field name="stage_id" ref="crm.stage_lead4"/><field name="expected_revenue">44000</field><field name="recurring_revenue">44000</field><field name="recurring_plan" ref="crm.crm_recurring_plan_yearly"/>
+        <field name="tag_ids" eval="[(6, 0, [ref('tag_annual')])]"/><field name="user_id" ref="base.user_admin"/>
+    </record>
+    <record id="lead_fortis" model="crm.lead">
+        <field name="name">Secondary locates, rural south zone</field><field name="type">opportunity</field><field name="partner_id" ref="partner_fortis"/>
+        <field name="stage_id" ref="crm.stage_lead4"/><field name="expected_revenue">21000</field><field name="recurring_revenue">21000</field><field name="recurring_plan" ref="crm.crm_recurring_plan_yearly"/>
+        <field name="tag_ids" eval="[(6, 0, [ref('tag_annual')])]"/><field name="user_id" ref="user_kowalski"/>
+    </record>
+    <!-- tickets for won customers hang off their deal -->
+    <record id="wo_04187" model="strataflow.workorder"><field name="lead_id" ref="lead_ledcor"/></record>
+    <record id="wo_04166" model="strataflow.workorder"><field name="lead_id" ref="lead_fortis"/></record>
+
+    <!-- posted / paid / overdue customer invoices (account.move) -->
+    <function model="strataflow.workorder" name="_demo_seed_invoices"/>
 </odoo>

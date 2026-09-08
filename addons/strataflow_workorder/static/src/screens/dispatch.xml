@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+<t t-name="strataflow_workorder.Dispatch">
+    <StrataflowShell active="'dispatch'" me="state.data.me" loading="state.loading" skeleton="'map'" bgmap="'none'" searchPlaceholder="'Tickets, addresses, or lon, lat…'" onSearch.bind="onSearch">
+        <t t-set-slot="headerMid">
+            <span class="o_sf_pill o_sf_nav" role="group" aria-label="Basemap">
+                <button type="button" class="o_sf_navbtn" t-att-class="{ 'is-on': state.basemap === 'streets' }" t-att-aria-pressed="state.basemap === 'streets'" t-on-click="() => (state.basemap = 'streets')">Map</button>
+                <button type="button" class="o_sf_navbtn" t-att-class="{ 'is-on': state.basemap === 'satellite' }" t-att-aria-pressed="state.basemap === 'satellite'" t-on-click="() => (state.basemap = 'satellite')">Satellite</button>
+            </span>
+        </t>
+
+        <FauxMap basemap="state.basemap">
+            <svg t-if="state.auto" class="o_sf_routes" viewBox="0 0 1440 900" preserveAspectRatio="none" aria-hidden="true">
+                <t t-foreach="routes" t-as="r" t-key="r.crew.id"><path t-att-d="r.d" fill="none" t-att-stroke="r.color" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="10 7" opacity="0.85"/></t>
+            </svg>
+            <t t-foreach="pins" t-as="pin" t-key="pin.id">
+                <button type="button" class="o_sf_pin" t-att-class="{ 'is-on': pin.on, 'is-emergency': pin.emergency }" t-attf-style="left: {{ pin.x }}%; top: {{ pin.y }}%" t-att-title="pin.name + ' · ' + pin.address" t-att-aria-pressed="pin.on" t-on-click="() => this.select(pin.id)">
+                    <span class="o_sf_dot" t-attf-class="o_sf_dot--{{ pin.status }}" aria-hidden="true"/>
+                    <span t-if="state.showCrew and pin.onsite and pin.locator" class="o_sf_pin_crew" t-esc="pin.locator.initials"/>
+                </button>
+            </t>
+            <div t-if="selPin" class="o_sf_pin_label" t-attf-style="left: {{ selPin.x }}%; top: {{ selPin.y }}%">
+                <span class="o_sf_mono o_sf_note" t-esc="selPin.name"/><b t-esc="selPin.address"/>
+            </div>
+        </FauxMap>
+
+        <aside class="o_sf_panel o_sf_queue" aria-label="Ticket queue">
+            <div class="o_sf_queue_head">
+                <label class="o_sf_filter"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5.5"/><line x1="13" y1="13" x2="17.5" y2="17.5"/></svg><input type="search" placeholder="Filter tickets…" aria-label="Filter tickets" t-on-input="(ev) => this.onSearch(ev.target.value)"/></label>
+                <button type="button" class="o_sf_btn o_sf_btn--auto" t-att-class="{ 'is-on': state.auto }" t-att-aria-pressed="state.auto" title="Suggest routes for all unassigned tickets" t-on-click="() => (state.auto = !state.auto)">
+                    <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M11 1 L4 11.5 H9.5 L8 19 L16 8.5 H10.5 Z" stroke-linejoin="round"/></svg>Auto-assign
+                </button>
+            </div>
+            <div class="o_sf_chips o_sf_chips--tight" role="group" aria-label="Filter by status">
+                <t t-foreach="chips" t-as="chip" t-key="chip.key"><button type="button" class="o_sf_chip" t-att-class="{ 'is-on': chip.on }" t-att-aria-pressed="chip.on" t-on-click="() => this.pickChip(chip.key)"><t t-esc="chip.label"/><span class="o_sf_chip_count" t-esc="chip.count"/></button></t>
+            </div>
+            <div class="o_sf_rows">
+                <p t-if="!visible.length" class="o_sf_empty">No tickets match.</p>
+                <t t-foreach="visible" t-as="t" t-key="t.id">
+                    <button type="button" class="o_sf_row" t-att-class="{ 'is-selected': t.id === state.selId }" t-on-click="() => this.select(t.id)">
+                        <span class="o_sf_dot" t-attf-class="o_sf_dot--{{ t.status }}" aria-hidden="true"/>
+                        <span class="o_sf_row_text"><b t-esc="t.address"/><small class="o_sf_mono"><t t-esc="t.name"/> · dig <t t-esc="fmtDate(t.dig_date)"/> · <t t-esc="t.source"/></small></span>
+                        <span t-if="t.emergency" class="o_sf_status o_sf_status--danger">Emerg</span>
+                        <span class="o_sf_status" t-attf-class="o_sf_status--{{ t.status }}" t-esc="statusLabel(t.status)"/>
+                    </button>
+                </t>
+            </div>
+            <div class="o_sf_list_foot"><t t-esc="state.data.tickets.length"/> tickets · emergencies first</div>
+        </aside>
+
+        <nav class="o_sf_rail" aria-label="Map controls">
+            <button type="button" class="o_sf_rail_btn" title="Zoom in" t-on-click="zoomSoon">+</button>
+            <button type="button" class="o_sf_rail_btn" title="Zoom out" t-on-click="zoomSoon">−</button>
+            <button type="button" class="o_sf_rail_btn" title="Crew positions" t-att-aria-pressed="state.showCrew" t-att-class="{ 'is-on': state.showCrew }" t-on-click="() => (state.showCrew = !state.showCrew)"><svg width="19" height="19" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="10" cy="10" r="5.5"/><circle cx="10" cy="10" r="1.6" fill="currentColor" stroke="none"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="10" y1="16" x2="10" y2="19"/><line x1="1" y1="10" x2="4" y2="10"/><line x1="16" y1="10" x2="19" y2="10"/></svg></button>
+            <button type="button" class="o_sf_rail_btn is-on" title="Utility layers" t-on-click="layersSoon"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" aria-hidden="true"><polygon points="10,2 18,6.5 10,11 2,6.5"/><polyline points="2,10.5 10,15 18,10.5"/><polyline points="2,14.5 10,19 18,14.5"/></svg></button>
+        </nav>
+
+        <aside t-if="sel and state.cardOpen" class="o_sf_panel o_sf_card" aria-label="Assign ticket">
+            <div class="o_sf_card_head">
+                <span class="o_sf_detail_title"><span class="o_sf_eyebrow o_sf_eyebrow--accent">Ticket · <t t-esc="sel.name"/><t t-if="sel.emergency"> · <span class="o_sf_danger_text">EMERGENCY</span></t></span><span class="o_sf_card_h" t-esc="sel.address"/></span>
+                <button type="button" class="o_sf_x" aria-label="Close" t-on-click="() => (state.cardOpen = false)">✕</button>
+            </div>
+            <dl class="o_sf_kv o_sf_kv--card">
+                <dt>Dig date</dt><dd class="o_sf_mono" t-esc="fmtDate(sel.dig_date) + ', ' + sel.dig_date.slice(0, 4)"/>
+                <dt>Source</dt><dd class="o_sf_mono" t-esc="sel.source"/>
+                <dt>Requested by</dt><dd class="o_sf_mono" t-esc="sel.requester || '—'"/>
+                <dt class="o_sf_kv_top">Utilities</dt>
+                <dd class="o_sf_utils"><t t-foreach="selUtilities" t-as="u" t-key="u.id"><span class="o_sf_util"><span class="o_sf_dot" t-attf-style="background: {{ u.color }}" aria-hidden="true"/><t t-esc="u.name"/></span></t></dd>
+            </dl>
+            <div class="o_sf_eyebrow o_sf_card_eyebrow">Assign locator</div>
+            <div class="o_sf_card_rows" role="radiogroup" aria-label="Locator">
+                <t t-foreach="crews" t-as="c" t-key="c.id">
+                    <button type="button" class="o_sf_row o_sf_row--crew" t-att-class="{ 'is-selected': c.on }" role="radio" t-att-aria-checked="c.on" t-on-click="() => (state.selCrew = c.id)">
+                        <span class="o_sf_avatar o_sf_avatar--md" t-attf-style="background: linear-gradient(135deg, color-mix(in srgb, {{ c.hue }} 80%, #fff), {{ c.hue }})" aria-hidden="true" t-esc="c.initials"/>
+                        <span class="o_sf_row_text"><b t-esc="c.name"/><small t-esc="c.load"/></span>
+                        <span class="o_sf_mono o_sf_note" t-esc="c.dist"/>
+                    </button>
+                </t>
+            </div>
+            <div class="o_sf_card_actions">
+                <button type="button" class="o_sf_btn o_sf_btn--primary o_sf_btn--grow" t-att-disabled="!state.selCrew or !['new', 'assigned'].includes(sel.status)" t-on-click="assignSelected"><t t-if="state.selCrew">Assign to <t t-esc="selCrewName"/></t><t t-else="">Pick a locator</t></button>
+                <button type="button" class="o_sf_btn" t-on-click="openTicket">Open ticket</button>
+            </div>
+        </aside>
+
+        <t t-set-slot="footer">
+            <button type="button" class="o_sf_pill o_sf_pill--sm o_sf_pill--danger o_sf_pillbtn" t-on-click="disclaimer"><svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><g transform="translate(0 -1.4)"><path d="M10 3 L18 17 H2 Z" stroke-linejoin="round"/><line x1="10" y1="8.5" x2="10" y2="12.5"/><circle cx="10" cy="14.8" r="0.7" fill="currentColor" stroke="none"/></g></svg>Reference only — not a locate</button>
+            <span class="o_sf_pill o_sf_pill--sm"><span class="o_sf_dot o_sf_dot--closed" aria-hidden="true"/>USP feed · not connected</span>
+            <span t-if="sel and sel.latitude" class="o_sf_pill o_sf_pill--sm o_sf_mono o_sf_note"><t t-esc="sel.latitude.toFixed(4)"/>, <t t-esc="sel.longitude.toFixed(4)"/></span>
+            <span t-if="state.auto" class="o_sf_pill o_sf_pill--sm o_sf_pill--accent"><span class="o_sf_dot o_sf_dot--new" aria-hidden="true"/><t t-esc="routeSummary"/></span>
+            <button t-if="state.auto and routes.length" type="button" class="o_sf_pill o_sf_pill--sm o_sf_pillbtn o_sf_pill--ink" t-on-click="applyRoutes">Apply routes</button>
+            <span class="o_sf_spacer"/>
+            <span class="o_sf_pill o_sf_pill--sm o_sf_note">faux map · live Strataline tiles pending</span>
+        </t>
+    </StrataflowShell>
+</t>
+
+</templates>

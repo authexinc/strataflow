@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+<t t-name="strataflow_workorder.Invoices">
+    <StrataflowShell active="'invoices'" me="state.me" loading="state.loading" skeleton="'list'" searchPlaceholder="'Search invoices…'" onSearch.bind="onSearch">
+        <t t-set-slot="headerRight">
+            <button type="button" class="o_sf_pill o_sf_pillbtn o_sf_pill--ink" t-on-click="newInvoice">+ New invoice</button>
+        </t>
+        <div class="o_sf_stack">
+            <div class="o_sf_stats" role="group" aria-label="Filters">
+                <t t-foreach="cards" t-as="c" t-key="c.key">
+                    <button type="button" class="o_sf_stat" t-att-class="{ 'is-on': c.on, 'o_sf_stat--danger': c.danger, 'o_sf_stat--ok': c.ok }" t-att-aria-pressed="c.on" t-on-click="() => this.pick(c.key)">
+                        <span class="o_sf_eyebrow o_sf_stat_label" t-esc="c.label"/>
+                        <span class="o_sf_mono o_sf_stat_value" t-esc="c.value"/>
+                        <span class="o_sf_note" t-esc="c.sub"/>
+                    </button>
+                </t>
+            </div>
+            <section class="o_sf_panel o_sf_table" aria-label="Invoices">
+                <div class="o_sf_thead o_sf_trow" role="row"><span>Invoice</span><span>Customer</span><span>Tickets</span><span>Issued</span><span>Due</span><span class="o_sf_right">Amount</span><span class="o_sf_right">Status</span></div>
+                <div class="o_sf_tbody">
+                    <div t-if="state.filter === 'uninvoiced'" class="o_sf_center">
+                        <div>
+                            <div class="o_sf_h2"><t t-esc="state.board.stats.uninvoiced_count"/> closed tickets ready to invoice</div>
+                            <div class="o_sf_note"><t t-esc="cards[3].value"/> of completed locate work has not been billed yet.</div>
+                            <button type="button" class="o_sf_btn o_sf_btn--primary o_sf_mt" t-att-disabled="!state.board.stats.uninvoiced_count" t-on-click="createFromTickets">Create invoices from tickets</button>
+                        </div>
+                    </div>
+                    <t t-else="">
+                        <p t-if="!rows.length" class="o_sf_empty">No invoices match.</p>
+                        <t t-foreach="rows" t-as="r" t-key="r.id">
+                            <button type="button" class="o_sf_trow o_sf_tr" t-on-click="() => this.open(r)">
+                                <span class="o_sf_mono o_sf_accent_text" t-esc="r.name"/>
+                                <span class="o_sf_tr_customer" t-esc="r.customer"/>
+                                <span class="o_sf_mono o_sf_note" t-esc="r.ticketsLabel"/>
+                                <span class="o_sf_mono o_sf_note" t-esc="r.issuedLabel"/>
+                                <span class="o_sf_mono" t-att-class="{ 'o_sf_danger_text': r.status === 'overdue' }" t-esc="r.dueLabel"/>
+                                <span class="o_sf_mono o_sf_right" t-esc="r.amountLabel"/>
+                                <span class="o_sf_right"><span class="o_sf_status" t-attf-class="o_sf_status--{{ r.statusStyle }}" t-esc="r.statusLabel"/></span>
+                            </button>
+                        </t>
+                    </t>
+                </div>
+                <div class="o_sf_list_foot"><t t-esc="footNote"/> · <a href="#" class="o_sf_link" t-on-click.prevent="openAccounting">open in Accounting →</a></div>
+            </section>
+        </div>
+    </StrataflowShell>
+</t>
+
+</templates>

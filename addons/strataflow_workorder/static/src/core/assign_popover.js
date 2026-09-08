@@ -4,12 +4,14 @@ import { _t } from "@web/core/l10n/translation";
 /**
  * Popover under "Assign locator". Options come pre-sorted by the server
  * (not busy first, then lightest open load). Escape / outside click /
- * focus return are handled by the popover service.
+ * focus return are handled by the popover service. Lives in the overlay
+ * container, outside the .o_sf root, so it carries the theme itself.
  */
 export class AssignLocatorPopover extends Component {
     static template = "strataflow_workorder.AssignLocatorPopover";
     static props = {
         crew: Array,
+        theme: String,
         onPick: Function,
         close: Function,
     };

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+<t t-name="strataflow_workorder.Crm">
+    <StrataflowShell active="'crm'" me="state.me" loading="state.loading" skeleton="'board'" searchPlaceholder="'Search leads, companies…'" onSearch.bind="onSearch">
+        <t t-set-slot="headerRight">
+            <button type="button" class="o_sf_pill o_sf_pillbtn o_sf_pill--ink" t-on-click="newLead">+ New lead</button>
+        </t>
+        <div class="o_sf_board">
+            <t t-foreach="columns" t-as="col" t-key="col.id">
+                <section class="o_sf_panel o_sf_column" t-att-aria-label="col.name">
+                    <div class="o_sf_column_head">
+                        <span class="o_sf_dot" t-attf-class="o_sf_dot--{{ col.dot }}" aria-hidden="true"/>
+                        <span class="o_sf_column_name" t-esc="col.name"/>
+                        <span class="o_sf_mono o_sf_note" t-esc="col.cards.length"/>
+                        <span class="o_sf_mono o_sf_column_total" t-esc="col.total"/>
+                    </div>
+                    <div class="o_sf_cards">
+                        <p t-if="!col.cards.length" class="o_sf_empty">Nothing here.</p>
+                        <t t-foreach="col.cards" t-as="card" t-key="card.id">
+                            <button type="button" class="o_sf_lead" t-on-click="() => this.open(card)">
+                                <span class="o_sf_lead_top"><b t-esc="card.company"/><span class="o_sf_mono o_sf_lead_value" t-esc="card.value"/></span>
+                                <span class="o_sf_lead_sum" t-esc="card.summary"/>
+                                <span class="o_sf_lead_foot">
+                                    <span t-if="card.tag" class="o_sf_status" t-attf-class="o_sf_status--{{ card.tagStyle }}" t-esc="card.tag"/>
+                                    <span t-if="card.tickets" class="o_sf_status" title="Locate tickets on this deal"><t t-esc="card.tickets"/> <t t-esc="card.tickets === 1 ? 'ticket' : 'tickets'"/></span>
+                                    <span class="o_sf_spacer"/>
+                                    <span class="o_sf_mono o_sf_note" t-esc="card.when"/>
+                                    <span class="o_sf_avatar o_sf_avatar--xs" aria-hidden="true" t-esc="card.owner"/>
+                                </span>
+                            </button>
+                        </t>
+                    </div>
+                </section>
+            </t>
+        </div>
+        <t t-set-slot="footer">
+            <span class="o_sf_pill o_sf_pill--sm o_sf_note">Live from the CRM app — stages and tags are yours to edit there.</span>
+            <button type="button" class="o_sf_pill o_sf_pill--sm o_sf_pillbtn" t-on-click="openPipeline">Open in CRM →</button>
+        </t>
+    </StrataflowShell>
+</t>
+
+</templates>

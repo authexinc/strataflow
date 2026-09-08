@@ -1,10 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- The product screen: OWL client action, fullscreen (own header, no Odoo navbar) -->
-    <record id="action_strataflow_workorders" model="ir.actions.client">
-        <field name="name">Work Orders</field>
-        <field name="tag">strataflow_workorders</field>
-    </record>
 
     <!-- Plain views so records stay reachable from stock Odoo (imports, admin, debugging) -->
     <record id="view_strataflow_workorder_list" model="ir.ui.view">
@@ -14,6 +9,7 @@
             <list>
                 <field name="name"/>
                 <field name="address"/>
+                <field name="emergency"/>
                 <field name="status"/>
                 <field name="dig_date"/>
                 <field name="requester_id"/>
@@ -33,19 +29,25 @@
                         <group>
                             <field name="address"/>
                             <field name="lld"/>
+                            <field name="parcel"/>
                             <field name="status"/>
+                            <field name="emergency"/>
                             <field name="dig_date"/>
                             <field name="source"/>
                         </group>
                         <group>
                             <field name="requester_id"/>
+                            <field name="contact"/>
                             <field name="locator_id"/>
+                            <field name="move_id"/>
                             <field name="utility_ids" widget="many2many_tags"/>
                             <field name="latitude"/>
                             <field name="longitude"/>
                         </group>
                     </group>
+                    <group string="Scope"><field name="scope_note" nolabel="1"/></group>
                 </sheet>
+                <chatter/>
             </form>
         </field>
     </record>
@@ -54,8 +56,46 @@
         <field name="res_model">strataflow.workorder</field>
         <field name="view_mode">list,form</field>
     </record>
+    <!-- smart buttons: tickets from a deal, an invoice, a customer -->
+    <record id="view_crm_lead_form_strataflow" model="ir.ui.view">
+        <field name="name">crm.lead.form.strataflow</field>
+        <field name="model">crm.lead</field>
+        <field name="inherit_id" ref="crm.crm_lead_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_view_strataflow_workorders" type="object" class="oe_stat_button" icon="fa-map-marker">
+                    <field name="strataflow_workorder_count" widget="statinfo" string="Locate tickets"/>
+                </button>
+            </xpath>
+        </field>
+    </record>
+    <record id="view_move_form_strataflow" model="ir.ui.view">
+        <field name="name">account.move.form.strataflow</field>
+        <field name="model">account.move</field>
+        <field name="inherit_id" ref="account.view_move_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_view_strataflow_workorders" type="object" class="oe_stat_button" icon="fa-map-marker" invisible="strataflow_workorder_count == 0">
+                    <field name="strataflow_workorder_count" widget="statinfo" string="Locate tickets"/>
+                </button>
+            </xpath>
+        </field>
+    </record>
+    <record id="view_partner_form_strataflow" model="ir.ui.view">
+        <field name="name">res.partner.form.strataflow</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_view_strataflow_workorders" type="object" class="oe_stat_button" icon="fa-map-marker">
+                    <field name="strataflow_workorder_count" widget="statinfo" string="Locate tickets"/>
+                </button>
+            </xpath>
+        </field>
+    </record>
 
-    <menuitem id="menu_strataflow_root" name="Strataflow" sequence="5" groups="group_strataflow_user"/>
-    <menuitem id="menu_strataflow_workorders" name="Work Orders" parent="menu_strataflow_root" action="action_strataflow_workorders" sequence="10"/>
-    <menuitem id="menu_strataflow_records" name="Records" parent="menu_strataflow_root" action="action_strataflow_workorder_records" sequence="90" groups="group_strataflow_manager"/>
+    <menuitem id="menu_strataflow_records" name="Records" parent="menu_strataflow_root" sequence="90" groups="group_strataflow_manager"/>
+    <menuitem id="menu_strataflow_records_wo" name="Work Orders" parent="menu_strataflow_records" action="action_strataflow_workorder_records" sequence="10"/>
+    <menuitem id="menu_strataflow_records_lead" name="Pipeline (CRM)" parent="menu_strataflow_records" action="crm.crm_lead_action_pipeline" sequence="20"/>
+    <menuitem id="menu_strataflow_records_inv" name="Customer Invoices (Accounting)" parent="menu_strataflow_records" action="account.action_move_out_invoice_type" sequence="30"/>
 </odoo>

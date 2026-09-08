@@ -149,6 +149,8 @@ export class LocateCanvas extends Component {
     }
 
     commit(drawing) {
-        this.props.onChange(drawing);
+        const el = this.svgRef.el;
+        const size = el ? { w: Math.round(el.clientWidth), h: Math.round(el.clientHeight) } : this.props.drawing?.size;
+        this.props.onChange({ ...drawing, size });
     }
 }

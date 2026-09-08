@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+<t t-name="strataflow_workorder.Shell">
+    <div class="o_sf" t-att-data-theme="theme.theme" t-att-class="{ 'is-theming': theme.fading, 'o_sf--scroll': props.scroll }">
+        <t t-if="props.bgmap !== 'none'">
+            <div t-if="props.bgmap === 'home'" class="o_sf_glow" aria-hidden="true"/>
+            <svg class="o_sf_bgmap" t-att-class="{ 'o_sf_bgmap--home': props.bgmap === 'home' }" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+                <g class="o_sf_bgmap_line" stroke-width="2">
+                    <line x1="0" y1="150" x2="1440" y2="150"/><line x1="0" y1="330" x2="1440" y2="330"/>
+                    <line x1="0" y1="520" x2="1440" y2="520"/><line x1="0" y1="700" x2="1440" y2="700"/>
+                    <line x1="180" y1="0" x2="180" y2="900"/><line x1="420" y1="0" x2="420" y2="900"/>
+                    <line x1="660" y1="0" x2="660" y2="900"/><line x1="940" y1="0" x2="940" y2="900"/>
+                    <line x1="1180" y1="0" x2="1180" y2="900"/>
+                    <line t-if="props.bgmap === 'home'" x1="300" y1="0" x2="900" y2="900"/>
+                </g>
+                <g class="o_sf_bgmap_line" stroke-width="6"><line x1="0" y1="430" x2="1440" y2="430"/><line x1="540" y1="0" x2="540" y2="900"/></g>
+                <g t-if="props.bgmap === 'home'" class="o_sf_bgmap_block">
+                    <rect x="200" y="170" width="200" height="140" rx="6"/><rect x="680" y="170" width="230" height="140" rx="6"/>
+                    <rect x="680" y="450" width="240" height="230" rx="6"/><rect x="1200" y="540" width="180" height="140" rx="6"/>
+                </g>
+            </svg>
+        </t>
+
+        <header class="o_sf_topbar">
+            <div class="o_sf_pill o_sf_brand">
+                <svg class="o_sf_logo" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M3 7.5c4-2.5 8 2.5 12 0s6-1.5 6-1.5" stroke="#f2b705" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M3 12.5c4-2.5 8 2.5 12 0s6-1.5 6-1.5" stroke="#de2d26" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M3 17.5c4-2.5 8 2.5 12 0s6-1.5 6-1.5" stroke="#0f6ed8" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                <span class="o_sf_brand_text">
+                    <span class="o_sf_brand_name">Strataflow</span>
+                    <span class="o_sf_brand_tag" aria-hidden="true">by Strataline</span>
+                </span>
+            </div>
+            <t t-if="props.slots and props.slots.nav"><t t-slot="nav"/></t>
+            <nav t-else="" class="o_sf_pill o_sf_nav" aria-label="Strataflow">
+                <t t-foreach="nav" t-as="item" t-key="item.key">
+                    <button type="button" class="o_sf_navbtn" t-att-class="{ 'is-on': item.key === props.active }"
+                            t-att-aria-current="item.key === props.active ? 'page' : undefined"
+                            t-on-click="() => this.goNav(item.key)"><t t-esc="item.label"/></button>
+                </t>
+            </nav>
+            <t t-if="props.slots and props.slots.headerMid"><t t-slot="headerMid"/></t>
+            <label t-if="props.searchPlaceholder" class="o_sf_pill o_sf_search">
+                <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5.5"/><line x1="13" y1="13" x2="17.5" y2="17.5"/></svg>
+                <input type="search" t-ref="search" t-att-placeholder="props.searchPlaceholder" t-att-aria-label="props.searchPlaceholder" autocomplete="off"
+                       t-on-input="(ev) => props.onSearch and props.onSearch(ev.target.value)"/>
+                <kbd class="o_sf_kbd" aria-hidden="true">⌘K</kbd>
+            </label>
+            <span class="o_sf_spacer"/>
+            <t t-if="props.slots and props.slots.headerRight"><t t-slot="headerRight"/></t>
+            <button t-if="props.locatorLink" type="button" class="o_sf_pill o_sf_pillbtn" t-on-click="() => this.goNav('locator')" title="Switch to the locator field view (no financials)">
+                <span class="o_sf_dot o_sf_dot--located" aria-hidden="true"/>Locator view →
+            </button>
+            <button type="button" class="o_sf_round" t-on-click="openOdoo" title="Open Odoo" aria-label="Open Odoo">
+                <span class="o_sf_avatar o_sf_avatar--lg"><t t-esc="props.me ? props.me.initials : ''"/></span>
+            </button>
+            <button type="button" class="o_sf_round" t-on-click="toggleTheme" t-att-aria-pressed="theme.theme === 'dark'" title="Toggle dark mode" aria-label="Toggle dark mode">
+                <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M15.5 12.5 A7 7 0 1 1 7.5 4.5 A5.5 5.5 0 0 0 15.5 12.5 Z" stroke-linejoin="round"/></svg>
+            </button>
+        </header>
+
+        <t t-slot="default"/>
+
+        <footer t-if="props.slots and props.slots.footer" class="o_sf_foot"><t t-slot="footer"/></footer>
+
+        <!-- generic skeleton shell (strataline "stagger-sweep") until the first payload paints -->
+        <div class="o_sf_skeleton" t-if="showSkeleton" aria-hidden="true">
+            <div class="sk-sheen"/>
+            <div class="sk-sect sk-topbar">
+                <div class="sk-pill sk-brand"><i class="sk-bone" style="width:28px;height:28px;border-radius:9px"/><i class="sk-bone" style="width:88px;height:13px"/></div>
+                <div class="sk-pill sk-chips"><i class="sk-bone sk-chip" style="width:58px"/><i class="sk-bone sk-chip" style="width:72px"/><i class="sk-bone sk-chip" style="width:86px"/><i class="sk-bone sk-chip" style="width:54px"/><i class="sk-bone sk-chip" style="width:70px"/></div>
+                <div class="sk-pill sk-search"><i class="sk-bone sk-dot" style="width:16px;height:16px"/><i class="sk-bone" style="flex:1;height:11px"/><i class="sk-bone" style="width:28px;height:17px"/></div>
+                <div class="sk-spacer"/>
+                <div class="sk-round"><i class="sk-bone sk-dot" style="width:32px;height:32px"/></div>
+                <div class="sk-round"><i class="sk-bone sk-dot" style="width:18px;height:18px"/></div>
+            </div>
+            <t t-if="props.skeleton === 'board'">
+                <t t-foreach="[0, 1, 2, 3]" t-as="c" t-key="c">
+                    <div class="sk-sect sk-panel sk-col" t-attf-style="left: calc(16px + {{ c }} * (100% - 32px + 12px) / 4); width: calc((100% - 32px - 36px) / 4); animation-delay: {{ .2 + c * .1 }}s">
+                        <div class="sk-panel-head"><i class="sk-bone sk-dot" style="width:9px;height:9px"/><i class="sk-bone" style="width:90px;height:12px"/><span class="sk-spacer"/><i class="sk-bone" style="width:34px;height:10px"/></div>
+                        <div class="sk-cards"><i class="sk-bone sk-card"/><i class="sk-bone sk-card"/><i class="sk-bone sk-card" style="opacity:.6"/></div>
+                    </div>
+                </t>
+            </t>
+            <t t-elif="props.skeleton === 'grid'">
+                <div class="sk-sect sk-hero"><i class="sk-bone" style="width:280px;height:11px"/><i class="sk-bone" style="width:360px;height:34px;margin-top:12px"/><span class="sk-row" style="gap:8px;padding:0;height:auto;margin-top:22px"><i class="sk-bone sk-chip" style="width:120px"/><i class="sk-bone sk-chip" style="width:100px"/><i class="sk-bone sk-chip" style="width:90px"/><i class="sk-bone sk-chip" style="width:110px"/></span></div>
+                <div class="sk-sect sk-grid"><t t-foreach="[0,1,2,3,4,5,6,7]" t-as="i" t-key="i"><i class="sk-bone sk-tile" t-attf-style="animation-delay: {{ .3 + i * .05 }}s"/></t></div>
+            </t>
+            <t t-elif="props.skeleton === 'map'">
+                <div class="sk-sect sk-panel sk-list">
+                    <div class="sk-panel-head"><i class="sk-bone" style="flex:1;height:40px;border-radius:12px"/><i class="sk-bone" style="width:96px;height:40px;border-radius:12px"/></div>
+                    <div class="sk-panel-rows"><t t-foreach="[62, 48, 70, 55, 66, 44, 58, 50]" t-as="w" t-key="w_index"><div class="sk-row"><i class="sk-bone sk-row-dot"/><span class="sk-row-lines"><i class="sk-bone" t-attf-style="width:{{ w }}%;height:11px"/><i class="sk-bone" t-attf-style="width:{{ w - 20 }}%;height:8px"/></span><i class="sk-bone sk-row-pill"/></div></t></div>
+                </div>
+                <div class="sk-sect sk-rail"><i class="sk-bone" style="width:16px;height:16px;border-radius:5px"/><i class="sk-bone" style="width:16px;height:16px;border-radius:5px"/><i class="sk-bone sk-dot" style="width:18px;height:18px"/><i class="sk-bone" style="width:18px;height:18px;border-radius:5px"/></div>
+            </t>
+            <t t-else="">
+                <div class="sk-sect sk-panel sk-list">
+                    <div class="sk-panel-head"><i class="sk-bone sk-chip" style="width:44px"/><i class="sk-bone sk-chip" style="width:56px"/><i class="sk-bone sk-chip" style="width:74px"/><i class="sk-bone sk-chip" style="width:64px"/></div>
+                    <div class="sk-panel-rows"><t t-foreach="[62, 48, 70, 55, 66, 44, 58, 50]" t-as="w" t-key="w_index"><div class="sk-row"><i class="sk-bone sk-row-dot"/><span class="sk-row-lines"><i class="sk-bone" t-attf-style="width:{{ w }}%;height:11px"/><i class="sk-bone" t-attf-style="width:{{ w - 20 }}%;height:8px"/></span><i class="sk-bone sk-dot" style="width:24px;height:24px"/><i class="sk-bone sk-row-pill"/></div></t></div>
+                    <div class="sk-panel-foot"><i class="sk-bone" style="width:60%;height:9px"/></div>
+                </div>
+                <div class="sk-sect sk-panel sk-main">
+                    <div class="sk-panel-head sk-main-head"><span class="sk-row-lines"><i class="sk-bone" style="width:90px;height:10px"/><i class="sk-bone" style="width:220px;height:18px"/></span><i class="sk-bone sk-chip" style="width:70px;height:28px"/><i class="sk-bone" style="width:120px;height:38px;border-radius:12px"/><i class="sk-bone" style="width:64px;height:38px;border-radius:12px"/></div>
+                    <div class="sk-main-body">
+                        <div class="sk-col"><i class="sk-bone" style="width:60px;height:9px"/><i class="sk-bone" style="width:80%;height:11px"/><i class="sk-bone" style="width:70%;height:11px"/><i class="sk-bone" style="width:85%;height:11px"/><i class="sk-bone" style="width:65%;height:11px"/><i class="sk-bone" style="width:60px;height:9px;margin-top:14px"/><i class="sk-bone" style="width:75%;height:11px"/><i class="sk-bone" style="width:55%;height:11px"/></div>
+                        <div class="sk-col"><i class="sk-bone" style="width:120px;height:9px"/><i class="sk-bone sk-canvas"/></div>
+                    </div>
+                </div>
+            </t>
+        </div>
+    </div>
+</t>
+
+<!-- full-bleed faux map used by Dispatch and the Locator map mode -->
+<t t-name="strataflow_workorder.FauxMap">
+    <div class="o_sf_fauxmap" t-att-class="{ 'is-satellite': props.basemap === 'satellite' }">
+        <svg t-if="props.basemap === 'satellite'" class="o_sf_fauxmap_svg" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+            <rect x="0" y="0" width="1440" height="470" fill="#28301f" opacity="0.55"/><rect x="0" y="470" width="1440" height="430" fill="#2b3327" opacity="0.5"/>
+            <rect x="180" y="0" width="360" height="330" fill="#33402a" opacity="0.6"/><rect x="940" y="520" width="500" height="380" fill="#374430" opacity="0.55"/><rect x="660" y="150" width="280" height="180" fill="#3a3d33" opacity="0.5"/>
+            <path d="M0 430 Q 500 400 900 440 T 1440 430" fill="none" stroke="#1d2b33" stroke-width="26" opacity="0.8"/>
+            <g stroke="rgba(235,230,215,.22)" stroke-width="3" fill="none"><line x1="0" y1="150" x2="1440" y2="150"/><line x1="0" y1="330" x2="1440" y2="330"/><line x1="0" y1="520" x2="1440" y2="520"/><line x1="0" y1="700" x2="1440" y2="700"/><line x1="0" y1="840" x2="1440" y2="840"/><line x1="180" y1="0" x2="180" y2="900"/><line x1="420" y1="0" x2="420" y2="900"/><line x1="660" y1="0" x2="660" y2="900"/><line x1="940" y1="0" x2="940" y2="900"/><line x1="1180" y1="0" x2="1180" y2="900"/><line x1="300" y1="0" x2="900" y2="900"/><line x1="1440" y1="80" x2="700" y2="900"/></g>
+            <g stroke="rgba(235,230,215,.32)" stroke-width="7" fill="none"><line x1="0" y1="430" x2="1440" y2="430"/><line x1="540" y1="0" x2="540" y2="900"/><line x1="1060" y1="0" x2="1440" y2="480"/></g>
+            <g fill="#4a4f43"><rect x="200" y="170" width="200" height="140" rx="3"/><rect x="680" y="170" width="230" height="140" rx="3"/><rect x="960" y="340" width="200" height="70" rx="3"/><rect x="200" y="540" width="180" height="140" rx="3"/><rect x="680" y="450" width="240" height="230" rx="3"/><rect x="1200" y="540" width="180" height="140" rx="3"/><rect x="440" y="340" width="80" height="70" rx="3"/></g>
+            <g stroke="rgba(190,165,235,.6)" stroke-width="1.3" stroke-dasharray="7 5" fill="none"><rect x="190" y="160" width="220" height="160"/><rect x="670" y="160" width="250" height="160"/><rect x="670" y="440" width="260" height="250"/><rect x="1190" y="530" width="200" height="160"/></g>
+            <g fill="none" stroke-linecap="round" opacity="0.65"><path d="M0 470 C 300 430, 620 500, 900 460 S 1300 420, 1440 445" stroke="#f2b705" stroke-width="3" stroke-dasharray="1 9"/><path d="M560 0 C 590 260, 540 520, 610 900" stroke="#e04a3a" stroke-width="3" stroke-dasharray="14 7"/><path d="M0 700 C 400 720, 800 660, 1440 690" stroke="#f5964a" stroke-width="3" stroke-dasharray="4 6"/></g>
+        </svg>
+        <svg t-else="" class="o_sf_fauxmap_svg" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+            <g class="o_sf_bgmap_line" stroke-width="2"><line x1="0" y1="150" x2="1440" y2="150"/><line x1="0" y1="330" x2="1440" y2="330"/><line x1="0" y1="520" x2="1440" y2="520"/><line x1="0" y1="700" x2="1440" y2="700"/><line x1="0" y1="840" x2="1440" y2="840"/><line x1="180" y1="0" x2="180" y2="900"/><line x1="420" y1="0" x2="420" y2="900"/><line x1="660" y1="0" x2="660" y2="900"/><line x1="940" y1="0" x2="940" y2="900"/><line x1="1180" y1="0" x2="1180" y2="900"/><line x1="300" y1="0" x2="900" y2="900"/><line x1="1440" y1="80" x2="700" y2="900"/></g>
+            <g class="o_sf_bgmap_line" stroke-width="6"><line x1="0" y1="430" x2="1440" y2="430"/><line x1="540" y1="0" x2="540" y2="900"/><line x1="1060" y1="0" x2="1440" y2="480"/></g>
+            <g class="o_sf_bgmap_block"><rect x="200" y="170" width="200" height="140" rx="6"/><rect x="680" y="170" width="230" height="140" rx="6"/><rect x="960" y="340" width="200" height="70" rx="6"/><rect x="200" y="540" width="180" height="140" rx="6"/><rect x="680" y="450" width="240" height="230" rx="6"/><rect x="1200" y="540" width="180" height="140" rx="6"/><rect x="440" y="340" width="80" height="70" rx="6"/></g>
+            <g class="o_sf_cadastral" stroke-width="1.3" stroke-dasharray="7 5" fill="none"><rect x="190" y="160" width="220" height="160"/><rect x="670" y="160" width="250" height="160"/><rect x="670" y="440" width="260" height="250"/><rect x="1190" y="530" width="200" height="160"/></g>
+            <g fill="none" stroke-linecap="round" opacity="0.5"><path d="M0 470 C 300 430, 620 500, 900 460 S 1300 420, 1440 445" stroke="#f2b705" stroke-width="3" stroke-dasharray="1 9"/><path d="M560 0 C 590 260, 540 520, 610 900" stroke="#de2d26" stroke-width="3" stroke-dasharray="14 7"/><path d="M0 700 C 400 720, 800 660, 1440 690" stroke="#e8721c" stroke-width="3" stroke-dasharray="4 6"/></g>
+        </svg>
+        <t t-slot="default"/>
+    </div>
+</t>
+
+<!-- read-only render of a locate print (review + preview) -->
+<t t-name="strataflow_workorder.LocatePreview">
+    <svg class="o_sf_preview" t-att-viewBox="'0 0 ' + size.w + ' ' + size.h" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Locate print preview">
+        <g class="o_sf_bgmap_line" stroke-width="2"><line x1="0" t-att-y1="size.h * .25" t-att-x2="size.w" t-att-y2="size.h * .25"/><line x1="0" t-att-y1="size.h * .7" t-att-x2="size.w" t-att-y2="size.h * .7"/><line t-att-x1="size.w * .22" y1="0" t-att-x2="size.w * .22" t-att-y2="size.h"/><line t-att-x1="size.w * .58" y1="0" t-att-x2="size.w * .58" t-att-y2="size.h"/></g>
+        <t t-foreach="segments" t-as="s" t-key="s_index">
+            <line t-att-x1="s.x1" t-att-y1="s.y1" t-att-x2="s.x2" t-att-y2="s.y2" t-att-stroke="color(s.util)" stroke-width="3" stroke-linecap="round" t-att-stroke-dasharray="s.util === 'gas' ? '1 8' : 'none'"/>
+            <text class="o_sf_ink_label" t-att-x="(s.x1 + s.x2) / 2" t-att-y="(s.y1 + s.y2) / 2 - 7" text-anchor="middle" t-att-fill="color(s.util)" t-esc="label(s)"/>
+        </t>
+        <t t-foreach="notes" t-as="n" t-key="n_index">
+            <circle t-att-cx="n.x" t-att-cy="n.y" r="4" class="o_sf_ink_pin"/><text class="o_sf_ink_label o_sf_ink_note" t-att-x="n.x + 8" t-att-y="n.y + 3" t-esc="n.text"/>
+        </t>
+        <text t-if="!segments.length and !notes.length" t-att-x="size.w / 2" t-att-y="size.h / 2" text-anchor="middle" class="o_sf_preview_empty">nothing drawn yet</text>
+    </svg>
+</t>
+
+</templates>

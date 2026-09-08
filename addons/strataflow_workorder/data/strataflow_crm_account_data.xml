@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="tag_annual" model="crm.tag"><field name="name">Annual contract</field></record>
+    <record id="tag_project" model="crm.tag"><field name="name">Project</field></record>
+    <record id="tag_oneoff" model="crm.tag"><field name="name">One-off</field></record>
+    <record id="tag_municipal" model="crm.tag"><field name="name">Municipal</field></record>
+
+    <record id="product_locate" model="product.product">
+        <field name="name">Locate service</field>
+        <field name="default_code">LOCATE</field>
+        <field name="type">service</field>
+        <field name="list_price">250</field>
+        <field name="description_sale">Utility locate, per ticket</field>
+    </record>
+</odoo>

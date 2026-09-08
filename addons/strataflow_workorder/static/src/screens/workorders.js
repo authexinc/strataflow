@@ -3,11 +3,15 @@ import { registry } from "@web/core/registry";
 import { _t } from "@web/core/l10n/translation";
 import { useService } from "@web/core/utils/hooks";
 import { usePopover } from "@web/core/popover/popover_hook";
-import { useHotkey } from "@web/core/hotkeys/hotkey_hook";
 import { standardActionServiceProps } from "@web/webclient/actions/action_service";
-const { DateTime } = luxon;
-import { AssignLocatorPopover } from "./assign_popover";
-import { LocateCanvas } from "./locate_canvas";
+import { Dropdown } from "@web/core/dropdown/dropdown";
+import { DropdownItem } from "@web/core/dropdown/dropdown_item";
+import { StrataflowShell } from "../core/shell";
+import { AssignLocatorPopover } from "../core/assign_popover";
+import { LocateCanvas } from "../core/locate_canvas";
+import { useTheme } from "../core/theme";
+import { fmtDate, fmtWhen } from "../core/format";
+import { downloadBlob, downloadText, svgToPng } from "../core/download";
 
 const STATUS_LABEL = {
     new: _t("New"),
@@ -27,30 +31,10 @@ const NEXT_ACTION = {
     invoiced: _t("View invoice"),
 };
 const STAGE = { new: 0, assigned: 1, onsite: 2, located: 3, closed: 4, invoiced: 4 };
-const NAV = [
-    { key: "home", label: _t("Home") },
-    { key: "dispatch", label: _t("Dispatch") },
-    { key: "workorders", label: _t("Work Orders") },
-    { key: "crm", label: _t("CRM") },
-    { key: "invoices", label: _t("Invoices") },
-];
-const THEME_KEY = "strataflow.theme";
 
-function readTheme() {
-    try {
-        const saved = localStorage.getItem(THEME_KEY);
-        if (saved === "light" || saved === "dark") {
-            return saved;
-        }
-    } catch {
-        // storage blocked: fall through to the system preference
-    }
-    return window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-}
-
-export class WorkOrderApp extends Component {
-    static template = "strataflow_workorder.WorkOrderApp";
-    static components = { LocateCanvas };
+export class WorkOrdersScreen extends Component {
+    static template = "strataflow_workorder.WorkOrders";
+    static components = { StrataflowShell, LocateCanvas, Dropdown, DropdownItem };
     static props = { ...standardActionServiceProps };
     static target = "fullscreen";
 
@@ -58,21 +42,16 @@ export class WorkOrderApp extends Component {
         this.orm = useService("orm");
         this.action = useService("action");
         this.notification = useService("notification");
+        this.theme = useTheme();
         this.rootRef = useRef("root");
-        this.searchRef = useRef("search");
         this.state = useState({
-            skeleton: "on", // on -> fading -> off
-            theme: readTheme(),
+            loading: true,
             chip: "all",
             query: "",
-            selId: null,
+            selId: this.props.action?.context?.active_id || null,
             data: { me: { initials: "" }, utilities: [], crew: [], tickets: [] },
         });
-        this.assignPopover = usePopover(AssignLocatorPopover, {
-            position: "bottom-end",
-            popoverClass: "o_sf_popover",
-        });
-        useHotkey("control+k", () => this.searchRef.el?.focus(), { bypassEditableProtection: true });
+        this.assignPopover = usePopover(AssignLocatorPopover, { position: "bottom-end", popoverClass: "o_sf_popover" });
         onMounted(() => this.load());
         onWillUnmount(() => this.flushDrawing());
     }
@@ -85,13 +64,7 @@ export class WorkOrderApp extends Component {
         if (!data.tickets.some((t) => t.id === this.state.selId)) {
             this.state.selId = this.ordered[0]?.id ?? null;
         }
-        if (this.state.skeleton === "on") {
-            // first frame is up: fade the shell out, then drop it (same beat as strataline app.js)
-            requestAnimationFrame(() => {
-                this.state.skeleton = "fading";
-                setTimeout(() => (this.state.skeleton = "off"), 500);
-            });
-        }
+        this.state.loading = false;
     }
 
     get utilById() {
@@ -108,7 +81,7 @@ export class WorkOrderApp extends Component {
         }));
     }
 
-    // Dispatch order: live work soonest-dig first, then located, then closed/invoiced newest first.
+    // Dispatch order: emergencies, then live work soonest-dig first, then located, then closed/invoiced newest first.
     get ordered() {
         const rank = { new: 0, assigned: 0, onsite: 0, located: 1, closed: 2, invoiced: 2 };
         return [...this.state.data.tickets].sort((a, b) => {
@@ -116,6 +89,9 @@ export class WorkOrderApp extends Component {
             const rb = rank[b.status];
             if (ra !== rb) {
                 return ra - rb;
+            }
+            if (ra === 0 && a.emergency !== b.emergency) {
+                return a.emergency ? -1 : 1;
             }
             return ra === 2 ? b.dig_date.localeCompare(a.dig_date) : a.dig_date.localeCompare(b.dig_date);
         });
@@ -126,7 +102,7 @@ export class WorkOrderApp extends Component {
         return this.ordered.filter(
             (t) =>
                 (this.state.chip === "all" || t.status === this.state.chip) &&
-                (!q || `${t.address} ${t.name} ${t.requester} ${t.lld}`.toLowerCase().includes(q))
+                (!q || `${t.address} ${t.name} ${t.requester} ${t.lld} ${t.parcel}`.toLowerCase().includes(q))
         );
     }
 
@@ -154,12 +130,12 @@ export class WorkOrderApp extends Component {
             [_t("Assigned"), t.assigned_at, t.assigned_by ? _t("by %s", t.assigned_by) : ""],
             [_t("On site"), t.onsite_at, _t("field check-in")],
             [_t("Print complete"), t.located_at, _t("field app")],
-            [_t("Closed"), t.closed_at, ""],
+            [t.status === "invoiced" ? _t("Closed · invoiced") : _t("Closed"), t.closed_at, t.invoice],
         ];
         return steps.map(([what, at, who], i) => ({
             what,
             done: i <= stage,
-            when: i <= stage ? [this.fmtWhen(at), who].filter(Boolean).join(" · ") || _t("done") : _t("pending"),
+            when: i <= stage ? [fmtWhen(at), who].filter(Boolean).join(" · ") || _t("done") : _t("pending"),
             last: i === steps.length - 1,
         }));
     }
@@ -167,13 +143,8 @@ export class WorkOrderApp extends Component {
     statusLabel(status) {
         return STATUS_LABEL[status];
     }
-
     fmtDate(iso) {
-        return iso ? DateTime.fromISO(iso).toFormat("LLL dd, yyyy") : "";
-    }
-
-    fmtWhen(sql) {
-        return sql ? DateTime.fromSQL(sql, { zone: "utc" }).toLocal().toFormat("LLL dd · HH:mm") : "";
+        return fmtDate(iso);
     }
 
     // ---- interactions -----------------------------------------------------
@@ -189,6 +160,10 @@ export class WorkOrderApp extends Component {
         if (!this.visible.some((t) => t.id === this.state.selId) && this.visible.length) {
             this.select(this.visible[0].id);
         }
+    }
+
+    onSearch(value) {
+        this.state.query = value;
     }
 
     onListKeydown(ev) {
@@ -217,16 +192,35 @@ export class WorkOrderApp extends Component {
             }
             this.assignPopover.open(ev.currentTarget, {
                 crew: this.state.data.crew,
+                theme: this.theme.theme,
                 onPick: (userId) => this.assign(t.id, userId),
             });
             return;
         }
         if (t.status === "invoiced") {
-            this.notification.add(_t("Invoices open from the Invoices screen."), { type: "info" });
+            if (t.move_id) {
+                this.openInvoice(t.move_id);
+            }
+            return;
+        }
+        if (t.status === "closed") {
+            const res = await this.orm.call("strataflow.workorder", "action_invoice_closed", []);
+            this.notification.add(_t("%(n)s invoice(s) created from %(t)s closed ticket(s).", { n: res.created, t: res.tickets }), { type: "success" });
+            await this.load();
             return;
         }
         await this.orm.call("strataflow.workorder", "action_advance", [[t.id]]);
         await this.load();
+    }
+
+    openInvoice(moveId) {
+        this.action.doAction({ type: "ir.actions.act_window", res_model: "account.move", res_id: moveId, views: [[false, "form"]], target: "current" });
+    }
+
+    openRecord() {
+        if (this.sel) {
+            this.action.doAction({ type: "ir.actions.act_window", res_model: "strataflow.workorder", res_id: this.sel.id, views: [[false, "form"]], target: "current" });
+        }
     }
 
     async assign(ticketId, userId) {
@@ -255,38 +249,56 @@ export class WorkOrderApp extends Component {
         }
     }
 
-    print() {
-        window.print();
+    // ---- export -----------------------------------------------------------
+
+    get menuClass() {
+        return "o_sf_menu" + (this.theme.theme === "dark" ? " o_sf_theme_dark" : "");
     }
 
-    toggleTheme() {
-        this.state.theme = this.state.theme === "dark" ? "light" : "dark";
+    exportPdf() {
+        this.flushDrawing();
+        window.open(`/strataflow/workorder/${this.sel.id}/locate.pdf`, "_blank");
+    }
+
+    async exportPng() {
+        const t = this.sel;
+        const { w, h } = t.drawing?.size || { w: 900, h: 470 };
+        const byCode = Object.fromEntries(this.state.data.utilities.map((u) => [u.code, u]));
+        const esc = (s) => String(s).replace(/[<>&"]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;" }[c]));
+        const font = "font: 600 11px ui-monospace, Menlo, monospace; paint-order: stroke; stroke: #f4f5f3; stroke-width: 3px;";
+        const parts = [`<rect width="100%" height="100%" fill="#f4f5f3"/>`];
+        for (const s of t.drawing?.segments || []) {
+            const u = byCode[s.util];
+            const m = (Math.hypot(s.x2 - s.x1, s.y2 - s.y1) * 0.15).toFixed(1);
+            parts.push(`<line x1="${s.x1}" y1="${s.y1}" x2="${s.x2}" y2="${s.y2}" stroke="${u?.color || "#1c2124"}" stroke-width="3" stroke-linecap="round"${s.util === "gas" ? ' stroke-dasharray="1 8"' : ""}/>`);
+            parts.push(`<text x="${(s.x1 + s.x2) / 2}" y="${(s.y1 + s.y2) / 2 - 7}" text-anchor="middle" fill="${u?.color || "#1c2124"}" style="${font}">${esc((u?.name || "?")[0])} ${m} m</text>`);
+        }
+        for (const n of t.drawing?.notes || []) {
+            parts.push(`<circle cx="${n.x}" cy="${n.y}" r="4" fill="#1c2124" stroke="#f4f5f3" stroke-width="1.5"/><text x="${n.x + 8}" y="${n.y + 3}" fill="#1a1d21" style="${font}">${esc(n.text)}</text>`);
+        }
+        parts.push(`<text x="10" y="${h - 8}" fill="#5b6167" style="font: 10px ui-monospace, Menlo, monospace">${esc(t.name)} · ${esc(t.address)} · 1 px ≈ 0.15 m · reference only, not a locate</text>`);
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">${parts.join("")}</svg>`;
         try {
-            localStorage.setItem(THEME_KEY, this.state.theme);
-        } catch {
-            // storage blocked: the choice lives for this session only
+            downloadBlob(await svgToPng(svg, w, h), `${t.name}-locate.png`);
+        } catch (e) {
+            this.notification.add(e.message, { type: "danger" });
         }
     }
 
-    get nav() {
-        return NAV;
-    }
-
-    goNav(key) {
-        if (key === "workorders") {
-            return;
+    exportCsv() {
+        const t = this.sel;
+        const byCode = Object.fromEntries(this.state.data.utilities.map((u) => [u.code, u.name]));
+        const q = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+        const head = ["ticket", "address", "status", "dig_date", "source", "requested_by", "locator", "utilities", "parcel", "lld", "latitude", "longitude"];
+        const row = [t.name, t.address, t.status, t.dig_date, t.source, t.requester, t.locator?.name || "", this.selUtilities.map((u) => u.name).join("; "), t.parcel, t.lld, t.latitude, t.longitude];
+        const lines = [head.join(","), row.map(q).join(","), "", "segment,utility,x1,y1,x2,y2,metres"];
+        (t.drawing?.segments || []).forEach((s, i) => lines.push([i + 1, byCode[s.util] || s.util, s.x1, s.y1, s.x2, s.y2, (Math.hypot(s.x2 - s.x1, s.y2 - s.y1) * 0.15).toFixed(1)].join(",")));
+        if (t.drawing?.notes?.length) {
+            lines.push("", "note,x,y,text");
+            t.drawing.notes.forEach((n) => lines.push([n.x, n.y, q(n.text)].join(",")));
         }
-        const tag = `strataflow_${key}`;
-        if (registry.category("actions").contains(tag)) {
-            this.action.doAction({ type: "ir.actions.client", tag });
-        } else {
-            this.notification.add(_t("%s is coming soon.", NAV.find((n) => n.key === key).label), { type: "info" });
-        }
-    }
-
-    openOdoo() {
-        this.action.doAction({ type: "ir.actions.act_url", url: "/odoo", target: "self" });
+        downloadText(lines.join("\n"), `${t.name}.csv`, "text/csv");
     }
 }
 
-registry.category("actions").add("strataflow_workorders", WorkOrderApp);
+registry.category("actions").add("strataflow_workorders", WorkOrdersScreen);
