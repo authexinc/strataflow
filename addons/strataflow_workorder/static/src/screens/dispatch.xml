@@ -68,19 +68,31 @@
                 <dt class="o_sf_kv_top">Utilities</dt>
                 <dd class="o_sf_utils"><t t-foreach="selUtilities" t-as="u" t-key="u.id"><span class="o_sf_util"><span class="o_sf_dot" t-attf-style="background: {{ u.color }}" aria-hidden="true"/><t t-esc="u.name"/></span></t></dd>
             </dl>
-            <div class="o_sf_eyebrow o_sf_card_eyebrow">Assign locator</div>
-            <div class="o_sf_card_rows" role="radiogroup" aria-label="Locator">
-                <t t-foreach="crews" t-as="c" t-key="c.id">
-                    <button type="button" class="o_sf_row o_sf_row--crew" t-att-class="{ 'is-selected': c.on }" role="radio" t-att-aria-checked="c.on" t-on-click="() => (state.selCrew = c.id)">
-                        <span class="o_sf_avatar o_sf_avatar--md" t-attf-style="background: linear-gradient(135deg, color-mix(in srgb, {{ c.hue }} 80%, #fff), {{ c.hue }})" aria-hidden="true" t-esc="c.initials"/>
-                        <span class="o_sf_row_text"><b t-esc="c.name"/><small t-esc="c.load"/></span>
-                        <span class="o_sf_mono o_sf_note" t-esc="c.dist"/>
-                    </button>
-                </t>
-            </div>
+            <t t-if="canAssign">
+                <div class="o_sf_eyebrow o_sf_card_eyebrow">Assign locator</div>
+                <div class="o_sf_card_rows" role="radiogroup" aria-label="Locator">
+                    <t t-foreach="crews" t-as="c" t-key="c.id">
+                        <button type="button" class="o_sf_row o_sf_row--crew" t-att-class="{ 'is-selected': c.on }" role="radio" t-att-aria-checked="c.on" t-on-click="() => (state.selCrew = c.id)">
+                            <span class="o_sf_avatar o_sf_avatar--md" t-attf-style="background: linear-gradient(135deg, color-mix(in srgb, {{ c.hue }} 80%, #fff), {{ c.hue }})" aria-hidden="true" t-esc="c.initials"/>
+                            <span class="o_sf_row_text"><b t-esc="c.name"/><small t-esc="c.load"/></span>
+                            <span class="o_sf_mono o_sf_note" t-esc="c.dist"/>
+                        </button>
+                    </t>
+                </div>
+            </t>
+            <t t-else="">
+                <div class="o_sf_eyebrow o_sf_card_eyebrow">Locator</div>
+                <div class="o_sf_card_rows">
+                    <div class="o_sf_row o_sf_row--crew o_sf_row--static">
+                        <span t-if="sel.locator" class="o_sf_avatar o_sf_avatar--md" aria-hidden="true" t-esc="sel.locator.initials"/>
+                        <span class="o_sf_row_text"><b t-esc="sel.locator ? sel.locator.name : 'Never assigned'"/><small t-esc="assignLocked"/></span>
+                        <span class="o_sf_status" t-attf-class="o_sf_status--{{ sel.status }}" t-esc="statusLabel(sel.status)"/>
+                    </div>
+                </div>
+            </t>
             <div class="o_sf_card_actions">
-                <button type="button" class="o_sf_btn o_sf_btn--primary o_sf_btn--grow" t-att-disabled="!state.selCrew or !['new', 'assigned'].includes(sel.status)" t-on-click="assignSelected"><t t-if="state.selCrew">Assign to <t t-esc="selCrewName"/></t><t t-else="">Pick a locator</t></button>
-                <button type="button" class="o_sf_btn" t-on-click="openTicket">Open ticket</button>
+                <button t-if="canAssign" type="button" class="o_sf_btn o_sf_btn--primary o_sf_btn--grow" t-att-disabled="!state.selCrew" t-on-click="assignSelected"><t t-if="state.selCrew">Assign to <t t-esc="selCrewName"/></t><t t-else="">Pick a locator</t></button>
+                <button type="button" class="o_sf_btn" t-att-class="{ 'o_sf_btn--grow': !canAssign }" t-on-click="openTicket">Open ticket</button>
             </div>
         </aside>
 

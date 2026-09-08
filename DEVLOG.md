@@ -3,6 +3,64 @@
 Newest first. Read the last 3–5 entries at session start. Failures are recorded on purpose; a
 workaround is labelled as one so it does not become permanent by accident.
 
+### 2026-09-08 — Backlog opened; first five items off it
+
+**Goal:** Stefan handed over 17 items. `HANDOFF.md` is overwritten every session, so a queue parked in
+its "Next steps" dies at the next `/wrap`. Added `BACKLOG.md` as the durable list (open questions, UI,
+behaviour, platform) and recorded the convention in `CLAUDE.md`. Then took the first five items.
+
+**The automation-tab landmine is solved, and it was never Odoo.** Previous sessions recorded that the
+web client would not mount in the automation tab — `.o_web_client` present, body empty — and fell back
+to RPC. The console says why: `Access to storage is not allowed from this context.` The client needs
+`localStorage` at boot. Navigating to `/web/login` first (which primes storage for the origin), then
+injecting a `session_id` cookie obtained over JSON-RPC, then navigating to the action, mounts it every
+time. The remaining oddity is cosmetic: the **first** screenshot after a navigation comes back blank
+even though the DOM is fully painted — one scroll tick or a second capture fixes it. Every item below
+was checked in a real browser rather than reasoned about.
+
+**"Good morning, Mitchell" had no gap below it (item 10) — a specificity bug, not a spacing choice.**
+`.o_sf_home_h1` declares `margin: 0 0 26px`, but computed style read `0px`. The cause is
+`strataflow.scss:80`, `dl, ol, p, h1 { margin: 0; }` nested inside `.o_sf`, which compiles to
+`.o_sf h1` — specificity (0,1,1), beating the (0,1,0) component class. Line 74 directly above it says
+these resets are meant to be zero-specificity "so single-class component rules always win"; `h1` had
+simply been left out of the `:where()`. Wrapped the whole group. The same reset was also silently
+killing `.o_sf_kv { margin-top: 10px }` on the three plain `<dl>`s. Only one real `<h1>` exists in the
+module, so the blast radius was checked before changing it, and the gap now measures 26px.
+
+**The locator's completed-ticket guards were dead code (items 13, and the root of 4).** `sel.done` was
+read in two places (`Start locate drawing`, `Confirm locate`). `done` is computed in the `stops`
+getter, which maps *copies*; `sel` returns the raw ticket out of `state.data.tickets`, which has no
+such key. So both guards evaluated `undefined` and neither ever disabled anything — a finished ticket
+would happily reopen the drawing tool, and re-confirming threw a red `UserError` toast from the server.
+Replaced with a `selDone` getter that asks the status directly (`located`/`closed`/`invoiced`), and
+restructured the stage chain so a finished ticket renders a **completed view** instead: the review body
+(now a shared `LocateReviewBody` template) with no drawing entry, no confirm, a status line and a
+"Next stop" button. Copy adapts too — "Ticket details" rather than "Confirm ticket details", and the
+red "go back and draw the locate" line is neutral once the ticket is done. Careful with the branch
+order here: lifting the completed block out created a *second* `t-if` group for a moment, which renders
+the review body alongside stage 1. It has to be one chain (`t-if` selDone → `t-elif` map → `t-elif`
+draw → `t-else` review).
+
+**Dispatch offered an assignment it could never make (item 4).** The "Assign to X" button was correctly
+`disabled` on a ticket past `assigned` — that part was never broken. What was live was everything
+*around* it: the crew rows stayed clickable on an invoiced ticket, so you could pick a locator and the
+button would then read "Assign to S. Braun" while staying permanently grey. The picker is now not
+rendered at all when `action_assign` would refuse the ticket; in its place is a static row stating who
+holds it and why it is locked, with "Open ticket" taking the full width. Verified both ways: invoiced
+ticket shows the locked row, `new` ticket still shows the full picker.
+
+**Two banners removed as contradictions, not as clutter.** The locate print PDF carried "Reference only
+— not a locate" (item 5) — on the one document that *is* the locate. Removed; confirmed by extracting
+text from a freshly generated PDF, everything else intact. (Note for anyone parsing these: ReportLab
+writes `/Filter [/ASCII85Decode /FlateDecode]`, so raw `zlib.decompress` over the streams yields
+nothing and silently "proves" whatever you were hoping — use a real parser.) The Home screen's identical
+footer banner (item 9) went too, since it speaks for the Strataline map and Home shows no map. It is
+deliberately still on Dispatch and the Locator map, which do.
+
+**Not done / still open:** the three questions at the top of `BACKLOG.md` (USP feed, ticket creation,
+Auto-assign) need Stefan before they can be planned — Auto-assign in particular turns on whether real
+locator GPS is in scope, since `crewAnchors` currently fakes position from each locator's current ticket.
+
 ### 2026-09-08 — The six open decisions answered and implemented
 
 **Goal:** close the decision list that had been sitting in HANDOFF since the build session. Stefan

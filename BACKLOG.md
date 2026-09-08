@@ -38,21 +38,13 @@ Locked product decisions are in `ARCHITECTURE.md` › "Product decisions" and ar
       is a harsh cut.
 - [ ] Home screen and other map-less static pages: slow-moving, very light pink/blue hues in the gradient
       background. Non-obstructive, no motion that competes with content; respect `prefers-reduced-motion`.
-- [ ] Fix "Good morning, Mitchell" spacing relative to the pills below it.
 - [ ] Change the Home screen hover animation.
-- [ ] Remove the "Reference only" banner from the bottom left of the Home screen — it only applies to the
-      strataline map.
-- [ ] Remove the "Not a locate" banner from the ticket export. The exported ticket *is* a locate, so the banner
-      contradicts the document.
 
 Review UI work with the `apple-design` skill before and after (CLAUDE.md non-negotiable).
 
 ## Behaviour / correctness
 
-- [ ] Dispatch: when a ticket is complete the greyed-out button must not be clickable. It is disabled in
-      appearance only.
-- [ ] A completed ticket must not offer "start a locate drawing" again — show the completed locate instead.
-      Ties into the locked decision that field confirmation stops at `located` and a dispatcher closes.
+*(empty — both items done 2026-09-08, see `DEVLOG.md`)*
 
 ## Platform
 

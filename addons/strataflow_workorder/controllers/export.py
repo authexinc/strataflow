@@ -106,9 +106,6 @@ class StrataflowExport(http.Controller):
         pdf.setFillColor(colors.HexColor('#5b6167'))
         pdf.setFont('Courier', 7)
         pdf.drawRightString(width - margin, ly, f'scale 1 px ≈ {PX_TO_M} m')
-        pdf.setFillColor(colors.HexColor('#b1332c'))
-        pdf.setFont('Helvetica-Bold', 8)
-        pdf.drawString(margin, margin, 'Reference only — not a locate. Strataline is a reference aid; the field locate governs.')
         pdf.showPage()
         pdf.save()
         return request.make_response(buf.getvalue(), headers=[

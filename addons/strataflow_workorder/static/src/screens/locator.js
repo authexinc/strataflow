@@ -16,6 +16,10 @@ const STAGES = [
     { key: "draw", label: _t("Draw") },
     { key: "review", label: _t("Review") },
 ];
+// a ticket at or past `located` is finished as far as the field is concerned:
+// `action_complete_locate` refuses it, so the locator sees the print, not the tools
+const DONE_STATUSES = ["located", "closed", "invoiced"];
+const DONE_LABEL = { located: _t("Located"), closed: _t("Closed"), invoiced: _t("Invoiced") };
 
 export class LocatorScreen extends Component {
     static template = "strataflow_workorder.Locator";
@@ -79,9 +83,9 @@ export class LocatorScreen extends Component {
             .sort((a, b) => (b.emergency ? 1 : 0) - (a.emergency ? 1 : 0) || rank[a.status] - rank[b.status] || a.dig_date.localeCompare(b.dig_date))
             .map((t, i) => ({
                 ...t, n: i + 1,
-                done: ["located", "closed"].includes(t.status),
-                stopStatus: ["located", "closed"].includes(t.status) ? "located" : t.status === "onsite" ? "onsite" : i === 0 || t.emergency ? "new" : "closed",
-                stopLabel: ["located", "closed"].includes(t.status) ? _t("Done") : t.status === "onsite" ? _t("On site") : t.emergency ? _t("Next") : _t("Queued"),
+                done: DONE_STATUSES.includes(t.status),
+                stopStatus: DONE_STATUSES.includes(t.status) ? "located" : t.status === "onsite" ? "onsite" : i === 0 || t.emergency ? "new" : "closed",
+                stopLabel: DONE_STATUSES.includes(t.status) ? _t("Done") : t.status === "onsite" ? _t("On site") : t.emergency ? _t("Next") : _t("Queued"),
                 meta: `${t.name} · dig ${fmtDate(t.dig_date, "LLL dd")}${t.emergency ? " · EMERGENCY" : ""} · ${this.utilNames(t).join(", ")}`,
             }));
     }
@@ -100,12 +104,39 @@ export class LocatorScreen extends Component {
         return (this.sel?.utility_ids || []).map((id) => byId[id]).filter(Boolean);
     }
 
+    // NB: `done` is computed in `stops`, which maps copies — it never exists on the
+    // raw ticket `sel` returns, so `sel.done` read undefined and every guard using it
+    // was dead. Ask the status directly.
+    get selDone() {
+        return DONE_STATUSES.includes(this.sel?.status);
+    }
+
+    get doneLabel() {
+        return DONE_LABEL[this.sel?.status] || "";
+    }
+
+    get completedNote() {
+        const t = this.sel;
+        if (t.status === "invoiced") {
+            return _t("Invoiced on %s — nothing further to do here.", t.invoice || "—");
+        }
+        if (t.status === "closed") {
+            return _t("Closed %s — awaiting invoicing.", fmtWhen(t.closed_at));
+        }
+        return _t("Located %s — a dispatcher closes it after reviewing the print.", fmtWhen(t.located_at));
+    }
+
+    get nextOpenStop() {
+        return this.stops.find((s) => !s.done && s.id !== this.state.selId) || null;
+    }
+
     get selUtilCodes() {
         return this.selUtilities.map((u) => u.code);
     }
 
     get steps() {
-        const idx = STAGES.findIndex((s) => s.key === this.state.stage);
+        // a finished ticket is past every stage, whatever `state.stage` happens to hold
+        const idx = this.selDone ? STAGES.length : STAGES.findIndex((s) => s.key === this.state.stage);
         return STAGES.map((s, i) => ({ ...s, label: `${i + 1} · ${s.label}`, on: i === idx, done: i < idx }));
     }
 
@@ -193,7 +224,7 @@ export class LocatorScreen extends Component {
     }
 
     async confirmLocate() {
-        if (!this.hasLines) {
+        if (!this.hasLines || this.selDone) {
             return;
         }
         await this.flushDrawing();

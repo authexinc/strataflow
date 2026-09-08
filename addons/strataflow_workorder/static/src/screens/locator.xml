@@ -66,8 +66,19 @@
                     <span class="o_sf_utils"><t t-foreach="selUtilities" t-as="u" t-key="u.id"><span class="o_sf_util"><span class="o_sf_dot" t-attf-style="background: {{ u.color }}" aria-hidden="true"/><t t-esc="u.name"/></span></t></span>
                 </div>
 
+                <!-- COMPLETED: the locate is in; show the ticket, not the tools -->
+                <t t-if="selDone">
+                    <t t-call="strataflow_workorder.LocateReviewBody"/>
+                    <div class="o_sf_stage_actions">
+                        <span class="o_sf_status o_sf_status--located o_sf_status--lg" t-esc="doneLabel"/>
+                        <span class="o_sf_note" t-esc="completedNote"/>
+                        <span class="o_sf_spacer"/>
+                        <button t-if="nextOpenStop" type="button" class="o_sf_btn o_sf_btn--primary" t-on-click="() => this.selectStop(this.nextOpenStop.id)">Next stop →</button>
+                    </div>
+                </t>
+
                 <!-- STAGE 1: on-site map -->
-                <t t-if="state.stage === 'map'">
+                <t t-elif="state.stage === 'map'">
                     <div class="o_sf_site">
                         <div class="o_sf_canvas o_sf_canvas--site" t-att-class="{ 'is-satellite': state.basemap === 'satellite' }">
                             <svg class="o_sf_canvas_map" viewBox="0 0 400 330" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
@@ -106,7 +117,7 @@
                         <button t-if="sel.status === 'assigned'" type="button" class="o_sf_btn" t-on-click="markOnSite">I'm on site</button>
                         <span class="o_sf_spacer"/>
                         <span class="o_sf_note">Locate on site first, then draw it up</span>
-                        <button type="button" class="o_sf_btn o_sf_btn--primary" t-att-disabled="sel.done" t-on-click="() => (state.stage = 'draw')">Start locate drawing →</button>
+                        <button type="button" class="o_sf_btn o_sf_btn--primary" t-on-click="() => (state.stage = 'draw')">Start locate drawing →</button>
                     </div>
                 </t>
 
@@ -129,9 +140,28 @@
 
                 <!-- STAGE 3: review + confirm -->
                 <t t-else="">
+                    <t t-call="strataflow_workorder.LocateReviewBody"/>
+                    <div class="o_sf_stage_actions">
+                        <button type="button" class="o_sf_btn" t-on-click="() => { state.stage = 'draw'; state.auditOpen = false; }">← Back to drawing</button>
+                        <span class="o_sf_spacer"/>
+                        <button type="button" class="o_sf_btn o_sf_btn--primary" t-att-disabled="!hasLines" t-on-click="confirmLocate">Confirm locate</button>
+                    </div>
+                </t>
+            </section>
+            <section class="o_sf_panel o_sf_detail o_sf_detail--empty" t-else=""><p class="o_sf_empty">No ticket selected.</p></section>
+        </div>
+
+        <t t-set-slot="footer" t-if="state.view === 'map'">
+            <span class="o_sf_pill o_sf_pill--sm o_sf_pill--danger"><svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><g transform="translate(0 -1.4)"><path d="M10 3 L18 17 H2 Z" stroke-linejoin="round"/><line x1="10" y1="8.5" x2="10" y2="12.5"/><circle cx="10" cy="14.8" r="0.7" fill="currentColor" stroke="none"/></g></svg>Reference only — not a locate</span>
+            <span class="o_sf_pill o_sf_pill--sm o_sf_note">faux map · live Strataline tiles pending</span>
+        </t>
+    </StrataflowShell>
+</t>
+
+<t t-name="strataflow_workorder.LocateReviewBody">
                     <div class="o_sf_review">
                         <div>
-                            <div class="o_sf_eyebrow">Confirm ticket details</div>
+                            <div class="o_sf_eyebrow" t-esc="selDone ? 'Ticket details' : 'Confirm ticket details'"/>
                             <dl class="o_sf_kv">
                                 <dt>Ticket</dt><dd class="o_sf_mono" t-esc="sel.name"/>
                                 <dt>Address</dt><dd class="o_sf_mono" t-esc="sel.address"/>
@@ -144,6 +174,7 @@
                                 <t t-foreach="lines.rows" t-as="lr" t-key="lr.code"><div class="o_sf_line_row"><span class="o_sf_dot" t-attf-style="background: {{ lr.color }}" aria-hidden="true"/><span><t t-esc="lr.name"/> · <t t-esc="lr.count"/> line(s)</span><span class="o_sf_mono" t-esc="lr.metres.toFixed(1) + ' m'"/></div></t>
                                 <div class="o_sf_line_row o_sf_line_row--total"><span class="o_sf_eyebrow">Total marked · <t t-esc="(sel.drawing.notes || []).length"/> notes</span><span class="o_sf_mono" t-esc="lines.total.toFixed(1) + ' m'"/></div>
                             </div>
+                            <p t-elif="selDone" class="o_sf_note">No lines were drawn on this ticket.</p>
                             <p t-else="" class="o_sf_note o_sf_danger_text">No lines drawn yet — go back and draw the locate before confirming.</p>
                             <div class="o_sf_eyebrow o_sf_eyebrow--gap">Documents</div>
                             <div class="o_sf_docs">
@@ -166,21 +197,6 @@
                             <p class="o_sf_note">Rule-based check against ticket scope and typical measurement ranges. Findings are advisory — the locator's judgment governs.</p>
                         </div>
                     </div>
-                    <div class="o_sf_stage_actions">
-                        <button type="button" class="o_sf_btn" t-on-click="() => { state.stage = 'draw'; state.auditOpen = false; }">← Back to drawing</button>
-                        <span class="o_sf_spacer"/>
-                        <button type="button" class="o_sf_btn o_sf_btn--primary" t-att-disabled="!hasLines or sel.done" t-on-click="confirmLocate">Confirm locate</button>
-                    </div>
-                </t>
-            </section>
-            <section class="o_sf_panel o_sf_detail o_sf_detail--empty" t-else=""><p class="o_sf_empty">No ticket selected.</p></section>
-        </div>
-
-        <t t-set-slot="footer" t-if="state.view === 'map'">
-            <span class="o_sf_pill o_sf_pill--sm o_sf_pill--danger"><svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><g transform="translate(0 -1.4)"><path d="M10 3 L18 17 H2 Z" stroke-linejoin="round"/><line x1="10" y1="8.5" x2="10" y2="12.5"/><circle cx="10" cy="14.8" r="0.7" fill="currentColor" stroke="none"/></g></svg>Reference only — not a locate</span>
-            <span class="o_sf_pill o_sf_pill--sm o_sf_note">faux map · live Strataline tiles pending</span>
-        </t>
-    </StrataflowShell>
 </t>
 
 </templates>

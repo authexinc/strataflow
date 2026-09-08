@@ -77,7 +77,7 @@
   :where(button, input, a, [tabindex]):focus-visible { outline: none; box-shadow: var(--focus); }
   a { color: var(--accent); }
   b { font-weight: 600; }
-  dl, ol, p, h1 { margin: 0; }
+  :where(dl, ol, p, h1) { margin: 0; }
   // smooth theme swap: transitions only while .is-theming is set by the toggle
   &.is-theming, &.is-theming * {
     transition: background-color .45s ease, color .45s ease, border-color .45s ease, fill .45s ease, stroke .45s ease, box-shadow .45s ease !important;
@@ -140,7 +140,9 @@
 .o_sf_chip_count { font-family: var(--mono); font-size: 9.5px; font-weight: 400; opacity: .75; }
 .o_sf_rows { flex: 1; overflow-y: auto; scrollbar-gutter: stable; padding: 0 8px 8px; display: flex; flex-direction: column; gap: 1px; }
 .o_sf_row { display: flex; align-items: center; gap: 9px; min-height: 48px; padding: 4px 10px; border-radius: 13px; width: 100%; text-align: left;
-  &:hover { background: var(--chip-bg); } &.is-selected { background: var(--accent-soft); } &--crew { min-height: 44px; border-radius: 11px; } &--stop { min-height: 52px; } }
+  &:hover { background: var(--chip-bg); } &.is-selected { background: var(--accent-soft); } &--crew { min-height: 44px; border-radius: 11px; } &--stop { min-height: 52px; }
+  // a row that states a fact rather than offering a choice
+  &--static { cursor: default; &:hover { background: none; } } }
 .o_sf_row_text { flex: 1; min-width: 0; text-align: left;
   b { display: block; font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text); }
   small { display: block; font-size: 11px; color: var(--muted); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } }

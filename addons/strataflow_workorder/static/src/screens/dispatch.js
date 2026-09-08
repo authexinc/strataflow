@@ -123,6 +123,17 @@ export class DispatchScreen extends Component {
         return this.crews.find((c) => c.on)?.name || "";
     }
 
+    // `action_assign` refuses anything past `assigned`, so on a ticket that far along
+    // the picker is not rendered at all — a live crew list above a permanently greyed
+    // "Assign to X" button reads as a control that is merely slow, not one that is shut.
+    get canAssign() {
+        return ["new", "assigned"].includes(this.sel?.status);
+    }
+
+    get assignLocked() {
+        return _t("%s · assignment is locked", STATUS_LABEL[this.sel.status]);
+    }
+
     get routes() {
         if (!this.state.auto) {
             return [];

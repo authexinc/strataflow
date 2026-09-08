@@ -33,10 +33,6 @@
             </div>
         </main>
         <t t-set-slot="footer">
-            <button type="button" class="o_sf_pill o_sf_pill--sm o_sf_pill--danger o_sf_pillbtn" t-on-click="disclaimer">
-                <svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><g transform="translate(0 -1.4)"><path d="M10 3 L18 17 H2 Z" stroke-linejoin="round"/><line x1="10" y1="8.5" x2="10" y2="12.5"/><circle cx="10" cy="14.8" r="0.7" fill="currentColor" stroke="none"/></g></svg>
-                Reference only — not a locate
-            </button>
             <span class="o_sf_pill o_sf_pill--sm"><span class="o_sf_dot o_sf_dot--closed" aria-hidden="true"/>USP feed · not connected · manual entry</span>
         </t>
     </StrataflowShell>

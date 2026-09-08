@@ -86,10 +86,6 @@ export class HomeScreen extends Component {
         }
         this.action.doAction({ type: "ir.actions.client", tag: `strataflow_${app.key}` }, { clearBreadcrumbs: true });
     }
-
-    disclaimer() {
-        this.notification.add(_t("Strataline is a reference aid, not a locate. The field locate governs; see the subscriber agreement."), { type: "warning", title: _t("Reference only") });
-    }
 }
 
 registry.category("actions").add("strataflow_home", HomeScreen);
