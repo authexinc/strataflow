@@ -30,6 +30,11 @@ Nothing in flight. The session ran two units of work, both committed, both pushe
   (that one module needs `mercantile`, absent from this environment — a pre-existing gap, not something I broke).
 
 ## Next steps
+`BACKLOG.md` holds the durable queue (17 items added 2026-09-08: strataline login/skeleton styling, an Odoo-free
+URL structure, the internal-screen restyle, several Home/Dispatch fixes, and three open questions — the USP
+feed hookup, how tickets are created, and what "Auto-assign" should actually do). The list below is only what
+this session left at the front of it.
+
 1. **Review and merge `~/map-sys` `feat/search-key-scope`.** It gates step 2 and the Phase 2 provisioner.
    Merging deploys, so read it first: it changes the request gate in `web/serve.py`.
 2. Swap the faux maps for MapLibre: Dispatch/Locator full-bleed map is `core/shell.xml:118` (`FauxMap`), the

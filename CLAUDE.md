@@ -5,6 +5,8 @@ else is upstream Odoo and is not edited.
 
 ## Session protocol
 - Start: read `HANDOFF.md`, then the last 3–5 entries of `DEVLOG.md`, then `ARCHITECTURE.md` for locked decisions.
+- `BACKLOG.md` is the durable work queue; `HANDOFF.md` only carries what is in flight. Anything that must
+  survive a `/wrap` goes in `BACKLOG.md`.
 - End (or when context is nearly exhausted): prepend a `DEVLOG.md` entry (failures mandatory, workarounds labelled),
   then overwrite `HANDOFF.md`. The `/wrap` skill does both.
 - Commits are authored `Stefan Djordjevic <dev@authex.co>` (repo-local git config) on a feature branch; never push
