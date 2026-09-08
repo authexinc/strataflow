@@ -3,6 +3,28 @@
 Newest first. Read the last 3–5 entries at session start. Failures are recorded on purpose; a
 workaround is labelled as one so it does not become permanent by accident.
 
+### 2026-09-08 — Ticket creation: baseline read out of the code, then decided
+
+**The factual half was answerable without asking.** "How are tickets created?" turned out to have an
+uncomfortable answer: **there is no create path in the Strataflow UI at all.** CRM and Invoices both
+carry "+ New" buttons in the shell header (`screens/crm.js` `newLead`, `screens/invoices.js`
+`newInvoice`), and Work Orders and Dispatch carry none — so the only ways to make a ticket today are
+the stock Odoo form (`views/strataflow_workorder_views.xml`, reached through the avatar's "Open Odoo"),
+the demo data, or RPC. `create()` (`models/strataflow_workorder.py:58`) stamps the
+`strataflow.workorder` sequence and, when a requester is set, auto-links that partner's most recent
+won `crm.lead`. `address` and `dig_date` are the only required fields. The `source` selection already
+offers `usp` / `manual`, but nothing anywhere writes `usp` — it always defaults to `manual`, which is
+exactly why every screen footer reads "USP feed · not connected · manual entry".
+
+**Stefan decided the product half:** dispatchers get a "+ New ticket" button, matching CRM and
+Invoices. Locked in `ARCHITECTURE.md` › "Product decisions"; the build task, with the field
+requirements above, is in `BACKLOG.md`. **Not built this session.**
+
+**Two questions were put to him and are still open** — the USP feed hookup, and what Auto-assign
+should actually do. The Auto-assign options offered are recorded verbatim in `BACKLOG.md` so the next
+session does not re-derive them; the live one is whether real locator GPS is in scope, since
+`screens/dispatch.js:95` `crewAnchors` currently infers a locator's position from their current ticket.
+
 ### 2026-09-08 — Skeleton fade (item 11), and the automation tab stopped mounting
 
 **Item 11 was already three-quarters done.** The shell skeleton is an existing port of strataline's
