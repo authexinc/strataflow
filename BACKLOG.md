@@ -13,23 +13,25 @@ Locked product decisions are in `ARCHITECTURE.md` › "Product decisions" and ar
 - [ ] **How do we actually hook into the USP feed?** No integration exists today; tickets are created by hand.
       Need: the feed's transport (poll, push, email, portal scrape), its record shape, auth, and cadence, then
       a decision on whether it lands in Odoo directly or through the strataline API. Blocks any real ticket
-      intake and gates "How are tickets created?" below.
-- [ ] **How are tickets created?** *Baseline answered from the code 2026-09-08 — the product decision is
-      still open.* Today there is **no create path in the Strataflow UI at all**: CRM and Invoices have
-      "+ New" buttons, Work Orders and Dispatch have none. A ticket can only be made through the stock Odoo
-      form (`views/strataflow_workorder_views.xml`, reachable via the avatar's "Open Odoo"), by demo data,
-      or over RPC. `create()` (`models/strataflow_workorder.py:58`) stamps the `strataflow.workorder`
-      sequence and, when a requester is set, auto-links that partner's most recent won `crm.lead`.
-      `address` and `dig_date` are the required fields. The `source` selection already offers
-      `usp` / `manual` but nothing ever writes `usp` — it defaults to `manual`, which is why every screen
-      footer reads "USP feed · not connected · manual entry".
-      **Decide:** does a dispatcher get a "+ New ticket" button in the Strataflow shell (matching CRM and
-      Invoices), or is manual entry only ever a fallback because real volume arrives via the USP feed?
+      intake: until it exists, `source` is always `manual` and every screen footer reads "USP feed · not
+      connected". The manual "+ New ticket" path below is settled independently of this.
 - [ ] **How can "Auto-assign" actually work?** Currently a stub. Needs an assignment rule — nearest available
       locator, load balance, skill/zone match, or a mix — plus a source of truth for locator position.
       `screens/dispatch.js:95` `crewAnchors` derives distance from each locator's *current ticket*, not GPS,
       and `planRoutes` (`core/geo.js:45`) is greedy nearest-neighbour presented as a suggestion. Decide whether
-      real locator GPS is in scope before building this.
+      real locator GPS is in scope before building this. **Asked 2026-09-08, not yet answered** — the
+      options put to Stefan were: keep the current-ticket approximation; add real locator GPS (needs a
+      position source, a field, and a staff-tracking privacy call); assign by workload or zone/skill
+      instead of distance; or leave it stubbed.
+
+## Behaviour / correctness
+
+- [ ] **Add a "+ New ticket" button to the Strataflow shell** (Stefan, 2026-09-08 — locked in
+      `ARCHITECTURE.md` › "Product decisions"). Match the existing `+ New lead` (`screens/crm.js`
+      `newLead`) and `+ New invoice` (`screens/invoices.js` `newInvoice`), which open the stock form in a
+      dialog — so the same treatment on Work Orders, and probably Dispatch too. Required fields are
+      `address` and `dig_date`; `create()` stamps the sequence and auto-links the requester's won
+      `crm.lead`. It should write `source = 'manual'` (the default), leaving `usp` for the feed.
 
 ## UI / design language
 
@@ -50,10 +52,6 @@ Locked product decisions are in `ARCHITECTURE.md` › "Product decisions" and ar
       whether these follow, ideally alongside the internal-screen revamp above.
 
 Review UI work with the `apple-design` skill before and after (CLAUDE.md non-negotiable).
-
-## Behaviour / correctness
-
-*(empty — both items done 2026-09-08, see `DEVLOG.md`)*
 
 ## Platform
 

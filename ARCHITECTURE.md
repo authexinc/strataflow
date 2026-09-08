@@ -28,6 +28,7 @@ Answers to the six questions that sat open in HANDOFF. Same rule as above: do no
 | Invoice numbering | **Keep Odoo's `INV/2026/00001`** | Numbering is an audit trail — the stock sequence is what Odoo's accounting reports, locking and gap detection expect. The design's format was cosmetic. No code. |
 | Locate pricing | **Flat per ticket** ($250, product "Locate service") | Simplest to invoice and explain; a second product can be added later without touching the close-to-invoice path. No code. |
 | Fonts | **Ship Public Sans + JetBrains Mono locally** | Variable woff2, latin subset, 27 KB + 40 KB in `static/fonts/` with their OFL licences, `font-display: swap`. Self-hosted rather than a font CDN: a tenant subdomain should not call a third party to render its own UI. |
+| Ticket creation in the shell | **Yes — a "+ New ticket" button, matching CRM and Invoices** | Answered 2026-09-08. Today there is no create path in the Strataflow UI at all: CRM and Invoices carry "+ New" buttons, Work Orders and Dispatch carry none, so a ticket can only come from the stock Odoo form, demo data or RPC. Manual entry becomes a first-class path in the shell rather than a trip out to Odoo. Not built — see `BACKLOG.md`. |
 | Equipment / Timesheets / Reports | **Stay "coming soon"** | Finish the six screens, the MapLibre swap and tenancy first. Each extra module is more install time and more surface per tenant before there is a paying tenant asking for it. |
 
 ## Provisioner flow (Phase 2, not built)
