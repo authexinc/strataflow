@@ -24,15 +24,19 @@ relitigate without him.
 3. Mint a strataline key for the org (`bbox` from "business operation location", `origins = https://<slug>.strataflow.co`).
 4. Store it in tenant `ir.config_parameter` (`strataline.api_key`); Stripe webhook flips `strataline.access`.
 
-## Required changes on strataline (Phase 0, not built)
-1. `web/serve.py` ~L1390: API keys reach `/tiles/*` only; add `search` as a grantable source so
-   `/search/address|features|lld` accept `X-Api-Key`. Rural dispatch by LLD depends on it.
-2. `scripts/manage_access.py`: make `cmd_key_create` importable by the provisioner (no new public endpoint).
+## Required changes on strataline (Phase 0, built 2026-09-08, awaiting merge)
+Both are on `~/map-sys` branch `feat/search-key-scope` (7e466cf), unpushed — `main` there deploys
+itself, so the merge is Stefan's call. Until it lands, prod keys still reach `/tiles/*` only.
+1. `web/serve.py`: `search` is a grantable pseudo-source. A key holding it may call
+   `/search/address|features|lld` by `X-Api-Key` header or `?key=`; results are restricted to the
+   key's bbox inside the SQL, and `daily_searches` is counted apart from `daily_tiles`.
+2. `scripts/manage_access.py`: `create_key(...)` is importable by the provisioner and returns
+   `(record, raw_secret)`; the CLI is a wrapper over it. No new public endpoint.
 
 ## Phases
 | Phase | Where | Status |
 |---|---|---|
-| 0 | strataline key scope + importable key minting | not started |
+| 0 | strataline key scope + importable key minting | **built** (map-sys `feat/search-key-scope`, not merged/deployed) |
 | 1 | `strataflow_workorder` — six screens on the glass shell | **done** (faux maps; MapLibre pending Phase 0) |
 | 2 | control plane: template DB, provisioner, wildcard nginx + dbfilter, welcome-page hook | not started |
 | 3 | per-user tile tokens, tenant delete/backup, monitoring | not started |

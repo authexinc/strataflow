@@ -3,6 +3,43 @@
 Newest first. Read the last 3–5 entries at session start. Failures are recorded on purpose; a
 workaround is labelled as one so it does not become permanent by accident.
 
+### 2026-09-08 — Phase 0 on strataline: API keys can search, scoped to their bbox
+
+**Goal:** HANDOFF next step 1 — let a strataflow tenant's key reach strataline's
+`/search/address|features|lld`, not just `/tiles/*`, and let a provisioner mint keys in-process.
+All the code is in `~/map-sys`; nothing in this repo changed except these docs.
+
+**What was built** (map-sys branch `feat/search-key-scope`, commits 7e466cf + 1b16818, **not pushed**
+because pushing `main` there deploys to prod):
+- `"search"` is a grantable pseudo-source in a key record. With it the three search endpoints answer
+  a key; without it they stay 403. It is never treated as a tile source, so granting search cannot
+  widen tile access.
+- Search results are restricted to the key's bbox, and `daily_searches` is a counter separate from
+  `daily_tiles`.
+- `scripts/manage_access.py` exposes `create_key(org, contact, bbox, sources=..., origins=...,
+  keys_file=...) -> (record, raw)` for the Phase 2 provisioner to import. The raw secret exists only
+  in that return value.
+- Browser callers get CORS on search responses for origins registered on the key, and must pass the
+  key as `?key=` (a custom header would need a preflight the server does not answer).
+
+**Failures worth recording:**
+1. The first cut clipped results to the bbox *after* the query, over-fetching 4x to compensate.
+   Against the real province indexes `"17 avenue"` returned 32 rows and **0** inside Calgary — a
+   city-scoped tenant key would have looked broken on its own city. FTS ranks the whole province
+   before applying the limit, so over-fetching cannot fix it. The bbox now goes into the SQL.
+2. With the bbox in the WHERE clause, SQLite scans the entire ranked match set: `"road"` against a
+   small box took 375 ms. Scoped queries now rank at most 4000 rows in a subquery, then filter —
+   105 ms, same rows returned. Unscoped session queries keep the old one-shot SQL.
+3. Queries under three characters were being charged against the daily quota. Type-ahead fires per
+   keystroke, so the first two letters of every search were spending budget. They now answer empty
+   before the counter.
+
+**What this unblocks:** step 2 (swap the faux maps for MapLibre) and the Phase 2 provisioner, but
+only after Stefan merges the branch — until then production keys still reach `/tiles/*` only, so the
+Locator would get 403 from `/search/*`.
+
+**Files touched (this repo):** `ARCHITECTURE.md`, `HANDOFF.md`, `DEVLOG.md`.
+
 ### 2026-09-08 — Six screens on real Odoo modules (crm, account, mail) + theme fade
 **Goal:** Implement Home, Dispatch, CRM, Invoices and Locator from the Claude Design project; move CRM/invoicing
 off stand-in models onto `crm.lead` / `account.move`; connect tickets to leads, invoices and partners; add a smooth

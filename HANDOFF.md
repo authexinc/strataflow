@@ -1,4 +1,4 @@
-# Handoff — 2026-09-08 12:51
+# Handoff — 2026-09-08 13:40
 
 ## Current state
 `addons/strataflow_workorder` is the only custom module on this Odoo 19 CE fork. Six fullscreen OWL screens
@@ -8,8 +8,10 @@ Chrome, dark and light, with no app console errors. CRM and Invoices are backed 
 faux SVGs in MapLibre-shaped containers — live Strataline tiles are not wired. Nothing is known broken.
 
 ## What I was doing when this ended
-Session closed after writing DEVLOG.md. No task in flight. Last code change: Locator header dig date formatted
-(`screens/locator.xml`, commit `dbeccaab3a5`).
+Finished next-step 1 (Phase 0 on strataline) and stopped there. No task in flight. All of that work is in
+`~/map-sys` on branch `feat/search-key-scope` (7e466cf code, 1b16818 docs), **not pushed**: pushing `main`
+in that repo deploys straight to prod, so the merge is Stefan's call. 123 tests green there. Nothing in this
+repo changed but `ARCHITECTURE.md`, `DEVLOG.md` and this file.
 
 ## Repo state
 - Branch `feat/strataflow-workorder`, clean; pushed to `origin/feat/strataflow-workorder`. HEAD `bf4b8325d8d [DOC] strataflow_workorder: add DEVLOG with the two build entries`.
@@ -18,9 +20,10 @@ Session closed after writing DEVLOG.md. No task in flight. Last code change: Loc
   for the module (Odoo test suite not run).
 
 ## Next steps
-1. Strataline Phase 0 — in `~/map-sys/web/serve.py:1390` the API-key gate returns 403 for anything but
-   `/tiles/*`; add `search` as a grantable source so `/search/address|features|lld` accept `X-Api-Key`.
-   Then make `scripts/manage_access.py` `cmd_key_create` importable for a provisioner.
+1. ~~Strataline Phase 0~~ — **done, awaiting merge.** `search` is a grantable pseudo-source on a strataline
+   API key (bbox-restricted results, `daily_searches` counted apart from tiles), and
+   `manage_access.create_key(...)` is importable by a provisioner. Review and merge
+   `~/map-sys` `feat/search-key-scope`; until it is on prod, tenant keys still get 403 from `/search/*`.
 2. Swap the faux maps for MapLibre: Dispatch/Locator full-bleed map is `core/shell.xml:118`
    (`FauxMap`), the ticket canvas basemap is `screens/workorders.xml:141`; pins already project through
    `core/geo.js` — replace `project()` with `map.project()` when tiles land.
@@ -30,7 +33,10 @@ Session closed after writing DEVLOG.md. No task in flight. Last code change: Loc
    workaround, DEVLOG 2026-09-08 "Work Orders screen").
 5. Add `tests/` for `action_invoice_closed` (`models/strataflow_workorder.py:84`) and
    `action_complete_locate` (`:120`) — one `TransactionCase` each.
-6. Tenancy Phase 2 (DB-per-tenant provisioner, `dbfilter=^%d$`) — design in `ARCHITECTURE.md`; nothing built yet.
+6. Tenancy Phase 2 (DB-per-tenant provisioner, `dbfilter=^%d$`) — design in `ARCHITECTURE.md`; nothing built
+   yet. Key minting for a new tenant is now one import:
+   `from manage_access import create_key` (in `~/map-sys/scripts/`), which returns the record and the raw
+   secret and writes nothing to stdout.
 
 ## Landmines
 - After editing JS under `static/src`, a plain reload can serve a stale bundle mixing old and new module copies
@@ -48,6 +54,10 @@ Session closed after writing DEVLOG.md. No task in flight. Last code change: Loc
   not GPS; `planRoutes` (`core/geo.js:45`) is greedy nearest-neighbour, presented as a suggestion.
 - Chrome tool coordinates are viewport pixels (1728 wide) while screenshots are 1542 wide — click by `find` refs.
   First-paint screenshots of the blurred panels come back blank; probe the DOM.
+- A strataline key must pass as `?key=` from the browser: an `X-Api-Key` header cross-origin needs a CORS
+  preflight that serve.py does not answer. Server-side (Odoo Python) the header is fine.
+- Search results a key gets are clipped to the key's bbox, so a tenant whose bbox is wrong sees an empty
+  search rather than an error. Mint the bbox from the real business operation area.
 
 ## Environment / setup
 - Read `CLAUDE.md` (session protocol) and `ARCHITECTURE.md` (locked tenancy decisions) — both in the repo root.
