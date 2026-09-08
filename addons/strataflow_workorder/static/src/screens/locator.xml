@@ -144,7 +144,7 @@
                                 <t t-foreach="lines.rows" t-as="lr" t-key="lr.code"><div class="o_sf_line_row"><span class="o_sf_dot" t-attf-style="background: {{ lr.color }}" aria-hidden="true"/><span><t t-esc="lr.name"/> · <t t-esc="lr.count"/> line(s)</span><span class="o_sf_mono" t-esc="lr.metres.toFixed(1) + ' m'"/></div></t>
                                 <div class="o_sf_line_row o_sf_line_row--total"><span class="o_sf_eyebrow">Total marked · <t t-esc="(sel.drawing.notes || []).length"/> notes</span><span class="o_sf_mono" t-esc="lines.total.toFixed(1) + ' m'"/></div>
                             </div>
-                            <p t-else="" class="o_sf_note o_sf_danger_text">No lines drawn yet — go back and draw the locate before closing.</p>
+                            <p t-else="" class="o_sf_note o_sf_danger_text">No lines drawn yet — go back and draw the locate before confirming.</p>
                             <div class="o_sf_eyebrow o_sf_eyebrow--gap">Documents</div>
                             <div class="o_sf_docs">
                                 <p t-if="!state.attachments.length" class="o_sf_note">No documents on this ticket yet.</p>
@@ -169,7 +169,7 @@
                     <div class="o_sf_stage_actions">
                         <button type="button" class="o_sf_btn" t-on-click="() => { state.stage = 'draw'; state.auditOpen = false; }">← Back to drawing</button>
                         <span class="o_sf_spacer"/>
-                        <button type="button" class="o_sf_btn o_sf_btn--primary" t-att-disabled="!hasLines or sel.done" t-on-click="confirmClose">Confirm &amp; close ticket</button>
+                        <button type="button" class="o_sf_btn o_sf_btn--primary" t-att-disabled="!hasLines or sel.done" t-on-click="confirmLocate">Confirm locate</button>
                     </div>
                 </t>
             </section>

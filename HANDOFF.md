@@ -1,4 +1,4 @@
-# Handoff — 2026-09-08 13:40
+# Handoff — 2026-09-08 14:05
 
 ## Current state
 `addons/strataflow_workorder` is the only custom module on this Odoo 19 CE fork. Six fullscreen OWL screens
@@ -8,7 +8,8 @@ Chrome, dark and light, with no app console errors. CRM and Invoices are backed 
 faux SVGs in MapLibre-shaped containers — live Strataline tiles are not wired. Nothing is known broken.
 
 ## What I was doing when this ended
-Finished next-step 1 (Phase 0 on strataline) and stopped there. No task in flight. All of that work is in
+Finished next-step 1 (Phase 0 on strataline), then answered and implemented all six open decisions
+with Stefan. No task in flight. The decisions are locked in `ARCHITECTURE.md` under "Product decisions". All of that work is in
 `~/map-sys` on branch `feat/search-key-scope` (7e466cf code, 1b16818 docs), **not pushed**: pushing `main`
 in that repo deploys straight to prod, so the merge is Stefan's call. 123 tests green there. Nothing in this
 repo changed but `ARCHITECTURE.md`, `DEVLOG.md` and this file.
@@ -58,6 +59,13 @@ repo changed but `ARCHITECTURE.md`, `DEVLOG.md` and this file.
   preflight that serve.py does not answer. Server-side (Odoo Python) the header is fine.
 - Search results a key gets are clipped to the key's bbox, so a tenant whose bbox is wrong sees an empty
   search rather than an error. Mint the bbox from the real business operation area.
+- `post_init_hook` runs on install, never on `-u`. A data record in `data/strataflow_crm_account_data.xml`
+  cannot rename an existing record either — that file is `noupdate="1"`. Changing anything that already
+  exists in a tenant database needs a migration script, not a data record.
+- Public Sans sets ~6.5% wider than the system font it replaced, so the fixed-width panels truncate
+  sooner. Not looked at in a browser yet (see the DEVLOG entry) — check the dispatch queue and route.
+- The web client would not mount in the automation tab this session even with a valid session
+  (uid confirmed from inside the page). Same shape as the earlier action-357 note.
 
 ## Environment / setup
 - Read `CLAUDE.md` (session protocol) and `ARCHITECTURE.md` (locked tenancy decisions) — both in the repo root.
@@ -74,16 +82,26 @@ repo changed but `ARCHITECTURE.md`, `DEVLOG.md` and this file.
   GitHub login in the keychain.
 
 ## Open decisions
-1. **Locator "Confirm & close"** — currently sets status `closed` directly (`action_complete_locate`,
+None. All six were answered by Stefan on 2026-09-08 and are recorded in `ARCHITECTURE.md`; the four
+that needed code are implemented. Kept below for the record, struck through with what was chosen.
+
+### Answered 2026-09-08
+1. **Locator "Confirm & close"** — ANSWERED: stops at `located`; the dispatcher closes. Implemented.
+   Original question: — currently sets status `closed` directly (`action_complete_locate`,
    `models/strataflow_workorder.py:120`). Keep that, or stop at `located` so a dispatcher closes after
    review (Work Orders "Close ticket" already exists for that path)?
-2. **CRM stage names** — the CRM screen shows Odoo's stock stages (New / Qualified / Proposition / Won). Rename
+2. **CRM stage names** — ANSWERED: renamed to "Quote sent" via `post_init_hook`. Implemented.
+   Original question: — the CRM screen shows Odoo's stock stages (New / Qualified / Proposition / Won). Rename
    "Proposition" → "Quote sent" in CRM › Configuration to match the design, or keep stock?
-3. **Invoice numbering** — Odoo's `INV/2026/00001` vs the design's `INV-26-0341`. Change the sequence in
+3. **Invoice numbering** — ANSWERED: keep Odoo's. No code.
+   Original question: — Odoo's `INV/2026/00001` vs the design's `INV-26-0341`. Change the sequence in
    Accounting, or accept Odoo's?
-4. **Locate pricing** — `$250` per ticket via product "Locate service" (`data/strataflow_crm_account_data.xml`).
+4. **Locate pricing** — ANSWERED: flat per ticket. No code.
+   Original question: — `$250` per ticket via product "Locate service" (`data/strataflow_crm_account_data.xml`).
    Flat per ticket, or per utility / per hour?
-5. **Fonts** — Public Sans / JetBrains Mono as local `@font-face` (exact design type, adds ~400 KB) or keep the
+5. **Fonts** — ANSWERED: ship both locally; done, 67 KB of variable woff2 in `static/fonts/`.
+   Original question: — Public Sans / JetBrains Mono as local `@font-face` (exact design type, adds ~400 KB) or keep the
    system stack (current)?
-6. **Equipment / Timesheets / Reports** — leave as "coming soon", or wire `maintenance` and `hr_timesheet` (CE)
+6. **Equipment / Timesheets / Reports** — ANSWERED: stay "coming soon". No code.
+   Original question: — leave as "coming soon", or wire `maintenance` and `hr_timesheet` (CE)
    now?

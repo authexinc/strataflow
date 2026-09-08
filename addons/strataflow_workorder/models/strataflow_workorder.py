@@ -118,19 +118,26 @@ class StrataflowWorkOrder(models.Model):
         return True
 
     def action_complete_locate(self):
-        """Locator confirms the print from the field: located + closed in one go."""
+        """Locator confirms the print from the field: the ticket becomes `located`.
+
+        Closing is a dispatcher's act, not a field one — `closed` is what
+        `action_invoice_closed` bills, so a single tap in the truck must not
+        raise an invoice. The dispatcher closes from Work Orders (`action_advance`,
+        `located` -> `closed`) after reviewing the print. Decided 2026-09-08.
+        """
         self.ensure_one()
         if self.status not in ('assigned', 'onsite'):
             raise UserError(_('Ticket %s is not in progress.', self.name))
         if not (self.drawing or {}).get('segments'):
-            raise UserError(_('Draw the locate before closing the ticket.'))
+            raise UserError(_('Draw the locate before submitting the ticket.'))
         now = fields.Datetime.now()
         self.write({
-            'status': 'closed',
+            'status': 'located',
             'onsite_at': self.onsite_at or now,
             'located_at': now,
-            'closed_at': now,
         })
+        self.message_post(body=_('Locate completed on site; awaiting dispatcher review.'),
+                          message_type='notification', subtype_xmlid='mail.mt_note')
         return True
 
     # ---- payloads for the client actions --------------------------------------

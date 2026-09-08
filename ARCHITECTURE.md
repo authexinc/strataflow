@@ -18,6 +18,18 @@ relitigate without him.
 | Work order model | Fresh `strataflow.workorder`, not `mrp.workorder` | Locate tickets are not manufacturing. |
 | Data layer | Stock `crm.lead`, `account.move`, `mail.thread`, `res.partner` with smart buttons | Real modules, not stand-ins. |
 
+## Product decisions (Stefan, 2026-09-08)
+Answers to the six questions that sat open in HANDOFF. Same rule as above: do not relitigate without him.
+
+| Question | Choice | Rationale / where it lives |
+|---|---|---|
+| Locator "Confirm & close" | **Stops at `located`** | Closing is what `action_invoice_closed` bills, so one tap in the truck must not raise an invoice. The dispatcher closes from Work Orders after reviewing the print. `models/strataflow_workorder.py` `action_complete_locate`; the button now reads "Confirm locate". |
+| CRM stage names | **Rename "Proposition" to "Quote sent"** | The design's pipeline wording; the other three stock stages stand. Applied by `post_init_hook` and only when the stage still carries Odoo's default name, so a tenant's own rename survives. |
+| Invoice numbering | **Keep Odoo's `INV/2026/00001`** | Numbering is an audit trail — the stock sequence is what Odoo's accounting reports, locking and gap detection expect. The design's format was cosmetic. No code. |
+| Locate pricing | **Flat per ticket** ($250, product "Locate service") | Simplest to invoice and explain; a second product can be added later without touching the close-to-invoice path. No code. |
+| Fonts | **Ship Public Sans + JetBrains Mono locally** | Variable woff2, latin subset, 27 KB + 40 KB in `static/fonts/` with their OFL licences, `font-display: swap`. Self-hosted rather than a font CDN: a tenant subdomain should not call a third party to render its own UI. |
+| Equipment / Timesheets / Reports | **Stay "coming soon"** | Finish the six screens, the MapLibre swap and tenancy first. Each extra module is more install time and more surface per tenant before there is a paying tenant asking for it. |
+
 ## Provisioner flow (Phase 2, not built)
 1. `exp_duplicate_database('strataflow_template', slug)` over Odoo `db` XML-RPC (master password).
 2. Create the admin `res.users` with the signup email; `action_reset_password` sends the set-password link.

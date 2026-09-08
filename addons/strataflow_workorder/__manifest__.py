@@ -27,6 +27,7 @@
             'strataflow_workorder/static/src/**/*.xml',
         ],
     },
+    'post_init_hook': 'post_init_hook',
     'application': True,
     'installable': True,
 }

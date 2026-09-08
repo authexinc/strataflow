@@ -192,7 +192,7 @@ export class LocatorScreen extends Component {
         this.state.stage = "review";
     }
 
-    async confirmClose() {
+    async confirmLocate() {
         if (!this.hasLines) {
             return;
         }
@@ -203,7 +203,7 @@ export class LocatorScreen extends Component {
             this.notification.add(e.data?.message || e.message, { type: "danger" });
             return;
         }
-        this.notification.add(_t("%s closed. Locate print saved to the ticket.", this.sel.name), { type: "success" });
+        this.notification.add(_t("%s located. Print saved; a dispatcher closes it after review.", this.sel.name), { type: "success" });
         const next = this.stops.find((s) => !s.done && s.id !== this.sel.id);
         await this.load();
         await this.selectStop(next?.id ?? this.state.selId);

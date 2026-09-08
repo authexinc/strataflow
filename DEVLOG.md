@@ -3,6 +3,65 @@
 Newest first. Read the last 3–5 entries at session start. Failures are recorded on purpose; a
 workaround is labelled as one so it does not become permanent by accident.
 
+### 2026-09-08 — The six open decisions answered and implemented
+
+**Goal:** close the decision list that had been sitting in HANDOFF since the build session. Stefan
+answered all six; they are now locked in `ARCHITECTURE.md` under "Product decisions".
+
+**Three needed no code:** invoice numbering keeps Odoo's `INV/2026/00001` (numbering is an audit
+trail; the stock sequence is what Odoo's reports, locking and gap detection expect). Locate pricing
+stays flat per ticket at $250. Equipment / Timesheets / Reports stay "coming soon".
+
+**Locator "Confirm & close" now stops at `located`.** Closing is what `action_invoice_closed` bills,
+so one tap in the truck must not raise a draft invoice; a dispatcher closes from Work Orders after
+reviewing the print. `action_complete_locate` writes `located` + `located_at` and posts a note to the
+thread; `closed_at` is left for `action_advance`. The button reads "Confirm locate" and the handler
+was renamed `confirmLocate`. No screen work was needed beyond wording — the locator route already
+counted `located` as Done (`locator.js` `stops`). Verified over RPC end to end: onsite → confirm →
+`located` with no `closed_at`, then dispatcher `action_advance` → `closed` with `closed_at` set.
+
+**CRM stage renamed to "Quote sent"** — and the first attempt was wrong. A `<record id="crm.stage_lead3">`
+override in `data/strataflow_crm_account_data.xml` did nothing: that file is `noupdate="1"`, and the
+record already exists from the `crm` module, so a module update skips it. Confirmed by RPC after
+`-u`: stages still read Proposition. Moved to a `post_init_hook` that renames only when the stage
+still carries Odoo's default name, so a tenant who picked their own wording keeps it. Verified by a
+clean `-i` into a scratch database (`strataflow_hooktest`, dropped after): stages come out
+New / Qualified / Quote sent / Won, zero errors. The dev database was brought in line by running the
+same guarded write over RPC, since `post_init_hook` does not fire on an update.
+
+**Fonts are now self-hosted.** Public Sans and JetBrains Mono, variable woff2, latin subset, in
+`static/fonts/` with their OFL licences. 27 KB + 40 KB, well under the 400 KB the handoff estimated,
+because the variable latin subset replaces a family of static weights. `font-display: swap`; the
+`--font` / `--mono` tokens already named these families, so no rule changed. Not a font CDN
+on purpose: a tenant subdomain should not call a third party to render its own UI. Verified the SCSS
+compiles and both `@font-face` rules land in both backend CSS bundles, and that both files serve 200
+as `font/woff2`.
+
+**Design review of the type change (apple-design), measured rather than eyeballed:**
+- Public Sans against the SF Pro it replaces: x-height +1.8%, cap height +2.6%, `n` advance **+6.5%**.
+  Text sets wider at the same px size, so the fixed-width panels (list 372, queue 328, route 316,
+  search 300) reach their ellipsis sooner. 22 truncation guards already exist, so it degrades to
+  earlier truncation rather than overflow.
+- JetBrains Mono is metric-neutral against the old fallback: `n` advance 0.600 vs Menlo 0.602, and
+  x-height 4.6% larger than SF Mono. Tabular figures read better at 11px with no column reflow.
+- No thin text: the only `font-weight: 100` in the file is the variable range on the `@font-face`
+  itself. Text weights are 400/600/700/800, all clear of the Thin/Light range the guidelines warn off.
+- Left alone, flagged for Stefan: the 8.5px uppercase crew badge on a dispatch pin is under the 10pt
+  desktop floor (and pin sizing is already step 3 in the handoff), and the -.025em tracking on the
+  38px hero figure was tuned for a narrower face.
+
+**Failure worth recording — browser verification did not happen.** The plan was to check for clipped
+text in a real tab with the documented curl-cookie transplant. The session was accepted (uid 2 from
+`/web/session/get_session_info` inside the page) but the web client never mounted: `.o_web_client`
+present, body with zero children, on both the action route and plain `/odoo`. Same shape as the
+2026-09-08 action-357 note. Stopped after four probes rather than dig. **So the width finding above is
+analysis, not observation** — the next session should open the six screens and look at the dispatch
+queue and route panels specifically.
+
+**Files touched:** `models/strataflow_workorder.py`, `__init__.py` (new hook), `__manifest__.py`,
+`data/strataflow_crm_account_data.xml`, `static/src/screens/locator.{js,xml}`,
+`static/src/strataflow.scss`, `static/fonts/*` (4 new), `ARCHITECTURE.md`, `HANDOFF.md`.
+
 ### 2026-09-08 — Phase 0 on strataline: API keys can search, scoped to their bbox
 
 **Goal:** HANDOFF next step 1 — let a strataflow tenant's key reach strataline's

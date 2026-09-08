@@ -3,6 +3,26 @@
 // .o_sf so Bootstrap and the webclient never bleed in. Pieces that render in Odoo's overlay
 // container (popover, dropdown menu) carry the tokens themselves via .o_sf_pop / .o_sf_menu.
 
+// The design's type, self-hosted: variable woff2, latin subset, 27 KB + 40 KB.
+// Served from this addon rather than a font CDN — a tenant subdomain should not
+// call out to a third party to render its own UI, and the files are OFL (licences
+// beside them in static/fonts/). `swap` paints in the system stack below first,
+// so a cold cache never blocks first paint. Decided 2026-09-08.
+@font-face {
+  font-family: 'Public Sans';
+  src: url('/strataflow_workorder/static/fonts/public-sans-latin-var.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  src: url('/strataflow_workorder/static/fonts/jetbrains-mono-latin-var.woff2') format('woff2');
+  font-weight: 100 800;
+  font-style: normal;
+  font-display: swap;
+}
+
 @mixin tokens-light {
   --font: 'Public Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
