@@ -15,7 +15,9 @@ in that repo deploys straight to prod, so the merge is Stefan's call. 123 tests 
 repo changed but `ARCHITECTURE.md`, `DEVLOG.md` and this file.
 
 ## Repo state
-- Branch `feat/strataflow-workorder`, clean; pushed to `origin/feat/strataflow-workorder`. HEAD `bf4b8325d8d [DOC] strataflow_workorder: add DEVLOG with the two build entries`.
+- Branch `feat/strataflow-workorder`, clean. HEAD `e1783ca9730 [IMP] strataflow_workorder: answer the six
+  open product decisions`. **Three commits ahead of `origin/feat/strataflow-workorder` and not pushed** —
+  push is Stefan's call, as is the merge into `19.0`.
 - Not merged into `19.0` (the fork's mainline). Merge is Stefan's call.
 - Nothing intentionally broken. Build: module installs clean from scratch with demo; no automated tests exist
   for the module (Odoo test suite not run).
@@ -69,8 +71,8 @@ repo changed but `ARCHITECTURE.md`, `DEVLOG.md` and this file.
 
 ## Environment / setup
 - Read `CLAUDE.md` (session protocol) and `ARCHITECTURE.md` (locked tenancy decisions) — both in the repo root.
-- The dev server was left running in a background shell of the previous session; assume it is gone and start it
-  with the command below. Sessions are invalidated by restarts.
+- A dev server may still be running from this session on port 8069 (`strataflow_dev`, updated module).
+  Assume it is gone and start it with the command below; sessions are invalidated by restarts.
 - Reading the Claude Design project again needs `/design-login` (DesignSync auth is per session).
 - `~/strataflow/.venv` (gitignored). Postgres via Homebrew; DB `strataflow_dev` with demo.
 - Run: `.venv/bin/python odoo-bin -d strataflow_dev --db_host=localhost --addons-path=addons --dev=xml --http-port=8069 --log-level=warn`
