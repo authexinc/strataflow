@@ -33,12 +33,10 @@ Locked product decisions are in `ARCHITECTURE.md` › "Product decisions" and ar
 - [ ] Revamp every internal screen — individual invoices, the CRM record views, and the rest of the stock
       form/list views — into the strataflow language. Swap Odoo styling out across all pages, not just the six
       fullscreen OWL screens.
-- [ ] Fix the "New invoice" button styling conflict (theme colour mismatch).
-- [ ] Smooth transition when moving between apps, from both the Home screen and the top navbar. Current switch
-      is a harsh cut.
-- [ ] Home screen and other map-less static pages: slow-moving, very light pink/blue hues in the gradient
-      background. Non-obstructive, no motion that competes with content; respect `prefers-reduced-motion`.
-- [ ] Change the Home screen hover animation.
+- [ ] `.o_sf_btn--primary` (the in-page primary button: "Assign to X", "Confirm locate", "Create invoices
+      from tickets") still uses the `ink-btn` mixin, so ink continues to mean both "selected nav" and
+      "primary action" away from the top bar. The top-bar pill was split to accent on 2026-09-08; decide
+      whether these follow, ideally alongside the internal-screen revamp above.
 
 Review UI work with the `apple-design` skill before and after (CLAUDE.md non-negotiable).
 

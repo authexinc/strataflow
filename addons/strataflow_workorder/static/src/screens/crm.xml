@@ -4,7 +4,7 @@
 <t t-name="strataflow_workorder.Crm">
     <StrataflowShell active="'crm'" me="state.me" loading="state.loading" skeleton="'board'" searchPlaceholder="'Search leads, companies…'" onSearch.bind="onSearch">
         <t t-set-slot="headerRight">
-            <button type="button" class="o_sf_pill o_sf_pillbtn o_sf_pill--ink" t-on-click="newLead">+ New lead</button>
+            <button type="button" class="o_sf_pill o_sf_pillbtn o_sf_pill--primary" t-on-click="newLead">+ New lead</button>
         </t>
         <div class="o_sf_board">
             <t t-foreach="columns" t-as="col" t-key="col.id">

@@ -4,7 +4,7 @@
 <t t-name="strataflow_workorder.Invoices">
     <StrataflowShell active="'invoices'" me="state.me" loading="state.loading" skeleton="'list'" searchPlaceholder="'Search invoices…'" onSearch.bind="onSearch">
         <t t-set-slot="headerRight">
-            <button type="button" class="o_sf_pill o_sf_pillbtn o_sf_pill--ink" t-on-click="newInvoice">+ New invoice</button>
+            <button type="button" class="o_sf_pill o_sf_pillbtn o_sf_pill--primary" t-on-click="newInvoice">+ New invoice</button>
         </t>
         <div class="o_sf_stack">
             <div class="o_sf_stats" role="group" aria-label="Filters">

@@ -4,7 +4,7 @@
 <t t-name="strataflow_workorder.Shell">
     <div class="o_sf" t-att-data-theme="theme.theme" t-att-class="{ 'is-theming': theme.fading, 'o_sf--scroll': props.scroll }">
         <t t-if="props.bgmap !== 'none'">
-            <div t-if="props.bgmap === 'home'" class="o_sf_glow" aria-hidden="true"/>
+            <div class="o_sf_glow" aria-hidden="true"/>
             <svg class="o_sf_bgmap" t-att-class="{ 'o_sf_bgmap--home': props.bgmap === 'home' }" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
                 <g class="o_sf_bgmap_line" stroke-width="2">
                     <line x1="0" y1="150" x2="1440" y2="150"/><line x1="0" y1="330" x2="1440" y2="330"/>

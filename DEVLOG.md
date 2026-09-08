@@ -3,6 +3,50 @@
 Newest first. Read the last 3–5 entries at session start. Failures are recorded on purpose; a
 workaround is labelled as one so it does not become permanent by accident.
 
+### 2026-09-08 — Motion and the ink/accent split (backlog items 7, 8, 12, 14)
+
+Reviewed with the `apple-design` skill first, as CLAUDE.md requires; the Liquid Glass and Motion
+references decided three of the four.
+
+**The "+ New invoice" conflict was a token collision, and it was in both themes.** `.o_sf_pill--ink`
+(the CTA) and `.o_sf_navbtn.is-on` (the selected nav item) both `@include ink-btn`, so they rendered
+byte-identically — measured `rgb(232,236,238)` on `rgb(20,24,29)` for both in dark. Not a dark-mode
+bug: in light theme they were both the same black pill, about 600 px apart in the same bar. The
+guideline is blunt about it — *Color > Best practices: "Avoid using the same color to mean different
+things."* Liquid Glass splits the two cases explicitly: background colour for primary actions,
+foreground colour for selected states. So ink now means navigation only, and the primary action pill
+takes the accent as a fill. Renamed `--ink` → `--primary` on the pill (all three uses were actions:
++ New invoice, + New lead, Apply routes). New `--accent-hover/-active/-text` tokens per theme, because
+the accent inverts: white on `#0f6ed8` is 4.95:1 in light, but white on the dark theme's `#3fc6ff` is
+1.96:1 and fails — that one needs a dark label (9.68:1). Every state was computed, not eyeballed.
+**Left alone deliberately:** `.o_sf_btn--primary` (in-page buttons) still uses ink, so the ambiguity
+survives away from the top bar. It is in `BACKLOG.md` rather than silently changed — it restyles
+buttons on screens nobody complained about, and belongs with the internal-screen revamp.
+
+**Hover on the Home tiles no longer moves them.** It was `translateY(-3px)` plus a bigger shadow.
+The pointer guidance warns to "reserve scaling for elements that can increase in size without crowding
+nearby elements" — these sit on a 12 px grid, and lifting the card slides the click target out from
+under the cursor. Now the glass takes a wash of the tile's own hue with a matching hairline ring, via
+`inset 0 0 0 999px color-mix(...)` so the whole thing is one transitionable `box-shadow`; only the
+icon scales (1.05). Neighbours stay put.
+
+**Screens fade in instead of cutting.** Each screen is its own client action, so switching destroys
+the old `.o_sf` and mounts a new one — a hard cut. Added a 220 ms ease-out fade. **Opacity only, on
+purpose:** `.o_sf` hosts `position: fixed` children (topbar and footer in scroll mode), and animating
+a transform on it would make it their containing block for the duration and shift them mid-flight.
+This also happens to be what Reduce Motion asks for anyway — *"Replacing transitions in x-, y-, and
+z-axes with fades to avoid motion."*
+
+**Ambient drift on the map-less screens.** Two heavily blurred blobs (pink, blue) on 54 s and 71 s
+offset alternating loops, anchored off the corners so they never cross the centre column where the
+greeting and tiles sit, under the content layer at .17 in the gradient. `.o_sf_glow` also now renders
+for every non-map screen rather than Home alone, since the ask was "Home and static pages with no map"
+— Work Orders, CRM and Invoices qualify. Verified the transforms actually change over time rather than
+trusting the declaration.
+
+**All four are off under `prefers-reduced-motion`** — the fade, the drift, the icon scale and its
+transition — extending the block that was already there.
+
 ### 2026-09-08 — Backlog opened; first five items off it
 
 **Goal:** Stefan handed over 17 items. `HANDOFF.md` is overwritten every session, so a queue parked in

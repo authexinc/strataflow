@@ -30,6 +30,8 @@
   --glass: rgba(255,255,255,.62); --glass-72: rgba(255,255,255,.72); --glass-80: rgba(255,255,255,.80);
   --edge: rgba(190,193,200,.7); --hairline: rgba(120,126,134,.3); --hairline-soft: rgba(120,126,134,.25);
   --chip-bg: rgba(28,33,36,.06); --chip-bg-hi: rgba(28,33,36,.11); --accent: #0f6ed8; --accent-soft: rgba(15,110,216,.09);
+  // filled primary action: text flips per theme so the fill stays AA (4.95:1 here)
+  --accent-hover: #0d63c2; --accent-active: #0a5299; --accent-text: #fff;
   --ink: #1c2124; --ink-hover: #30373d; --ink-active: #0f1316; --ink-text: #fff; --ok: #0a9648; --warn-icon: #8a6116; --cyan: #0b6f99;
   --danger: #b1332c; --danger-bg: rgba(214,40,40,.1); --danger-edge: rgba(214,40,40,.35);
   --map-line: rgba(28,33,36,.08); --map-block: rgba(28,33,36,.035); --logo-bg: #fbfcfa; --logo-edge: rgba(28,33,36,.16); --cadastral: rgba(122,92,196,.55);
@@ -43,6 +45,8 @@
   --glass: rgba(23,29,35,.62); --glass-72: rgba(23,29,35,.72); --glass-80: rgba(23,29,35,.78);
   --edge: rgba(255,255,255,.1); --hairline: rgba(255,255,255,.12); --hairline-soft: rgba(255,255,255,.09);
   --chip-bg: rgba(255,255,255,.06); --chip-bg-hi: rgba(255,255,255,.12); --accent: #3fc6ff; --accent-soft: rgba(63,198,255,.1);
+  // the dark-theme accent is light, so the label goes dark (9.68:1)
+  --accent-hover: #6ad4ff; --accent-active: #22b0ee; --accent-text: #0d1116;
   --ink: #e8ecee; --ink-hover: #ffffff; --ink-active: #cdd5da; --ink-text: #14181d; --ok: #22b366; --warn-icon: #d9a83f; --cyan: #3fc6ff;
   --danger: #f08a8a; --danger-bg: rgba(214,40,40,.1); --danger-edge: rgba(214,40,40,.35);
   --map-line: rgba(255,255,255,.055); --map-block: rgba(255,255,255,.028); --logo-bg: #0c0f12; --logo-edge: rgba(255,255,255,.14); --cadastral: rgba(160,135,220,.6);
@@ -63,10 +67,19 @@
 }
 @mixin eyebrow { font-size: 10.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
 @mixin ink-btn { background: var(--ink); color: var(--ink-text); box-shadow: inset 0 1px 0 rgba(255,255,255,.14); }
+// ink says "you are here" (selected nav); accent says "this is the action". Keeping both
+// on ink made the primary CTA and the active nav pill render identically in both themes.
+@mixin accent-btn { background: var(--accent); color: var(--accent-text); box-shadow: inset 0 1px 0 rgba(255,255,255,.18); }
 
 // ---- shell -------------------------------------------------------------------
+// Screens are separate client actions, so switching one destroys the old `.o_sf` and mounts a new
+// one — a hard cut. Fading the incoming screen in softens that. Opacity only, deliberately: `.o_sf`
+// hosts `position: fixed` children (the topbar and footer when scrolling), and a transform here
+// would make it their containing block mid-animation and shift them.
+@keyframes o_sf_enter { from { opacity: 0; } to { opacity: 1; } }
 .o_sf {
   position: absolute; inset: 0; overflow: hidden;
+  animation: o_sf_enter .22s ease-out;
   background: var(--bg); color: var(--text);
   font-family: var(--font); font-size: 13px; line-height: 1.35;
   &--scroll { overflow-y: auto; overflow-x: hidden; }
@@ -97,7 +110,15 @@
 .o_sf_center { display: grid; place-items: center; height: 100%; padding: 30px; text-align: center; }
 
 .o_sf_bgmap { position: absolute; inset: 0; width: 100%; height: 100%; opacity: .45; pointer-events: none; &--home { opacity: .6; } }
-.o_sf_glow { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(900px 600px at 12% -5%, rgba(15,110,216,.13), transparent 70%), radial-gradient(1000px 700px at 95% 105%, rgba(242,183,5,.12), transparent 70%), radial-gradient(700px 500px at 60% 40%, rgba(222,45,38,.05), transparent 70%); }
+.o_sf_glow { position: absolute; inset: 0; pointer-events: none; overflow: hidden; background: radial-gradient(900px 600px at 12% -5%, rgba(15,110,216,.13), transparent 70%), radial-gradient(1000px 700px at 95% 105%, rgba(242,183,5,.12), transparent 70%), radial-gradient(700px 500px at 60% 40%, rgba(222,45,38,.05), transparent 70%);
+  // Two heavily blurred blobs, one pink one blue, on long offset loops. They are anchored to the
+  // corners and never travel across the centre column where the greeting and tiles sit, and they
+  // stay under the content layer — atmosphere, not a thing to look at.
+  &::before, &::after { content: ""; position: absolute; border-radius: 50%; filter: blur(70px); }
+  &::before { width: 46vw; height: 46vw; left: -13vw; top: -15vw; background: radial-gradient(circle, rgba(232,150,190,.17), transparent 68%); animation: o_sf_drift_a 54s ease-in-out infinite alternate; }
+  &::after { width: 52vw; height: 52vw; right: -17vw; bottom: -19vw; background: radial-gradient(circle, rgba(120,170,240,.17), transparent 68%); animation: o_sf_drift_b 71s ease-in-out infinite alternate; } }
+@keyframes o_sf_drift_a { from { transform: translate3d(0, 0, 0) scale(1); } to { transform: translate3d(7vw, 6vh, 0) scale(1.14); } }
+@keyframes o_sf_drift_b { from { transform: translate3d(0, 0, 0) scale(1.1); } to { transform: translate3d(-6vw, -5vh, 0) scale(1); } }
 .o_sf_bgmap_line { stroke: var(--map-line); fill: none; }
 .o_sf_bgmap_block { fill: var(--map-block); }
 .o_sf_cadastral { stroke: var(--cadastral); }
@@ -110,9 +131,9 @@
 .o_sf_pill--sm { height: 32px; padding: 0 13px; gap: 8px; font-size: 11px; font-weight: 700; color: var(--text-2); }
 .o_sf_pill--danger { color: var(--danger); background: linear-gradient(var(--danger-bg), var(--danger-bg)), var(--glass); border-color: var(--danger-edge); }
 .o_sf_pill--accent { color: var(--accent); }
-.o_sf_pill--ink { @include ink-btn; border: 0; font-weight: 700; }
+.o_sf_pill--primary { @include accent-btn; border: 0; font-weight: 700; }
 .o_sf_pillbtn { font-size: 12.5px; font-weight: 700; color: var(--text-2); white-space: nowrap; gap: 8px;
-  &:hover { background: var(--glass-80); } &.o_sf_pill--ink { color: var(--ink-text); &:hover { background: var(--ink-hover); } } &.o_sf_pill--danger:hover { background: linear-gradient(rgba(214,40,40,.16), rgba(214,40,40,.16)), var(--glass-72); } }
+  &:hover { background: var(--glass-80); } &.o_sf_pill--primary { color: var(--accent-text); &:hover { background: var(--accent-hover); } &:active { background: var(--accent-active); } } &.o_sf_pill--danger:hover { background: linear-gradient(rgba(214,40,40,.16), rgba(214,40,40,.16)), var(--glass-72); } }
 .o_sf_brand { padding: 0 16px 0 10px; }
 .o_sf_logo { width: 28px; height: 28px; flex: none; padding: 4px; background: var(--logo-bg); border: 0.5px solid var(--logo-edge); border-radius: 9px; }
 .o_sf_brand_text { display: flex; flex-direction: column; line-height: 1.1; }
@@ -229,10 +250,16 @@
 .o_sf_home_h1 { margin: 0 0 26px; font-size: 38px; font-weight: 800; letter-spacing: -.025em; background: linear-gradient(100deg, var(--text), var(--accent)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
 .o_sf_home_chips { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 28px; .o_sf_pill--sm { height: 34px; padding: 0 14px; font-size: 12px; } }
 .o_sf_apps { display: grid; grid-template-columns: repeat(auto-fill, minmax(228px, 1fr)); gap: 12px; }
-.o_sf_app { --hue: var(--accent); @include glass(var(--glass-72)); display: block; padding: 19px 19px 17px; border-radius: 24px; text-align: left; transition: transform .18s ease, box-shadow .18s ease;
+.o_sf_app { --hue: var(--accent); @include glass(var(--glass-72)); display: block; padding: 19px 19px 17px; border-radius: 24px; text-align: left; transition: box-shadow .2s ease, border-color .2s ease;
   background: linear-gradient(150deg, color-mix(in srgb, var(--hue) 9%, transparent), transparent 55%), var(--glass-72); box-shadow: var(--shadow), inset 0 1px 0 rgba(255,255,255,.25);
-  &:hover { transform: translateY(-3px); box-shadow: var(--shadow-hi), inset 0 1px 0 rgba(255,255,255,.25); } &.is-soon { opacity: .72; } }
-.o_sf_app_icon { width: 46px; height: 46px; display: grid; place-items: center; border-radius: 15px; color: #fff; background: linear-gradient(160deg, color-mix(in srgb, var(--hue) 78%, #fff), var(--hue)); box-shadow: inset 0 1px 0 rgba(255,255,255,.35), 0 4px 10px color-mix(in srgb, var(--hue) 30%, transparent); }
+  // Hover washes the glass in the tile's own hue and rings it, rather than lifting the card:
+  // the tiles sit on a 12px grid, so a translate moves the pointer target out from under the
+  // cursor and nudges its neighbours. The inset spread paints the wash and stays transitionable.
+  &:hover { border-color: color-mix(in srgb, var(--hue) 40%, var(--edge));
+    box-shadow: var(--shadow), inset 0 1px 0 rgba(255,255,255,.3), inset 0 0 0 999px color-mix(in srgb, var(--hue) 7%, transparent), 0 0 0 1px color-mix(in srgb, var(--hue) 25%, transparent); }
+  &:hover .o_sf_app_icon { transform: scale(1.05); }
+  &.is-soon { opacity: .72; } }
+.o_sf_app_icon { width: 46px; height: 46px; display: grid; place-items: center; border-radius: 15px; color: #fff; transition: transform .2s ease; background: linear-gradient(160deg, color-mix(in srgb, var(--hue) 78%, #fff), var(--hue)); box-shadow: inset 0 1px 0 rgba(255,255,255,.35), 0 4px 10px color-mix(in srgb, var(--hue) 30%, transparent); }
 .o_sf_app_name { display: block; font-size: 14.5px; font-weight: 800; letter-spacing: -.01em; color: var(--text); margin: 12px 0 3px; }
 .o_sf_app_stat { display: block; font-size: 11.5px; color: var(--muted); }
 
@@ -345,6 +372,10 @@
 @media (prefers-reduced-motion: reduce) {
   .o_sf.is-theming, .o_sf.is-theming * { transition: none !important; }
   .o_sf_app, .o_sf_lead { transition: none; }
+  .o_sf_app_icon { transition: none; }
+  .o_sf_app:hover .o_sf_app_icon { transform: none; }
+  .o_sf { animation: none; }
+  .o_sf_glow::before, .o_sf_glow::after { animation: none; }
   .o_sf_skeleton { .sk-sheen, .sk-bone, .sk-sect, .sk-row, .sk-tile { animation: none; } }
 }
 @media (max-width: 1180px) {

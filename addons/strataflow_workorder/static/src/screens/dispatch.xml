@@ -101,7 +101,7 @@
             <span class="o_sf_pill o_sf_pill--sm"><span class="o_sf_dot o_sf_dot--closed" aria-hidden="true"/>USP feed · not connected</span>
             <span t-if="sel and sel.latitude" class="o_sf_pill o_sf_pill--sm o_sf_mono o_sf_note"><t t-esc="sel.latitude.toFixed(4)"/>, <t t-esc="sel.longitude.toFixed(4)"/></span>
             <span t-if="state.auto" class="o_sf_pill o_sf_pill--sm o_sf_pill--accent"><span class="o_sf_dot o_sf_dot--new" aria-hidden="true"/><t t-esc="routeSummary"/></span>
-            <button t-if="state.auto and routes.length" type="button" class="o_sf_pill o_sf_pill--sm o_sf_pillbtn o_sf_pill--ink" t-on-click="applyRoutes">Apply routes</button>
+            <button t-if="state.auto and routes.length" type="button" class="o_sf_pill o_sf_pill--sm o_sf_pillbtn o_sf_pill--primary" t-on-click="applyRoutes">Apply routes</button>
             <span class="o_sf_spacer"/>
             <span class="o_sf_pill o_sf_pill--sm o_sf_note">faux map · live Strataline tiles pending</span>
         </t>
