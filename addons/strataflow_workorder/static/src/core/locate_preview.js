@@ -1,25 +1,35 @@
 import { Component } from "@odoo/owl";
+import { projectDrawing } from "./locate_geo";
 
-const PX_PER_M = 1 / 0.15;
-
+/** A north-up print of the geo-referenced drawing, fitted into a fixed box. */
 export class LocatePreview extends Component {
     static template = "strataflow_workorder.LocatePreview";
     static props = { drawing: { type: Object, optional: true }, utilities: Array };
+    static W = 900;
+    static H = 470;
 
+    get print() {
+        return projectDrawing(this.props.drawing, LocatePreview.W, LocatePreview.H);
+    }
     get size() {
-        return this.props.drawing?.size || { w: 900, h: 470 };
+        return { w: LocatePreview.W, h: LocatePreview.H };
     }
     get segments() {
-        return this.props.drawing?.segments || [];
+        return this.print.segments;
     }
     get notes() {
-        return this.props.drawing?.notes || [];
+        return this.print.notes;
+    }
+    // the print's scale, for its caption: metres per pixel, sensibly rounded
+    get scale() {
+        const m = this.print.mPerPx;
+        return m ? `1 px ≈ ${m < 0.1 ? m.toFixed(3) : m.toFixed(2)} m` : "";
     }
     color(code) {
         return this.props.utilities.find((u) => u.code === code)?.color || "var(--ink)";
     }
     label(seg) {
         const letter = (this.props.utilities.find((u) => u.code === seg.util)?.name || "?")[0];
-        return `${letter} ${(Math.hypot(seg.x2 - seg.x1, seg.y2 - seg.y1) / PX_PER_M).toFixed(1)} m`;
+        return `${letter} ${seg.metres.toFixed(1)} m`;
     }
 }

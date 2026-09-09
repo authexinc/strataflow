@@ -13,7 +13,7 @@
             <button type="button" class="o_sf_pill o_sf_pillbtn o_sf_pill--primary" t-on-click="newTicket">+ New ticket</button>
         </t>
 
-        <StratalineMap markers="markers" routes="routes" basemap="state.basemap" utilities="state.layers" focus="state.selId" padding="constructor.MAP_PADDING" onSelect.bind="select" onReady.bind="onMapReady"/>
+        <StratalineMap markers="markers" routes="routes" basemap="state.basemap" focus="state.selId" padding="constructor.MAP_PADDING" onSelect.bind="select" onReady.bind="onMapReady"/>
 
         <aside class="o_sf_panel o_sf_queue" aria-label="Ticket queue">
             <div class="o_sf_queue_head">
@@ -43,8 +43,9 @@
             <button type="button" class="o_sf_rail_btn" title="Zoom in" t-on-click="() => this.zoom(1)">+</button>
             <button type="button" class="o_sf_rail_btn" title="Zoom out" t-on-click="() => this.zoom(-1)">−</button>
             <button type="button" class="o_sf_rail_btn" title="Crew positions" t-att-aria-pressed="state.showCrew" t-att-class="{ 'is-on': state.showCrew }" t-on-click="() => (state.showCrew = !state.showCrew)"><svg width="19" height="19" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="10" cy="10" r="5.5"/><circle cx="10" cy="10" r="1.6" fill="currentColor" stroke="none"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="10" y1="16" x2="10" y2="19"/><line x1="1" y1="10" x2="4" y2="10"/><line x1="16" y1="10" x2="19" y2="10"/></svg></button>
-            <button type="button" class="o_sf_rail_btn" title="Utility layers" t-att-aria-pressed="state.layers" t-att-class="{ 'is-on': state.layers }" t-on-click="() => (state.layers = !state.layers)"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" aria-hidden="true"><polygon points="10,2 18,6.5 10,11 2,6.5"/><polyline points="2,10.5 10,15 18,10.5"/><polyline points="2,14.5 10,19 18,14.5"/></svg></button>
+            <button type="button" class="o_sf_rail_btn" title="Map layers" t-att-aria-pressed="state.layersOpen" t-att-class="{ 'is-on': state.layersOpen }" t-on-click="() => (state.layersOpen = !state.layersOpen)"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" aria-hidden="true"><polygon points="10,2 18,6.5 10,11 2,6.5"/><polyline points="2,10.5 10,15 18,10.5"/><polyline points="2,14.5 10,19 18,14.5"/></svg></button>
         </nav>
+        <LayerPanel t-if="state.layersOpen" onClose="() => (state.layersOpen = false)" aboveCard="!!(sel and state.cardOpen)"/>
 
         <aside t-if="sel and state.cardOpen" class="o_sf_panel o_sf_card" aria-label="Assign ticket">
             <div class="o_sf_card_head">

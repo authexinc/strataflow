@@ -3,6 +3,8 @@ import { loadCSS, loadJS } from "@web/core/assets";
 import { _t } from "@web/core/l10n/translation";
 import { useService } from "@web/core/utils/hooks";
 import { FauxMap } from "./faux_map";
+import { EXCLUDED_SUBS, hiddenState, ownRow, registerRows, rowsFromManifest, useLayers } from "./layers";
+import { geoDrawing, segMetres } from "./locate_geo";
 import { useTheme } from "./theme";
 
 // MapLibre is 1 MB and only the map screens need it, so it is fetched on first use rather
@@ -14,18 +16,21 @@ const LIB = "/strataflow_workorder/static/lib/maplibre-gl/maplibre-gl";
 const SATELLITE_TILES = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}";
 // Calgary until a tenant's tickets say otherwise: matches CALGARY in geo.js
 const HOME = { center: [-114.08, 51.045], zoom: 11 };
+const FONT = ["Noto Sans Regular"];
+const MIN_SEGMENT_M = 0.5;
 
 // Strataflow's own basemap palette, derived from the shell tokens (--bg, --map-line,
 // --map-block) so the live ground matches the faux one the shell already draws behind
 // every screen. Muted on purpose: tickets, crews and utility lines are the information.
 const GROUND = {
     // label on earth: 5.3:1 light, 5.9:1 dark — labels are 9.5–12px, so AA needs 4.5:1
-    light: { earth: "#f4f5f3", landuse: "#e7ece2", water: "#d5e2ea", buildings: "#e8e9e5", minor: "#dfe1de", major: "#d3d6d2", highway: "#c7cbc6", label: "#5f666d", halo: "#f4f5f3" },
-    dark: { earth: "#14181d", landuse: "#181f1a", water: "#172430", buildings: "#1b2027", minor: "#232a31", major: "#2a323a", highway: "#343d46", label: "#8b969e", halo: "#14181d" },
+    light: { earth: "#f4f5f3", landuse: "#e7ece2", water: "#d5e2ea", buildings: "#e8e9e5", minor: "#dfe1de", major: "#d3d6d2", highway: "#c7cbc6", label: "#5f666d", halo: "#f4f5f3", ink: "#1a1d21", grid: "rgba(122,92,196,.55)", gridText: "#6b5aa0" },
+    dark: { earth: "#14181d", landuse: "#181f1a", water: "#172430", buildings: "#1b2027", minor: "#232a31", major: "#2a323a", highway: "#343d46", label: "#8b969e", halo: "#14181d", ink: "#e8ecee", grid: "rgba(160,135,220,.6)", gridText: "#a99ad8" },
 };
 
 let libPromise = null;
 let configPromise = null;
+let assetsPromise = null;
 
 /** The tenant's map configuration, fetched once per page for every screen that asks. */
 export function mapConfig(orm) {
@@ -46,21 +51,31 @@ function keyed(base, path, key) {
     return `${base}${path}?key=${encodeURIComponent(key)}`;
 }
 
+// style, manifest and meta once per page: they change when strataline deploys, not per screen
+function loadAssets(cfg) {
+    if (!assetsPromise) {
+        const get = (path) => fetch(keyed(cfg.base_url, path, cfg.api_key)).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+        assetsPromise = Promise.all([get("/style.json"), get("/layers.json"), get("/tiles/meta")]).then(([utilities, manifest, meta]) => ({ utilities, manifest, meta }));
+    }
+    return assetsPromise;
+}
+
 function roadWidth(z0, w0, z1, w1) {
     return ["interpolate", ["exponential", 1.6], ["zoom"], z0, w0, z1, w1];
 }
 
+// ---- this client's own layers: basemap, ATS grid, addresses ---------------------------------
+
 function basemapLayers(g) {
-    const font = ["Noto Sans Regular"];
-    const road = (id, kinds, color, width, extra = {}) => ({
+    const road = (id, kinds, color, width) => ({
         id, type: "line", source: "basemap", "source-layer": "roads",
         filter: ["in", ["get", "kind"], ["literal", kinds]],
-        paint: { "line-color": color, "line-width": width }, ...extra,
+        paint: { "line-color": color, "line-width": width },
     });
     const text = (id, sl, kinds, size, extra = {}) => ({
         id, type: "symbol", source: "basemap", "source-layer": sl,
         filter: ["in", ["get", "kind"], ["literal", kinds]],
-        layout: { "text-field": ["get", "name"], "text-size": size, "text-font": font, ...(extra.layout || {}) },
+        layout: { "text-field": ["get", "name"], "text-size": size, "text-font": FONT, ...(extra.layout || {}) },
         paint: { "text-color": g.label, "text-halo-color": g.halo, "text-halo-width": 1.2 },
         ...(extra.minzoom ? { minzoom: extra.minzoom } : {}),
     });
@@ -80,13 +95,64 @@ function basemapLayers(g) {
     ];
 }
 
+// the grid is reference, not information: each level appears only once it is coarse enough
+// on screen to read, and never louder than the roads
+const ATS = [
+    { id: "ats_twp", minzoom: 8, width: 1.2, opacity: 0.55, label: 9.5, name: _t("ATS townships") },
+    { id: "ats_sec", minzoom: 12, width: 0.8, opacity: 0.45, label: 12.5, name: _t("ATS sections") },
+    { id: "ats_qtr", minzoom: 13.5, width: 0.6, opacity: 0.4, label: 14, name: _t("ATS quarter sections") },
+    { id: "ats_lsd", minzoom: 14.5, width: 0.4, opacity: 0.35, label: 15, name: _t("ATS LSDs") },
+];
+
+function atsLayers(g) {
+    const out = [];
+    for (const a of ATS) {
+        out.push({ id: a.id, type: "line", source: "ats", "source-layer": a.id, minzoom: a.minzoom, paint: { "line-color": g.grid, "line-width": a.width, "line-opacity": a.opacity } });
+        out.push({
+            id: `${a.id}_label`, type: "symbol", source: "ats", "source-layer": `${a.id}_label`, minzoom: a.label,
+            layout: { "text-field": ["get", "lbl"], "text-size": 10, "text-font": FONT, "text-allow-overlap": false },
+            paint: { "text-color": g.gridText, "text-halo-color": g.halo, "text-halo-width": 1.2 },
+        });
+    }
+    return out;
+}
+
+function addrLayer(g) {
+    return {
+        id: "sf_addr", type: "symbol", source: "addr", "source-layer": "addr_label", minzoom: 16,
+        layout: { "text-field": ["get", "n"], "text-size": 10, "text-font": FONT, "text-allow-overlap": false },
+        paint: { "text-color": g.label, "text-halo-color": g.halo, "text-halo-width": 1.2 },
+    };
+}
+
+function ownRows(g) {
+    return [
+        ownRow("sf_earth", "Basemap", "fill", g.earth, _t("Land")),
+        ownRow("sf_landuse", "Basemap", "fill", g.landuse, _t("Parks & green")),
+        ownRow("sf_water", "Basemap", "fill", g.water, _t("Water")),
+        ownRow("sf_buildings", "Basemap", "fill", g.buildings, _t("Buildings")),
+        ownRow("sf_roads_minor", "Basemap", "line", g.minor, _t("Minor roads"), { twins: ["sf_road_labels_minor"] }),
+        ownRow("sf_roads_major", "Basemap", "line", g.major, _t("Major roads")),
+        ownRow("sf_roads_highway", "Basemap", "line", g.highway, _t("Highways")),
+        ownRow("sf_road_labels", "Basemap", "label", g.label, _t("Road names")),
+        ownRow("sf_place_labels", "Basemap", "label", g.label, _t("Place names")),
+        ...ATS.map((a) => ownRow(a.id, "Reference", "line", g.grid, a.name, { twins: [`${a.id}_label`] })),
+        ownRow("sf_addr", "Reference", "label", g.label, _t("House numbers")),
+    ];
+}
+
 /**
  * Assemble the MapLibre style for one theme and basemap. Strataline supplies the data
- * (basemap, utilities and their style, glyphs); the ground palette is Strataflow's own.
+ * (basemap, utilities and their style, ATS grid, addresses, glyphs); the ground palette is
+ * Strataflow's own. Returns the style and the utility layers' baked filters, which
+ * setFilter() replaces and the visibility pass must therefore restate.
  */
 function buildStyle({ theme, basemap, cfg, utilities, meta }) {
     const { base_url: base, api_key: key } = cfg;
     const g = GROUND[theme] || GROUND.light;
+    // /tiles/meta is scoped to the key: a source it lists as null sits wholly outside the
+    // key's zoom or area and must not be asked for
+    const available = (name) => !meta || meta[name] !== null;
     const src = (name, extra = {}) => ({
         type: "vector", tiles: [keyed(base, `/tiles/${name}/{z}/{x}/{y}.pbf`, key)],
         ...(meta?.[name] ? { minzoom: meta[name].minzoom, maxzoom: meta[name].maxzoom, bounds: meta[name].bounds } : {}),
@@ -106,6 +172,11 @@ function buildStyle({ theme, basemap, cfg, utilities, meta }) {
     } else {
         style.layers.push(...basemapLayers(g));
     }
+    if (available("ats")) {
+        style.sources.ats = src("ats");
+        style.layers.push(...atsLayers(g));
+    }
+    const baked = {};
     // the utility style as strataline serves it: its own source, its own layers, its own
     // colours (the industry colour code). Only the tile URLs are ours to rewrite.
     if (utilities) {
@@ -123,19 +194,27 @@ function buildStyle({ theme, basemap, cfg, utilities, meta }) {
             if (theme === "dark" && layer.metadata?.dark) {
                 Object.assign(layer.paint || (layer.paint = {}), layer.metadata.dark);
             }
+            baked[layer.id] = layer.filter;
             style.layers.push(layer);
         }
     }
-    return style;
+    if (available("addr")) {
+        style.sources.addr = src("addr");
+        style.layers.push(addrLayer(g));
+    }
+    return { style, baked };
 }
 
 /**
  * The live Strataline map: tickets as glass pins, suggested routes as dashed lines, the
- * selected ticket labelled. Pan and zoom are the map's own. When the tenant has no
- * Strataline key yet, the faux ground stands in and says so.
+ * selected ticket labelled, the locate print as a geo-referenced layer that can be drawn on.
+ * Pan and zoom are the map's own. When the tenant has no Strataline key yet, the faux ground
+ * stands in and says so.
  *
  * markers: [{ id, latitude, longitude, status, emergency, on, badge?, name, address }]
  * routes:  [{ id, color, coords: [[lng, lat], …] }]
+ * drawing: { v: 2, segments: [{ a, b, util }], notes: [{ at, text }] } — see locate_geo.js
+ * tool:    a utility code or "note" to draw with; false to pan
  */
 export class StratalineMap extends Component {
     static template = "strataflow_workorder.StratalineMap";
@@ -144,30 +223,37 @@ export class StratalineMap extends Component {
         markers: { type: Array, optional: true },
         routes: { type: Array, optional: true },
         basemap: { type: String, optional: true }, // streets | satellite
-        utilities: { type: Boolean, optional: true }, // utility overlay on/off
         focus: { type: [Number, Boolean], optional: true }, // marker id to keep in view
         padding: { type: Object, optional: true }, // viewport padding, px — where the panels sit
         zoom: { type: Number, optional: true }, // zoom for a single marker (a bbox fit sets its own)
+        drawing: { type: Object, optional: true },
+        tool: { type: [String, Boolean], optional: true },
+        utils: { type: Array, optional: true }, // [{code, name, color}] for the drawing's colours
+        onDraw: { type: Function, optional: true },
         onSelect: { type: Function, optional: true },
         onReady: { type: Function, optional: true }, // receives { zoomIn, zoomOut }
     };
-    static defaultProps = { markers: [], routes: [], basemap: "streets", utilities: true, padding: { top: 90, left: 40, right: 80, bottom: 70 }, zoom: 14 };
+    static defaultProps = { markers: [], routes: [], basemap: "streets", padding: { top: 90, left: 40, right: 80, bottom: 70 }, zoom: 14, tool: false, utils: [] };
 
     setup() {
         this.orm = useService("orm");
         this.theme = useTheme();
+        this.layers = useLayers();
         this.el = useRef("map");
-        this.state = useState({ status: "loading", message: "" }); // loading | live | off | error
+        this.noteRef = useRef("note");
+        this.state = useState({ status: "loading", message: "", noteDraft: null, notePx: { x: 0, y: 0 } }); // loading | live | off | error
         this.map = null;
-        this.marks = new Map(); // id -> { marker, el, key }
+        this.marks = new Map(); // id -> { marker, el }
         this.label = null;
         this.fitted = false;
+        this.live = null; // the segment being dragged out
         onMounted(() => this.boot());
         onWillUnmount(() => this.map?.remove());
         // style follows the theme toggle and the basemap switch
         useEffect(
             () => {
                 if (this.map) {
+                    this.styleReady = false;
                     this.map.setStyle(this.style(), { diff: false });
                 }
             },
@@ -181,12 +267,20 @@ export class StratalineMap extends Component {
             () => [this.props.markers, this.props.routes, this.map]
         );
         useEffect(
-            () => this.setUtilities(this.props.utilities),
-            () => [this.props.utilities, this.map]
+            () => this.applyVisibility(),
+            () => [this.layers.version, this.map]
         );
         useEffect(
             () => this.keepInView(this.props.focus),
             () => [this.props.focus, this.map]
+        );
+        useEffect(
+            () => this.setTool(this.props.tool),
+            () => [this.props.tool, this.map]
+        );
+        useEffect(
+            () => this.syncDrawing(),
+            () => [this.props.drawing, this.props.utils, this.map]
         );
     }
 
@@ -202,17 +296,13 @@ export class StratalineMap extends Component {
                 this.state.message = _t("Strataline not connected — set the API key in Settings");
                 return;
             }
-            const [maplibregl, utilities, meta] = await Promise.all([
-                loadLib(),
-                fetch(keyed(this.cfg.base_url, "/style.json", this.cfg.api_key)).then((r) => (r.ok ? r.json() : null)),
-                fetch(keyed(this.cfg.base_url, "/tiles/meta", this.cfg.api_key)).then((r) => (r.ok ? r.json() : null)),
-            ]);
+            const [maplibregl, assets] = await Promise.all([loadLib(), loadAssets(this.cfg)]);
             this.gl = maplibregl;
-            this.utilities = utilities;
-            this.meta = meta;
+            Object.assign(this, assets); // utilities, manifest, meta
             if (!this.el.el) {
                 return; // unmounted while loading
             }
+            registerRows([...rowsFromManifest(this.manifest), ...ownRows(GROUND[this.theme.theme] || GROUND.light)]);
             const map = new maplibregl.Map({
                 container: this.el.el,
                 style: this.style(),
@@ -221,9 +311,14 @@ export class StratalineMap extends Component {
                 attributionControl: false,
             });
             map.addControl(new maplibregl.AttributionControl({ compact: true, customAttribution: "© Strataline" }), "bottom-right");
+            // Not `map.isStyleLoaded()` as the guard: that is false whenever any tile is still
+            // streaming, so an update arriving mid-load would be dropped and never retried.
+            // "style.load" fires once per setStyle, which is exactly when layers can be added.
             map.on("style.load", () => {
+                this.styleReady = true;
                 this.syncRoutes();
-                this.setUtilities(this.props.utilities);
+                this.syncDrawing();
+                this.applyVisibility();
             });
             map.on("error", (ev) => {
                 // a refused request is a key problem, not a crash: 401 means the key itself is bad
@@ -237,6 +332,7 @@ export class StratalineMap extends Component {
                     console.warn("strataline", status, ev.error.url || "");
                 }
             });
+            this.bindDraw(map);
             this.map = map;
             this.state.status = "live";
             this.props.onReady?.({ zoomIn: () => map.zoomIn(), zoomOut: () => map.zoomOut() });
@@ -250,11 +346,51 @@ export class StratalineMap extends Component {
     }
 
     style() {
-        return buildStyle({ theme: this.theme.theme, basemap: this.props.basemap, cfg: this.cfg, utilities: this.utilities, meta: this.meta });
+        const { style, baked } = buildStyle({ theme: this.theme.theme, basemap: this.props.basemap, cfg: this.cfg, utilities: this.utilities, meta: this.meta });
+        this.baked = baked;
+        return style;
+    }
+
+    get ground() {
+        return GROUND[this.theme.theme] || GROUND.light;
     }
 
     get reducedMotion() {
         return window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    }
+
+    // ---- layer visibility (the layer panel's store, applied to the style) ------------------
+
+    applyVisibility() {
+        const map = this.map;
+        if (!map || !this.styleReady) {
+            return;
+        }
+        const { merged, own } = hiddenState();
+        // strataline's merged layers: many datasets in one style layer, told apart by
+        // `sub_layer`. setFilter replaces the baked filter (the abandoned split, pipeline
+        // exclusions), so it is restated as the first clause every time.
+        for (const [m, { all, hidden }] of Object.entries(merged)) {
+            for (const id of [m, `${m}__abandoned`]) {
+                if (!map.getLayer(id)) {
+                    continue;
+                }
+                map.setLayoutProperty(id, "visibility", hidden.length === all.length ? "none" : "visible");
+                const clause = ["!", ["in", ["get", "sub_layer"], ["literal", [...EXCLUDED_SUBS, ...hidden]]]];
+                map.setFilter(id, this.baked?.[id] ? ["all", this.baked[id], clause] : clause);
+            }
+        }
+        for (const r of this.layers.rows) {
+            if (r.parts) {
+                continue;
+            }
+            const on = !own.includes(r.id);
+            for (const id of [r.id, ...(r.twins || [])]) {
+                if (map.getLayer(id)) {
+                    map.setLayoutProperty(id, "visibility", on ? "visible" : "none");
+                }
+            }
+        }
     }
 
     // ---- markers ----------------------------------------------------------------
@@ -364,7 +500,7 @@ export class StratalineMap extends Component {
 
     syncRoutes() {
         const map = this.map;
-        if (!map || !map.isStyleLoaded()) {
+        if (!map || !this.styleReady) {
             return;
         }
         const data = {
@@ -385,19 +521,190 @@ export class StratalineMap extends Component {
         });
     }
 
-    // ---- view -----------------------------------------------------------------------
+    // ---- the locate print: a geo-referenced layer, drawn on with pointer drags ---------------
 
-    setUtilities(on) {
+    utilColor(code) {
+        return this.props.utils.find((u) => u.code === code)?.color || this.ground.ink;
+    }
+
+    utilLetter(code) {
+        return (this.props.utils.find((u) => u.code === code)?.name || "?")[0];
+    }
+
+    drawingData() {
+        const d = geoDrawing(this.props.drawing);
+        const line = (s, live) => ({
+            type: "Feature",
+            properties: { color: this.utilColor(s.util), dashed: s.util === "gas", live, label: `${this.utilLetter(s.util)} ${segMetres(s).toFixed(1)} m` },
+            geometry: { type: "LineString", coordinates: [s.a, s.b] },
+        });
+        const features = d.segments.map((s) => line(s, false));
+        if (this.live) {
+            features.push(line(this.live, true));
+        }
+        for (const n of d.notes) {
+            features.push({ type: "Feature", properties: { text: n.text }, geometry: { type: "Point", coordinates: n.at } });
+        }
+        return { type: "FeatureCollection", features };
+    }
+
+    syncDrawing() {
         const map = this.map;
-        if (!map || !map.isStyleLoaded() || !this.utilities) {
+        if (!map || !this.styleReady) {
             return;
         }
-        for (const l of this.utilities.layers || []) {
-            if (l.type !== "background" && map.getLayer(l.id)) {
-                map.setLayoutProperty(l.id, "visibility", on ? "visible" : "none");
-            }
+        const data = this.drawingData();
+        if (map.getSource("sf_locate")) {
+            map.getSource("sf_locate").setData(data);
+            return;
+        }
+        const g = this.ground;
+        const isLine = ["==", ["geometry-type"], "LineString"];
+        map.addSource("sf_locate", { type: "geojson", data });
+        map.addLayer({
+            id: "sf_locate_line", type: "line", source: "sf_locate", filter: ["all", isLine, ["!", ["get", "dashed"]]],
+            layout: { "line-cap": "round", "line-join": "round" },
+            paint: { "line-color": ["get", "color"], "line-width": 3.5, "line-opacity": ["case", ["get", "live"], 0.6, 1] },
+        });
+        // gas is the dotted one, as on the print; line-dasharray cannot vary per feature
+        map.addLayer({
+            id: "sf_locate_line_gas", type: "line", source: "sf_locate", filter: ["all", isLine, ["get", "dashed"]],
+            layout: { "line-cap": "round" },
+            paint: { "line-color": ["get", "color"], "line-width": 3.5, "line-dasharray": [0.1, 2.2], "line-opacity": ["case", ["get", "live"], 0.6, 1] },
+        });
+        // colour alone must not carry the utility: the label leads with the class letter
+        map.addLayer({
+            id: "sf_locate_label", type: "symbol", source: "sf_locate", filter: isLine,
+            layout: { "symbol-placement": "line-center", "text-field": ["get", "label"], "text-size": 11, "text-font": FONT, "text-offset": [0, -1.1], "text-allow-overlap": true, "text-ignore-placement": true },
+            paint: { "text-color": ["get", "color"], "text-halo-color": g.halo, "text-halo-width": 2 },
+        });
+        map.addLayer({
+            id: "sf_locate_note_dot", type: "circle", source: "sf_locate", filter: ["==", ["geometry-type"], "Point"],
+            paint: { "circle-radius": 4.5, "circle-color": g.ink, "circle-stroke-color": g.halo, "circle-stroke-width": 1.5 },
+        });
+        map.addLayer({
+            id: "sf_locate_note", type: "symbol", source: "sf_locate", filter: ["==", ["geometry-type"], "Point"],
+            layout: { "text-field": ["get", "text"], "text-size": 11, "text-font": FONT, "text-anchor": "left", "text-offset": [0.8, 0], "text-allow-overlap": true, "text-ignore-placement": true },
+            paint: { "text-color": g.ink, "text-halo-color": g.halo, "text-halo-width": 2 },
+        });
+    }
+
+    bindDraw(map) {
+        const down = (e) => this.drawDown(e);
+        const move = (e) => this.drawMove(e);
+        const up = () => this.drawUp();
+        const cancel = () => this.drawCancel();
+        map.on("mousedown", down);
+        map.on("mousemove", move);
+        map.on("mouseup", up);
+        map.on("mouseout", cancel);
+        map.on("touchstart", down);
+        map.on("touchmove", move);
+        map.on("touchend", up);
+        map.on("touchcancel", cancel);
+        map.on("move", () => this.trackNote());
+    }
+
+    setTool(tool) {
+        const map = this.map;
+        if (!map) {
+            return;
+        }
+        this.tool = tool;
+        if (tool) {
+            map.dragPan.disable();
+            map.doubleClickZoom.disable();
+            map.getCanvas().style.cursor = "crosshair";
+        } else {
+            map.dragPan.enable();
+            map.doubleClickZoom.enable();
+            map.getCanvas().style.cursor = "";
+            this.drawCancel();
+            this.state.noteDraft = null;
         }
     }
+
+    drawDown(e) {
+        if (!this.tool) {
+            return;
+        }
+        const button = e.originalEvent?.button;
+        if (button !== undefined && button !== 0) {
+            return;
+        }
+        e.preventDefault();
+        const at = [e.lngLat.lng, e.lngLat.lat];
+        if (this.tool === "note") {
+            this.state.noteDraft = { at, text: "" };
+            this.trackNote();
+            requestAnimationFrame(() => this.noteRef.el?.focus());
+            return;
+        }
+        this.live = { a: at, b: at, util: this.tool };
+        this.syncDrawing();
+    }
+
+    drawMove(e) {
+        if (!this.live) {
+            return;
+        }
+        e.preventDefault();
+        this.live = { ...this.live, b: [e.lngLat.lng, e.lngLat.lat] };
+        this.syncDrawing();
+    }
+
+    drawUp() {
+        const live = this.live;
+        if (!live) {
+            return;
+        }
+        this.live = null;
+        if (segMetres(live) >= MIN_SEGMENT_M) {
+            const d = geoDrawing(this.props.drawing);
+            this.props.onDraw?.({ ...d, segments: [...d.segments, live] });
+        } else {
+            this.syncDrawing();
+        }
+    }
+
+    drawCancel() {
+        if (this.live) {
+            this.live = null;
+            this.syncDrawing();
+        }
+    }
+
+    // the note input is plain DOM over the map: keep it on its point while the map moves
+    trackNote() {
+        if (this.state.noteDraft && this.map) {
+            const p = this.map.project(this.state.noteDraft.at);
+            this.state.notePx = { x: Math.round(p.x), y: Math.round(p.y) };
+        }
+    }
+
+    commitNote() {
+        const draft = this.state.noteDraft;
+        if (!draft) {
+            return;
+        }
+        this.state.noteDraft = null;
+        const text = draft.text.trim();
+        if (text) {
+            const d = geoDrawing(this.props.drawing);
+            this.props.onDraw?.({ ...d, notes: [...d.notes, { at: draft.at, text }] });
+        }
+    }
+
+    onNoteKeydown(ev) {
+        if (ev.key === "Enter") {
+            ev.preventDefault();
+            this.commitNote();
+        } else if (ev.key === "Escape") {
+            this.state.noteDraft = null;
+        }
+    }
+
+    // ---- view -----------------------------------------------------------------------
 
     fit() {
         const pts = this.props.markers.filter((m) => m.latitude && m.longitude);

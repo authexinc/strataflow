@@ -5,6 +5,7 @@ import { useService } from "@web/core/utils/hooks";
 import { standardActionServiceProps } from "@web/webclient/actions/action_service";
 import { StrataflowShell } from "../core/shell";
 import { StratalineMap } from "../core/strataline_map";
+import { LayerPanel } from "../core/layer_panel";
 import { LocateCanvas } from "../core/locate_canvas";
 import { LocatePreview } from "../core/locate_preview";
 import { auditDrawing, linesByUtility } from "../core/audit";
@@ -24,7 +25,7 @@ export class LocatorScreen extends Component {
     static template = "strataflow_workorder.Locator";
     // URL segment (/odoo/<path>). Keep in step with the action's `path` in strataflow_actions.xml.
     static path = "locator";
-    static components = { StrataflowShell, StratalineMap, LocateCanvas, LocatePreview };
+    static components = { StrataflowShell, StratalineMap, LayerPanel, LocateCanvas, LocatePreview };
     static props = { ...standardActionServiceProps };
     static target = "fullscreen";
     // map mode is unobstructed: only the top bar, the rail and the footer sit on it
@@ -45,7 +46,7 @@ export class LocatorScreen extends Component {
             panelOpen: true,
             detailsOpen: false,
             basemap: "streets",
-            layers: true,
+            layersOpen: false,
             mapFocus: false,
             audit: null,
             auditOpen: false,

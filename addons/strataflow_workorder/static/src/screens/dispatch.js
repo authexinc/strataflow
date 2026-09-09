@@ -5,6 +5,7 @@ import { useService } from "@web/core/utils/hooks";
 import { standardActionServiceProps } from "@web/webclient/actions/action_service";
 import { StrataflowShell } from "../core/shell";
 import { StratalineMap } from "../core/strataline_map";
+import { LayerPanel } from "../core/layer_panel";
 import { fmtDate } from "../core/format";
 import { haversineKm, planRoutes } from "../core/geo";
 
@@ -16,7 +17,7 @@ export class DispatchScreen extends Component {
     static template = "strataflow_workorder.Dispatch";
     // URL segment (/odoo/<path>). Keep in step with the action's `path` in strataflow_actions.xml.
     static path = "dispatch";
-    static components = { StrataflowShell, StratalineMap };
+    static components = { StrataflowShell, StratalineMap, LayerPanel };
     static props = { ...standardActionServiceProps };
     static target = "fullscreen";
     // the part of the map the queue (left), rail (right), top bar and footer leave free
@@ -35,7 +36,7 @@ export class DispatchScreen extends Component {
             basemap: "streets",
             auto: false,
             showCrew: true,
-            layers: true,
+            layersOpen: false,
             cardOpen: true,
             data: { me: { initials: "" }, utilities: [], crew: [], tickets: [] },
         });

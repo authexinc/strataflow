@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+<t t-name="strataflow_workorder.LayerPanel">
+    <aside class="o_sf_panel o_sf_layers" t-att-class="{ 'o_sf_layers--above-card': props.aboveCard }" aria-label="Map layers">
+        <div class="o_sf_layers_head">
+            <label class="o_sf_filter"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5.5"/><line x1="13" y1="13" x2="17.5" y2="17.5"/></svg><input type="search" t-att-placeholder="placeholder" aria-label="Filter layers" t-att-value="layers.filter" t-on-input="onFilter"/></label>
+            <button type="button" class="o_sf_x" title="Close layers" aria-label="Close layers" t-on-click="props.onClose">✕</button>
+        </div>
+        <div class="o_sf_chips o_sf_chips--tight" role="group" aria-label="Presets">
+            <t t-foreach="presets" t-as="p" t-key="p.key"><button type="button" class="o_sf_chip" t-att-class="{ 'is-on': p.on }" t-att-aria-pressed="p.on" t-on-click="() => this.preset(p.key)" t-esc="p.label"/></t>
+        </div>
+        <div class="o_sf_rows o_sf_layers_tree">
+            <p t-if="!groups.length" class="o_sf_empty">No layers match.</p>
+            <t t-foreach="groups" t-as="g" t-key="g.key">
+                <div class="o_sf_row o_sf_lgrp" t-att-class="{ 'is-open': g.open }" role="button" tabindex="0" t-att-aria-expanded="g.open" t-on-click="() => this.toggleOpen(g.key)" t-on-keydown="(ev) => ev.key === 'Enter' and this.toggleOpen(g.key)">
+                    <svg class="o_sf_chev" width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M7.5 5 L12.5 10 L7.5 15"/></svg>
+                    <span class="o_sf_row_text"><b t-esc="g.label"/></span>
+                    <span class="o_sf_chip_count o_sf_mono" t-esc="g.count"/>
+                    <button type="button" class="o_sf_tgl" t-att-class="{ 'is-on': g.state === 'on', 'is-mixed': g.state === 'mixed' }" role="switch" t-att-aria-checked="g.state === 'on' ? 'true' : g.state === 'mixed' ? 'mixed' : 'false'" t-att-aria-label="'All ' + g.label" t-on-click.stop="() => this.toggleGroup(g.key)"/>
+                </div>
+                <t t-foreach="g.rows" t-as="r" t-key="r.id">
+                    <div class="o_sf_row o_sf_lrow" t-att-class="{ 'is-safety': r.safety }">
+                        <span class="o_sf_swatch" t-attf-class="o_sf_swatch--{{ r.kind }}" t-attf-style="--sw: {{ r.color }}" aria-hidden="true"/>
+                        <span class="o_sf_row_text"><b t-esc="r.name"/><small t-esc="r.subtitle"/></span>
+                        <span t-if="r.safety" class="o_sf_status o_sf_status--danger">Safety</span>
+                        <button type="button" class="o_sf_tgl" t-att-class="{ 'is-on': r.on }" role="switch" t-att-aria-checked="r.on ? 'true' : 'false'" t-att-aria-label="r.name" t-att-disabled="r.safety and r.on" t-on-click="() => this.toggleRow(r)"/>
+                    </div>
+                </t>
+            </t>
+        </div>
+        <div class="o_sf_list_foot">Safety layers stay on. Your choices are remembered on this device.</div>
+    </aside>
+</t>
+
+</templates>

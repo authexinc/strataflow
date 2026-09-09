@@ -43,7 +43,8 @@ class StrataflowWorkOrder(models.Model):
     scope_note = fields.Text()
     locator_id = fields.Many2one('res.users', 'Locator', tracking=True, domain=lambda self: [('group_ids', 'in', self.env.ref('strataflow_workorder.group_strataflow_user').id)])
     utility_ids = fields.Many2many('strataflow.utility', string='Utilities')
-    # the locate print: {"size": {w, h}, "segments": [{x1,y1,x2,y2,util}], "notes": [{x,y,text}]}, canvas pixels
+    # the locate print, geo-referenced (static/src/core/locate_geo.js):
+    # {"v": 2, "segments": [{"a": [lng, lat], "b": [lng, lat], "util"}], "notes": [{"at": [lng, lat], "text"}]}
     drawing = fields.Json(default=dict)
     move_id = fields.Many2one('account.move', 'Invoice', readonly=True, copy=False)
     invoice_line_id = fields.Many2one('account.move.line', 'Invoice line', readonly=True, copy=False)

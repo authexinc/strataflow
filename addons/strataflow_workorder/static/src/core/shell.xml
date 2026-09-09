@@ -158,7 +158,8 @@
 <!-- read-only render of a locate print (review + preview) -->
 <t t-name="strataflow_workorder.LocatePreview">
     <svg class="o_sf_preview" t-att-viewBox="'0 0 ' + size.w + ' ' + size.h" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Locate print preview">
-        <g class="o_sf_bgmap_line" stroke-width="2"><line x1="0" t-att-y1="size.h * .25" t-att-x2="size.w" t-att-y2="size.h * .25"/><line x1="0" t-att-y1="size.h * .7" t-att-x2="size.w" t-att-y2="size.h * .7"/><line t-att-x1="size.w * .22" y1="0" t-att-x2="size.w * .22" t-att-y2="size.h"/><line t-att-x1="size.w * .58" y1="0" t-att-x2="size.w * .58" t-att-y2="size.h"/></g>
+        <!-- north up, fitted: the scale is whatever fits, so it is printed -->
+        <text t-if="scale" class="o_sf_ink_label o_sf_preview_scale" x="12" y="20" t-esc="'N ↑ · ' + scale"/>
         <t t-foreach="segments" t-as="s" t-key="s_index">
             <line t-att-x1="s.x1" t-att-y1="s.y1" t-att-x2="s.x2" t-att-y2="s.y2" t-att-stroke="color(s.util)" stroke-width="3" stroke-linecap="round" t-att-stroke-dasharray="s.util === 'gas' ? '1 8' : 'none'"/>
             <text class="o_sf_ink_label" t-att-x="(s.x1 + s.x2) / 2" t-att-y="(s.y1 + s.y2) / 2 - 7" text-anchor="middle" t-att-fill="color(s.util)" t-esc="label(s)"/>

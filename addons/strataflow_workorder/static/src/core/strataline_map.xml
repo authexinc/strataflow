@@ -2,11 +2,15 @@
 <templates xml:space="preserve">
 
 <t t-name="strataflow_workorder.StratalineMap">
-    <div class="o_sf_map" t-att-class="{ 'is-satellite': props.basemap === 'satellite' }">
+    <div class="o_sf_map" t-att-class="{ 'is-satellite': props.basemap === 'satellite', 'is-drawing': props.tool }">
         <div t-ref="map" class="o_sf_map_gl"/>
         <!-- no key yet, or the service is unreachable: the faux ground stands in and says so -->
         <FauxMap t-if="state.status === 'off' or state.status === 'error'" basemap="props.basemap"/>
         <span t-if="state.message" class="o_sf_pill o_sf_pill--sm o_sf_map_note" role="status" t-esc="state.message"/>
+        <!-- a note being typed: plain DOM over the map, kept on its point by trackNote() -->
+        <input t-if="state.noteDraft" t-ref="note" type="text" class="o_sf_note_input" aria-label="Note text" placeholder="e.g. hand dig only"
+               t-model="state.noteDraft.text" t-attf-style="left: {{ state.notePx.x + 10 }}px; top: {{ state.notePx.y - 14 }}px"
+               t-on-keydown="onNoteKeydown" t-on-blur="commitNote"/>
         <t t-slot="default"/>
     </div>
 </t>

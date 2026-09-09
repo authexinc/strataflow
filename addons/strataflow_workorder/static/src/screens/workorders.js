@@ -12,6 +12,7 @@ import { LocateCanvas } from "../core/locate_canvas";
 import { useTheme } from "../core/theme";
 import { fmtDate, fmtWhen } from "../core/format";
 import { downloadBlob, downloadText, svgToPng } from "../core/download";
+import { geoDrawing, projectDrawing, segMetres } from "../core/locate_geo";
 
 const STATUS_LABEL = {
     new: _t("New"),
@@ -271,21 +272,23 @@ export class WorkOrdersScreen extends Component {
 
     async exportPng() {
         const t = this.sel;
-        const { w, h } = t.drawing?.size || { w: 900, h: 470 };
+        const w = 900;
+        const h = 470;
+        const print = projectDrawing(t.drawing, w, h);
         const byCode = Object.fromEntries(this.state.data.utilities.map((u) => [u.code, u]));
         const esc = (s) => String(s).replace(/[<>&"]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;" }[c]));
         const font = "font: 600 11px ui-monospace, Menlo, monospace; paint-order: stroke; stroke: #f4f5f3; stroke-width: 3px;";
         const parts = [`<rect width="100%" height="100%" fill="#f4f5f3"/>`];
-        for (const s of t.drawing?.segments || []) {
+        for (const s of print.segments) {
             const u = byCode[s.util];
-            const m = (Math.hypot(s.x2 - s.x1, s.y2 - s.y1) * 0.15).toFixed(1);
             parts.push(`<line x1="${s.x1}" y1="${s.y1}" x2="${s.x2}" y2="${s.y2}" stroke="${u?.color || "#1c2124"}" stroke-width="3" stroke-linecap="round"${s.util === "gas" ? ' stroke-dasharray="1 8"' : ""}/>`);
-            parts.push(`<text x="${(s.x1 + s.x2) / 2}" y="${(s.y1 + s.y2) / 2 - 7}" text-anchor="middle" fill="${u?.color || "#1c2124"}" style="${font}">${esc((u?.name || "?")[0])} ${m} m</text>`);
+            parts.push(`<text x="${(s.x1 + s.x2) / 2}" y="${(s.y1 + s.y2) / 2 - 7}" text-anchor="middle" fill="${u?.color || "#1c2124"}" style="${font}">${esc((u?.name || "?")[0])} ${s.metres.toFixed(1)} m</text>`);
         }
-        for (const n of t.drawing?.notes || []) {
+        for (const n of print.notes) {
             parts.push(`<circle cx="${n.x}" cy="${n.y}" r="4" fill="#1c2124" stroke="#f4f5f3" stroke-width="1.5"/><text x="${n.x + 8}" y="${n.y + 3}" fill="#1a1d21" style="${font}">${esc(n.text)}</text>`);
         }
-        parts.push(`<text x="10" y="${h - 8}" fill="#5b6167" style="font: 10px ui-monospace, Menlo, monospace">${esc(t.name)} · ${esc(t.address)} · 1 px ≈ 0.15 m · reference only, not a locate</text>`);
+        const scale = print.mPerPx ? ` · north up · 1 px ≈ ${print.mPerPx.toFixed(2)} m` : "";
+        parts.push(`<text x="10" y="${h - 8}" fill="#5b6167" style="font: 10px ui-monospace, Menlo, monospace">${esc(t.name)} · ${esc(t.address)}${scale} · reference only, not a locate</text>`);
         const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">${parts.join("")}</svg>`;
         try {
             downloadBlob(await svgToPng(svg, w, h), `${t.name}-locate.png`);
@@ -300,11 +303,12 @@ export class WorkOrdersScreen extends Component {
         const q = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
         const head = ["ticket", "address", "status", "dig_date", "source", "requested_by", "locator", "utilities", "parcel", "lld", "latitude", "longitude"];
         const row = [t.name, t.address, t.status, t.dig_date, t.source, t.requester, t.locator?.name || "", this.selUtilities.map((u) => u.name).join("; "), t.parcel, t.lld, t.latitude, t.longitude];
-        const lines = [head.join(","), row.map(q).join(","), "", "segment,utility,x1,y1,x2,y2,metres"];
-        (t.drawing?.segments || []).forEach((s, i) => lines.push([i + 1, byCode[s.util] || s.util, s.x1, s.y1, s.x2, s.y2, (Math.hypot(s.x2 - s.x1, s.y2 - s.y1) * 0.15).toFixed(1)].join(",")));
-        if (t.drawing?.notes?.length) {
-            lines.push("", "note,x,y,text");
-            t.drawing.notes.forEach((n) => lines.push([n.x, n.y, q(n.text)].join(",")));
+        const d = geoDrawing(t.drawing);
+        const lines = [head.join(","), row.map(q).join(","), "", "segment,utility,from_longitude,from_latitude,to_longitude,to_latitude,metres"];
+        d.segments.forEach((s, i) => lines.push([i + 1, byCode[s.util] || s.util, s.a[0], s.a[1], s.b[0], s.b[1], segMetres(s).toFixed(1)].join(",")));
+        if (d.notes.length) {
+            lines.push("", "note,longitude,latitude,text");
+            d.notes.forEach((n) => lines.push([n.at[0], n.at[1], q(n.text)].join(",")));
         }
         downloadText(lines.join("\n"), `${t.name}.csv`, "text/csv");
     }

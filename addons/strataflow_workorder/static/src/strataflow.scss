@@ -245,6 +245,35 @@ html.o_sf_page[data-sf-theme="dark"] .o_action_manager { background: #14181d; }
 .o_sf_map .maplibregl-ctrl-attrib { @include glass; border-radius: 999px; padding: 3px 10px; font: 600 10.5px var(--font); color: var(--muted); a { color: inherit; text-decoration: none; } }
 .o_sf_map .maplibregl-ctrl-attrib.maplibregl-compact:not(.maplibregl-compact-show) { padding: 0; width: 26px; height: 26px; }
 .o_sf_map .maplibregl-ctrl-attrib-button { background-color: transparent; }
+// drawing: the pin must not swallow the drag that starts on it
+.o_sf_map.is-drawing .o_sf_mk { pointer-events: none; }
+// the drawing hint sits bottom-left on a live map; bottom-right is the attribution's
+.o_sf_map .o_sf_canvas_hint { left: 10px; right: auto; bottom: 10px; }
+.o_sf_preview_scale { fill: var(--muted); }
+
+// ---- layer panel (core/layer_panel.js) -------------------------------------------------
+.o_sf_layers { position: absolute; top: 80px; right: 76px; bottom: 58px; width: 340px; z-index: 15;
+  // Dispatch keeps its ticket card in the bottom-right corner; the panel stops above it
+  // not `min(52%, 460px)`: libsass rejects mixed units in min()
+  &--above-card { bottom: auto; height: 52%; max-height: 460px; } }
+.o_sf_layers_head { display: flex; align-items: center; gap: 8px; padding: 14px 14px 8px; flex: none; }
+.o_sf_lgrp { min-height: 44px; cursor: pointer; &.is-open { background: var(--accent-soft); } &.is-open .o_sf_chev { transform: rotate(90deg); } }
+.o_sf_chev { flex: none; color: var(--faint); transition: transform .15s; }
+.o_sf_lrow { min-height: 40px; padding-left: 28px; cursor: default; &:hover { background: none; } }
+// one glyph per layer kind, as strataline draws them: a line, a dot, an outline, a fill, text
+.o_sf_swatch { width: 18px; flex: none; display: grid; place-items: center; --sw: var(--faint);
+  &::before { content: ""; display: block; width: 18px; height: 4px; border-radius: 2px; background: var(--sw); }
+  &--line_hp::before, &--line_bold::before { height: 5px; }
+  &--line_trench::before { background: repeating-linear-gradient(90deg, var(--sw) 0 5px, transparent 5px 8px); }
+  &--marker::before { width: 9px; height: 9px; border-radius: 50%; }
+  &--hollow::before { width: 10px; height: 10px; border-radius: 3px; background: none; border: 2px solid var(--sw); }
+  &--fill::before { width: 12px; height: 12px; border-radius: 3px; border: 0.5px solid var(--hairline); }
+  &--label::before { content: "Aa"; width: auto; height: auto; background: none; font: italic 700 11px var(--font); color: var(--sw); } }
+.o_sf_tgl { width: 38px; height: 23px; border-radius: 12px; background: var(--hairline); position: relative; flex: none; box-shadow: inset 0 1px 2px rgba(0,0,0,.15); transition: background .15s;
+  &::after { content: ""; position: absolute; top: 2px; left: 2px; width: 19px; height: 19px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.25); transition: left .15s; }
+  &.is-on { background: var(--accent); &::after { left: 17px; } }
+  &.is-mixed { background: color-mix(in srgb, var(--accent) 45%, var(--hairline)); &::after { left: 10px; } }
+  &:disabled { opacity: 1; cursor: default; } }
 .o_sf_pin { @include glass(var(--glass-80)); position: absolute; transform: translate(-50%, -50%); width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; z-index: 10; backdrop-filter: blur(20px) saturate(180%); -webkit-backdrop-filter: blur(20px) saturate(180%);
   .o_sf_dot { width: 9px; height: 9px; } &.is-emergency .o_sf_dot { box-shadow: 0 0 0 2.5px rgba(214,40,40,.35); }
   &.is-on { width: 34px; height: 34px; z-index: 11; box-shadow: var(--shadow-hi), 0 0 0 3px var(--accent-soft), 0 0 0 1.5px var(--accent); .o_sf_dot { width: 12px; height: 12px; } }

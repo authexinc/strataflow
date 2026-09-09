@@ -92,8 +92,8 @@
                             <span class="o_sf_spacer"/>
                             <span class="o_sf_note">desktop &amp; tablet only</span>
                         </div>
-                        <LocateCanvas utilities="state.data.utilities" drawing="sel.drawing" onChange.bind="onDrawingChange" t-key="sel.id"/>
-                        <p class="o_sf_note">Drawn lines and measurements save to the ticket as the locate print — no more marking up map screenshots. Locators get this same canvas in their view.</p>
+                        <LocateCanvas ticket="sel" utilities="state.data.utilities" drawing="sel.drawing" onChange.bind="onDrawingChange" t-key="sel.id"/>
+                        <p class="o_sf_note">Lines and notes are drawn on the live Strataline map and save to the ticket as the locate print, in real coordinates and real metres. Locators get this same canvas in their view.</p>
                     </div>
                 </div>
             </section>
@@ -134,41 +134,14 @@
         <button type="button" class="o_sf_chip" t-on-click="clear" t-att-disabled="!segments.length and !notes.length">Clear</button>
     </div>
     <div class="o_sf_canvas" t-att-class="{ 'is-satellite': state.basemap === 'satellite' }">
-        <svg t-if="state.basemap === 'satellite'" class="o_sf_canvas_map" viewBox="0 0 400 330" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-            <rect x="0" y="0" width="400" height="160" fill="#28301f" opacity="0.55"/><rect x="0" y="160" width="400" height="170" fill="#2b3327" opacity="0.5"/>
-            <g stroke="rgba(235,230,215,.22)" stroke-width="2.5" fill="none"><line x1="0" y1="85" x2="400" y2="85"/><line x1="0" y1="230" x2="400" y2="230"/><line x1="90" y1="0" x2="90" y2="330"/><line x1="230" y1="0" x2="230" y2="330"/><line x1="330" y1="0" x2="330" y2="330"/></g>
-            <rect x="105" y="108" width="70" height="90" rx="3" fill="#4a4f43"/><rect x="245" y="108" width="60" height="90" rx="3" fill="#4a4f43"/><rect x="105" y="250" width="90" height="60" rx="3" fill="#4a4f43"/>
-            <g stroke="rgba(190,165,235,.55)" stroke-width="1.2" stroke-dasharray="6 4" fill="none"><rect x="95" y="95" width="95" height="115"/><rect x="235" y="95" width="85" height="115"/><rect x="95" y="238" width="115" height="85"/></g>
-            <path d="M0 178 C 120 168, 260 192, 400 172" fill="none" stroke="#f2b705" stroke-width="2.5" stroke-dasharray="1 8" stroke-linecap="round" opacity="0.45"/><path d="M160 0 C 168 110, 156 220, 164 330" fill="none" stroke="#f5964a" stroke-width="2.5" opacity="0.45"/>
-        </svg>
-        <svg t-else="" class="o_sf_canvas_map" viewBox="0 0 400 330" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-            <g class="o_sf_bgmap_line" stroke-width="2"><line x1="0" y1="85" x2="400" y2="85"/><line x1="0" y1="230" x2="400" y2="230"/><line x1="90" y1="0" x2="90" y2="330"/><line x1="230" y1="0" x2="230" y2="330"/><line x1="330" y1="0" x2="330" y2="330"/></g>
-            <rect class="o_sf_bgmap_block" x="105" y="108" width="70" height="90" rx="4"/><rect class="o_sf_bgmap_block" x="245" y="108" width="60" height="90" rx="4"/><rect class="o_sf_bgmap_block" x="105" y="250" width="90" height="60" rx="4"/>
-            <g class="o_sf_cadastral" stroke-width="1.2" stroke-dasharray="6 4" fill="none"><rect x="95" y="95" width="95" height="115"/><rect x="235" y="95" width="85" height="115"/><rect x="95" y="238" width="115" height="85"/></g>
-            <path d="M0 178 C 120 168, 260 192, 400 172" fill="none" stroke="#f2b705" stroke-width="2.5" stroke-dasharray="1 8" stroke-linecap="round" opacity="0.6"/><path d="M160 0 C 168 110, 156 220, 164 330" fill="none" stroke="#e8721c" stroke-width="2.5" opacity="0.6"/>
-        </svg>
-        <span class="o_sf_bm" role="group" aria-label="Basemap">
-            <t t-foreach="basemaps" t-as="bm" t-key="bm.key">
-                <button type="button" class="o_sf_bm_btn" t-att-class="{ 'is-on': bm.on }" t-att-aria-pressed="bm.on" t-on-click="() => (this.state.basemap = bm.key)" t-esc="bm.label"/>
-            </t>
-        </span>
-        <svg class="o_sf_ink" t-ref="svg" t-on-pointerdown="onPointerDown" t-on-pointermove="onPointerMove" t-on-pointerup="onPointerUp" t-on-pointercancel="onPointerCancel" t-on-pointerleave="onPointerCancel" aria-label="Locate drawing surface" role="img">
-            <t t-foreach="segments" t-as="s" t-key="s_index">
-                <line t-att-x1="s.x1" t-att-y1="s.y1" t-att-x2="s.x2" t-att-y2="s.y2" t-att-stroke="color(s.util)" stroke-width="3" stroke-linecap="round" t-att-stroke-dasharray="dash(s, false)"/>
-                <text class="o_sf_ink_label" t-att-x="(s.x1 + s.x2) / 2" t-att-y="(s.y1 + s.y2) / 2 - 7" text-anchor="middle" t-att-fill="color(s.util)" t-esc="label(s)"/>
-            </t>
-            <t t-if="state.live">
-                <line t-att-x1="state.live.x1" t-att-y1="state.live.y1" t-att-x2="state.live.x2" t-att-y2="state.live.y2" t-att-stroke="color(state.live.util)" stroke-width="3" stroke-linecap="round" t-att-stroke-dasharray="dash(state.live, true)"/>
-                <text class="o_sf_ink_label" t-att-x="(state.live.x1 + state.live.x2) / 2" t-att-y="(state.live.y1 + state.live.y2) / 2 - 7" text-anchor="middle" t-att-fill="color(state.live.util)" t-esc="label(state.live)"/>
-            </t>
-            <t t-foreach="notes" t-as="n" t-key="n_index">
-                <circle t-att-cx="n.x" t-att-cy="n.y" r="4" class="o_sf_ink_pin"/><text class="o_sf_ink_label o_sf_ink_note" t-att-x="n.x + 8" t-att-y="n.y + 3" t-esc="n.text"/>
-            </t>
-        </svg>
-        <input t-if="state.noteDraft" t-ref="note" type="text" class="o_sf_note_input" aria-label="Note text" placeholder="e.g. hand dig only" t-model="state.noteDraft.text"
-               t-attf-style="left: {{ state.noteDraft.x + 8 }}px; top: {{ state.noteDraft.y - 12 }}px" t-on-keydown="onNoteKeydown" t-on-blur="commitNote"/>
-        <span class="o_sf_canvas_cap o_sf_mono">strataline · utilities layer · 1 px ≈ 0.15 m</span>
-        <span class="o_sf_canvas_hint o_sf_mono" aria-live="polite" t-esc="hint"/>
+        <StratalineMap markers="markers" basemap="state.basemap" zoom="18" padding="constructor.PADDING" drawing="props.drawing" tool="drawTool" utils="props.utilities" onDraw.bind="onDraw">
+            <span class="o_sf_bm" role="group" aria-label="Basemap">
+                <t t-foreach="basemaps" t-as="bm" t-key="bm.key">
+                    <button type="button" class="o_sf_bm_btn" t-att-class="{ 'is-on': bm.on }" t-att-aria-pressed="bm.on" t-on-click="() => (this.state.basemap = bm.key)" t-esc="bm.label"/>
+                </t>
+            </span>
+            <span class="o_sf_canvas_hint o_sf_mono" aria-live="polite" t-esc="hint"/>
+        </StratalineMap>
     </div>
 </t>
 
