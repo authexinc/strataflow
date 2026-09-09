@@ -1,0 +1,41 @@
+// Bootstrap variables for the stock views — prepended to `web._assets_backend_helpers`, so
+// it lands before Odoo's `bootstrap_overridden.scss` and Bootstrap's own `_variables.scss`,
+// both of which declare with `!default`. Palette, type and radii already come from
+// backend_variables.scss via Odoo's $o-* seam; this file only covers what Bootstrap sizes on
+// its own: control padding and the shapes of buttons, inputs, dropdowns and modals.
+
+$btn-padding-y: .45rem;
+$btn-padding-x: .95rem;
+$btn-font-weight: 700;
+$btn-border-radius: 12px;
+$btn-border-radius-sm: 9px;
+$btn-border-radius-lg: 14px;
+$btn-focus-width: 2px;
+
+$input-border-radius: 10px;
+$input-border-radius-sm: 8px;
+$form-select-border-radius: 10px;
+$form-check-input-border-radius: 6px;
+
+$dropdown-border-radius: 14px;
+$dropdown-border-width: 0.5px;
+$dropdown-padding-y: 6px;
+$dropdown-item-padding-y: 6px;
+$dropdown-item-padding-x: 12px;
+
+$modal-content-border-radius: 22px;
+$modal-content-border-width: 0.5px;
+$modal-header-padding: 18px 22px 12px;
+$modal-inner-padding: 22px;
+
+$popover-border-radius: 14px;
+$popover-border-width: 0.5px;
+$card-border-radius: 16px;
+$card-border-width: 0.5px;
+$badge-border-radius: 999px;
+$tooltip-border-radius: 8px;
+$nav-pills-border-radius: 999px;
+
+$box-shadow-sm: 0 1px 1px rgba(0, 0, 0, .04), 0 4px 14px rgba(0, 0, 0, .06);
+$box-shadow: 0 1px 1px rgba(0, 0, 0, .04), 0 4px 14px rgba(0, 0, 0, .06), 0 16px 40px rgba(0, 0, 0, .08);
+$box-shadow-lg: 0 1px 1px rgba(0, 0, 0, .05), 0 6px 20px rgba(0, 0, 0, .10), 0 24px 60px rgba(0, 0, 0, .14);

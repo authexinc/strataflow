@@ -1,0 +1,82 @@
+// Stock Odoo views in the Strataline language — the variable seam.
+//
+// Prepended to `web._assets_primary_variables` (see __manifest__.py), so it is compiled
+// before Odoo's own `primary_variables.scss` and every `*.variables.scss`, all of which
+// declare with `!default` and therefore keep what is set here. Consumed by Odoo's SCSS and
+// by Bootstrap's; the CSS custom properties Odoo emits from these (--NavBar-*, --body-bg,
+// --border-radius…) follow along for free.
+//
+// Tenant-wide on purpose (Stefan, 2026-09-09): tenancy is DB-per-tenant, so every internal
+// user of this database is the tenant's user; there is nobody to keep the stock look for.
+// Values mirror the light theme in tokens.scss. Odoo CE serves one colour scheme, so the
+// stock views are light only; the shell's dark toggle stays with the shell.
+
+// type — the faces are declared once by tokens.scss's @font-face rules in web.assets_backend
+$o-font-family-sans-serif: ('Public Sans', system-ui, -apple-system, 'Segoe UI', sans-serif);
+$o-font-family-monospace: ('JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace);
+$o-headings-font-family: $o-font-family-sans-serif;
+$o-font-size-base: o-to-rem(13px);
+$o-font-size-base-small: o-to-rem(12px);
+$o-font-size-base-smaller: o-to-rem(11px);
+$o-font-weight-medium: 600;
+$o-line-height-base: 1.4;
+
+// greys: the token ramp, --bg at the light end and --text at the dark end
+$o-gray-100: #f4f5f3;
+$o-gray-200: #e9ebe8;
+$o-gray-300: #d9dcd8;
+$o-gray-400: #b9bec2;
+$o-gray-500: #8b9294;
+$o-gray-600: #5b6167;
+$o-gray-700: #3a4045;
+$o-gray-800: #2a2f34;
+$o-gray-900: #1a1d21;
+
+// brand: accent is the action colour, ink is reserved for "you are here"
+$o-brand-odoo: #f4f5f3;
+$o-brand-primary: #0f6ed8;
+$o-brand-secondary: #5b6167;
+$o-action: #0f6ed8;
+$o-success: #0a9648;
+$o-info: #0b6f99;
+$o-warning: #8a6116;
+$o-danger: #b1332c;
+
+$o-main-text-color: #1a1d21;
+$o-main-headings-color: #1a1d21;
+$o-main-link-color: #0f6ed8;
+$o-main-color-muted: #5b6167;
+$o-component-active-color: #1a1d21;
+$o-component-active-bg: rgba(15, 110, 216, .09);
+$o-component-active-border: #0f6ed8;
+
+// surfaces: the sheet is a solid content surface (--logo-bg), the ground is --bg
+$o-view-background-color: #fbfcfa;
+$o-webclient-background-color: #f4f5f3;
+$o-webclient-color-scheme: light;
+$o-form-lightsecondary: rgba(120, 126, 134, .3);
+$o-input-border-required: #0f6ed8;
+
+// radii: pills and cards, not 4px corners
+$o-border-radius: o-to-rem(12px);
+$o-border-radius-sm: o-to-rem(8px);
+$o-border-radius-lg: o-to-rem(16px);
+
+// navbar: light ground, dark type — stock assumes the opposite
+$o-navbar-height: 48px;
+$o-navbar-border-bottom: 0.5px solid rgba(190, 193, 200, .7);
+$o-navbar-entry-color: #3a4045;
+$o-navbar-entry-color--hover: #1a1d21;
+$o-navbar-entry-bg--hover: rgba(28, 33, 36, .06);
+$o-navbar-entry-color--active: #1a1d21;
+$o-navbar-entry-bg--active: rgba(28, 33, 36, .11);
+$o-navbar-entry-border-radius: 999px;
+$o-navbar-entry-margin-h: 2px;
+$o-navbar-brand-color: #1a1d21;
+$o-navbar-badge-bg: #0f6ed8;
+$o-navbar-badge-color: #fff;
+
+// control panel and kanban sit on the ground, not on a white band
+$o-control-panel-background-color: transparent;
+$o-control-panel-border-bottom: 0 none;
+$o-kanban-background: #f4f5f3;

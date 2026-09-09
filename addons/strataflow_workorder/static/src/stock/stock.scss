@@ -1,0 +1,83 @@
+// Stock Odoo views in the Strataline language — the material.
+//
+// backend_variables.scss and backend_bootstrap.scss (static/scss) set the palette, type and
+// radii through Odoo's and Bootstrap's variable seams; this file adds what variables cannot
+// express: glass on the functional layer (navbar, control panel, dialogs, menus, toasts) and
+// solid surfaces for the content layer (form sheet, list, kanban cards) — Guideline, Liquid
+// Glass: "Don't use Liquid Glass in the content layer."
+//
+// Scope rule: never a bare `.o_web_client` or `body` rule beyond the token block. The six
+// fullscreen screens live in the same web client and own their look under `.o_sf`; every
+// selector here names a stock component that those screens never render (the navbar does
+// not even exist in the DOM for a fullscreen action). The token block itself is harmless
+// there: `.o_sf` redeclares every token it uses, for both themes.
+//
+// Tenant-wide, light only (Stefan, 2026-09-09) — see backend_variables.scss.
+
+.o_web_client { @include tokens-light; }
+
+// ---- functional layer -----------------------------------------------------------
+.o_main_navbar {
+  @include glass(var(--glass-72));
+  border: 0; border-bottom: 0.5px solid var(--edge); box-shadow: none;
+  .o_menu_brand { font-weight: 800; letter-spacing: -.01em; }
+  .o_nav_entry, .o_menu_sections > .dropdown > .dropdown-toggle { font-weight: 600; }
+}
+
+.o_control_panel {
+  background: transparent; border-bottom: 0;
+  .o_breadcrumb { font-weight: 600; color: var(--muted); .active, .o_last_breadcrumb_item { color: var(--text); font-weight: 800; letter-spacing: -.01em; } }
+  .o_searchview { @include glass; border-radius: 999px; min-height: 38px; }
+}
+
+.o_web_client {
+  .btn { transition: background-color .12s ease, border-color .12s ease; }
+  .btn-primary { background: var(--accent); border-color: var(--accent); color: var(--accent-text); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .18);
+    &:hover, &:focus-visible { background: var(--accent-hover); border-color: var(--accent-hover); color: var(--accent-text); }
+    &:active, &.active, &.show { background: var(--accent-active); border-color: var(--accent-active); color: var(--accent-text); } }
+  .btn-secondary { background: var(--chip-bg); border: 0.5px solid var(--hairline); color: var(--text-2);
+    &:hover, &:focus-visible { background: var(--chip-bg-hi); border-color: var(--hairline); color: var(--text); }
+    &:active, &.active, &.show { background: var(--chip-bg-hi); color: var(--text); } }
+  .btn-link { color: var(--accent); font-weight: 600; }
+}
+
+.o-overlay-container, .o_web_client {
+  .o-dropdown--menu, .dropdown-menu { @include glass(var(--glass-80)); border-radius: 14px; box-shadow: var(--shadow-hi); padding: 6px;
+    .dropdown-item { border-radius: 9px; font-weight: 500; &:hover, &:focus, &.focus { background: var(--chip-bg); color: var(--text); } &.active, &.selected { background: var(--accent-soft); color: var(--text); } } }
+  .o_popover { @include glass(var(--glass-80)); border-radius: 14px; box-shadow: var(--shadow-hi); }
+}
+
+.modal { .modal-content { @include glass(var(--glass-80)); box-shadow: var(--shadow-hi); }
+  .modal-header { border-bottom: 0.5px solid var(--hairline-soft); .modal-title { font-weight: 800; letter-spacing: -.01em; } }
+  .modal-footer { border-top: 0.5px solid var(--hairline-soft); } }
+
+.o_notification { @include glass(var(--glass-80)); border-radius: 16px; box-shadow: var(--shadow-hi); }
+
+// ---- content layer ----------------------------------------------------------------
+.o_form_view {
+  .o_form_sheet_bg { background: transparent; }
+  .o_form_sheet { background: var(--logo-bg); border: 0.5px solid var(--edge); border-radius: 22px; box-shadow: var(--shadow); }
+  .o_form_statusbar { background: transparent; border-bottom: 0; }
+  .oe_title h1, .oe_title .o_field_widget input { font-weight: 800; letter-spacing: -.01em; }
+  .o_form_label { color: var(--muted); font-weight: 600; }
+  .o_horizontal_separator { @include eyebrow; margin-bottom: 8px; }
+  .o_notebook_headers .nav-link { border-radius: 999px 999px 0 0; font-weight: 600; }
+  .oe_button_box .oe_stat_button { border-radius: 12px; background: var(--chip-bg); border: 0.5px solid var(--hairline); color: var(--text-2); &:hover { background: var(--chip-bg-hi); } }
+}
+.o_field_widget .o_input, .o_input { border-bottom-color: var(--hairline); &:focus, &:focus-within { border-bottom-color: var(--accent); } }
+.o-mail-Form-chatter { background: transparent; border-left: 0.5px solid var(--hairline-soft); }
+.o-mail-Chatter { background: transparent; }
+
+.o_list_view .o_list_renderer { background: var(--logo-bg); border: 0.5px solid var(--edge); border-radius: 22px; box-shadow: var(--shadow);
+  .o_list_table thead th { @include eyebrow; background: var(--logo-bg); border-bottom: 0.5px solid var(--hairline); }
+  .o_list_table .o_group_header { background: var(--chip-bg); font-weight: 700; }
+  .o_data_row.o_data_row_selected > td { background: var(--accent-soft); } }
+
+.o_kanban_view {
+  .o_kanban_group { background: transparent; }
+  .o_kanban_header .o_column_title { font-weight: 800; letter-spacing: -.01em; }
+  .o_kanban_record { background: var(--logo-bg); border: 0.5px solid var(--edge); border-radius: 16px; box-shadow: var(--shadow); &:hover { box-shadow: var(--shadow-hi); } }
+  .o_kanban_quick_create { border-radius: 16px; }
+}
+
+.o_settings_container .o_setting_box { border-radius: 16px; }

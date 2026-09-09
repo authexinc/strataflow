@@ -22,6 +22,16 @@
         'demo/strataflow_workorder_demo.xml',
     ],
     'assets': {
+        # the stock views in the Strataline language (tenant-wide, light): prepended so they
+        # land ahead of Odoo's and Bootstrap's `!default` declarations — appended they would
+        # come after and change nothing. The material rules live in static/src/stock/stock.scss,
+        # swept into web.assets_backend by the glob below.
+        'web._assets_primary_variables': [
+            ('prepend', 'strataflow_workorder/static/scss/backend_variables.scss'),
+        ],
+        'web._assets_backend_helpers': [
+            ('prepend', 'strataflow_workorder/static/scss/backend_bootstrap.scss'),
+        ],
         'web.assets_backend': [
             # tokens and mixins first: Odoo forbids @import between asset files, so every
             # bundle that uses them has to list this file ahead of its consumers
