@@ -3,6 +3,71 @@
 Newest first. Read the last 3–5 entries at session start. Failures are recorded on purpose; a
 workaround is labelled as one so it does not become permanent by accident.
 
+### 2026-09-08 — Login fixed for real: `home` is a stock client-action tag. Root paths reverted, branch pushed
+
+**FIXED, and seen by Stefan in a browser: "works on incognito now".** Four attempts across two
+sessions; the first three fixed the redirect, which was never wrong. Trail, so the pattern is not
+repeated on the next path we add.
+
+**Decisions first (Stefan, start of session):** revert the root-path serving to `/odoo/<path>` and
+do the clean URL in nginx at the tenant edge; a zone is a `strataflow.zone` model matched by
+postal-code prefix; the USP feed stays deferred; after the login fix, push, queue the
+internal-screen revamp, wrap. All locked in `ARCHITECTURE.md`, retired from `BACKLOG.md`
+(`b25f26c7de9`, `1f2a8ff482c`).
+
+**The revert (`b13cadcd239`).** `SCREEN_PATHS` and the `strataflow_screen` route out of
+`controllers/home.py`, `static/src/core/router_paths.js` deleted, `HOME_URL` constant, the
+`_login_redirect` / placeholder logic from `fd5a38aabe5` and `e592e9946ea` kept. HTTP-verified
+with `scratchpad/logincheck.py`; the served bundle checked for no router patch and all six static
+paths (`scratchpad/bundlecheck.py`). **Still landed in a loop** — see below. The revert stands as
+the decision (the router's `/odoo` guard at `router.js:325` is real), but it was not the fix.
+
+**What "nothing happens" was, in the normal Chrome profile.** Stefan typed admin/admin in the
+automation tab (he types, I read); a probe on the form showed a full navigation back to
+`/web/login?redirect=%2Fodoo%2Fhome%3F`. His cookie panel showed **two `session_id` cookies**:
+Odoo's own (Path `/`, HttpOnly) and one with Path `/web`, no HttpOnly, SameSite Lax, session
+expiry — the signature of a `document.cookie` write, i.e. last session's cookie-injection recipe.
+Chrome sends the longer-path cookie first, werkzeug takes the first, so every `/web/*` request
+carried a different session from every `/odoo/*` request. Login authenticated one session; the
+web client's RPCs ran under the other; `SessionExpired`; back to login. Later it degenerated into
+a pure server-side loop, `/web/login?redirect=/odoo/home?` (signed in) ↔ `/odoo/home` (signed
+out), `ERR_TOO_MANY_REDIRECTS`, and a "Session expired (invalid CSRF token)" when the form was
+rendered under one session and posted under the other. **Not our code; fix is deleting the
+`/web` cookie.** Never `document.cookie = "session_id=…"` on `localhost` again; if a cookie must
+be planted, use the `127.0.0.1` origin and delete it after.
+
+**What the incognito loop was — the actual bug.** Restarted the server with request logging
+(`--log-level=info --log-handler=werkzeug:INFO`) and the cycle was plain in ~3 s periods:
+`GET /odoo/home 200` → translations → `/mail/data` → `POST /web/webclient/version_info` →
+`GET / 303` → repeat. `version_info` is called from exactly one place that then navigates:
+stock's **client action with the tag `home`** (`web/static/src/webclient/actions/client_actions.js:63`),
+which polls `version_info` and then `browser.location.assign("/")`. The action service resolves a
+URL's action by registry **tag before path** (`action_service.js:527`,
+`actionRegistry.contains(state.action)` ahead of the `.find((a) => a[1].path === state.action)`
+fallback), so `/odoo/home` ran stock's action, which went to `/`, which our `index` sent back to
+`/odoo/home`. This is also why the pre-static-path version never worked and why last session's
+`/home` root path resolved to nonsense: the destination was the bug all along, never the redirect.
+
+**Fix (`e5453e0db49`):** the Home screen's path is `desk` — changed in the three places that must
+agree (`views/strataflow_actions.xml` `path`, `screens/home.js` `static path`, `HOME_URL` in
+`controllers/home.py`). Name and tag unchanged. The other five paths were checked against all 49
+stock tags (`registry.category("actions").add("…")` over `addons/*/static/src`): only `home`
+collided.
+
+**Failures this session, for the record.**
+- My first collision scan grepped `actionRegistry.add(` and reported "free: home". Wrong — stock
+  registers through `registry.category("actions").add(`. A negative from a grep is only as good
+  as the pattern; I had already read the registering line and still let the grep contradict it.
+- Tried the handoff's cookie-planting recipe to get an authenticated automation tab: blocked by
+  the extension (`[BLOCKED: Cookie/query string data]`). The tab is still useful as a place where
+  Stefan types and I read a probe; it cannot read or write cookies.
+- One heredoc-based edit of `home.py` asserted on a comment string and silently left `HOME_URL`
+  at `/odoo/home` while XML/JS/DB were already on `desk`; caught by rerunning `logincheck.py`
+  and seeing `/odoo/home` in the output. Rerun the check after every edit, not after the batch.
+
+**Pushed:** `feat/strataflow-workorder` is at `1f2a8ff482c`, in sync with origin (22 commits went
+up). Not merged into `19.0`.
+
 ### 2026-09-08 — Login still lands in Discuss. Three fixes, three misses, handed over unresolved
 
 **STILL BROKEN AT HANDOFF.** Stefan reported it three times and it is still wrong. Nothing below
