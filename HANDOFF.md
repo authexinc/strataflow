@@ -1,128 +1,149 @@
-# Handoff — 2026-09-08 14:55
+# Handoff — 2026-09-08 (evening)
 
 ## Current state
 `addons/strataflow_workorder` is the only custom module on this Odoo 19 CE fork. Six fullscreen OWL screens
 (Home, Dispatch, Work Orders, CRM, Invoices, Locator) render in the Strataline glass shell, backed by stock
 `crm.lead` and `account.move`, with tickets as `mail.thread` records. Maps are still faux SVGs.
 
-This session was **not** feature work: Stefan handed over a list of 17 items and asked for them one by one.
-Ten are done, one is done-but-unverified, one was answered and decided, and five are queued. The durable
-list now lives in **`BACKLOG.md`** — new this session, because `HANDOFF.md` is overwritten every wrap and a
-queue parked in its "Next steps" dies with it. `CLAUDE.md`'s session protocol records the convention.
+Since the last handoff, four things landed and one decision was locked:
 
-Nothing is known broken. Four of the fixes were real defects, not polish:
-- **Two dead guards in the Locator.** `sel.done` was read by the "Start locate drawing" and "Confirm locate"
-  buttons, but `done` is computed in the `stops` getter, which maps *copies*; `sel` returns the raw ticket, so
-  both guards read `undefined` and never disabled anything. Replaced by a `selDone` getter, and a finished
-  ticket now renders a completed view instead of the drawing tools.
-- **Dispatch offered an assignment it could not make.** The button was correctly disabled; the crew rows
-  around it were not, so an invoiced ticket let you pick a locator and then promised "Assign to S. Braun"
-  behind a permanently grey button.
-- **A CSS specificity bug ate the Home greeting's spacing.** `.o_sf_home_h1`'s `margin: 0 0 26px` computed to
-  `0` because the reset on `strataflow.scss:80` compiles to `.o_sf h1` — (0,1,1) beats the component class.
-- **The primary CTA and the selected nav item were the same pill in both themes.** Both used the `ink-btn`
-  mixin. Ink now means navigation; primary actions take the accent.
+- **A "+ New ticket" button** on Work Orders and Dispatch — the shell had no create path for a ticket at all.
+- **The sign-in page** in the glass language, with a live map background. Passkeys turned out to already
+  work (`auth_passkey` is `auto_install`); the button just needed skinning.
+- **`/odoo` is gone from the product URLs.** `/dispatch`, `/workorders`, `/pipeline`, `/invoices`,
+  `/locator`, `/home`, and `/` redirects to `/home`.
+- **Screen switching was rebuilt twice** — I made it materially worse first (see Landmines) before it
+  ended up genuinely responsive.
+- **Auto-assign is locked**: zone first, workload as the tiebreak, no locator GPS.
+
+Stefan reviewed the result in a normal browser tab and signed off ("Now we're talking").
 
 ## What I was doing when this ended
-Nothing in flight; working tree clean. I had just asked Stefan three questions, he answered one
-(ticket creation) and said to put the rest in the backlog and wrap. **Two questions are still open and are
-the first thing to raise next session:** the USP feed hookup, and what Auto-assign should do.
+Nothing in flight; working tree clean. The session ended on a `/wrap` right after the last transition fix
+was verified and committed.
 
 ## Repo state
-- Branch `feat/strataflow-workorder`, working tree clean, **pushed** to
-  `origin/feat/strataflow-workorder` (7 commits this session, through
-  `980a0d01c9f [DOC] strataflow: session wrap`).
-- This session's commits, oldest first: `9d7377398cc` (BACKLOG.md added), `e4141c08975` (five fixes),
-  `92227039d6e` (ink/accent split + motion), `2306d5045a7` (skeleton fade), `a53ab0cf4e3` (ticket-creation
-  baseline), `18f11b73c14` (decision locked).
+- Branch `feat/strataflow-workorder`, working tree clean, **9 commits ahead of
+  `origin/feat/strataflow-workorder` — not pushed.**
+- This session's commits, oldest first:
+  - `ff6cbb6f16c` [DOC] lock the auto-assign rule, park the USP feed
+  - `6549ae14d38` [ADD] "+ New ticket" button on Work Orders and Dispatch
+  - `3c43ffe7e35` [ADD] sign-in page in the Strataline glass language
+  - `44aa458433a` [IMP] readable URLs, and Home at the bare domain
+  - `cd7d7390283` [FIX] cross-fade between screens instead of cutting  ← **this one was a regression**
+  - `d32fe2f6cfc` [IMP] drop /odoo from the product URLs
+  - `c826ab246d2` [IMP] richer login background, and drop Odoo's login footer
+  - `95868cd255a` [FIX] make screen changes respond instantly again  ← reverts the guts of `cd7d7390283`
+  - `515bae96c1c` [FIX] stop the top bar fading in on every screen load
 - Not merged into `19.0`. Merge is Stefan's call.
-- `~/map-sys` is on `feat/search-key-scope`, in sync with its origin. The long-dangling **uncommitted
-  `README.md` edit is resolved** — committed as `bccec7a` and pushed. It was a correct manage_users →
-  manage_access cleanup, verified against the code (`manage_access.py`'s subparsers really are
-  revoke/unrevoke/list/approve/unapprove/key) rather than taken on trust; I also fixed the one stale clause
-  it left behind, which still claimed `users.json` "remains for dev fallback only" when the script was
-  removed 2026-09-03, `data/users.json` was deleted from the VPS, and `serve.py` never references it.
-  That branch still awaits Stefan's review; pushing it does not deploy (that repo deploys on `main`).
+- `~/map-sys` is on `feat/search-key-scope`, in sync with its origin, still awaiting Stefan's review.
+  Untouched this session.
 - Still no automated tests for this module.
 
 ## Next steps
 `BACKLOG.md` is the queue. In the order I would take them:
-1. **Answer the two open questions** in `BACKLOG.md` › "Open questions". Auto-assign is blocked on one thing:
-   whether real locator GPS is in scope, since `screens/dispatch.js:95` `crewAnchors` infers a locator's
-   position from their current ticket rather than a fix.
-2. **Verify the skeleton fade in a browser** — see Landmines; it is the one thing shipped unverified.
-3. **Add the "+ New ticket" button** (decided, not built). Mirror `screens/crm.js` `newLead` and
-   `screens/invoices.js` `newInvoice`; required fields are `address` and `dig_date`; leave `source` at its
-   `manual` default.
-4. **README** (`BACKLOG.md` › Platform) — the one fully unblocked item that needs no browser.
-5. **Odoo-free URLs** and **the internal-screen revamp** — both large; scope before touching. The revamp
-   should also settle `.o_sf_btn--primary`, which still uses the ink mixin.
-6. Still outstanding from before this session: MapLibre swap (`core/shell.xml` `FauxMap`,
-   `screens/workorders.xml` ticket canvas), a stored sort key on `strataflow.workorder`, tests for
-   `action_invoice_closed` and `action_complete_locate`, and tenancy Phase 2.
+1. **Push this branch** — 9 commits sitting local.
+2. **Answer the USP feed question** (`BACKLOG.md` › Open questions). It now carries its dependent
+   sub-question: under DB-per-tenant, does ingest run as an `ir.cron` per tenant DB, or as one
+   strataline-side service writing in over JSON-RPC? Not answerable before the transport is known.
+3. **Build zone-first auto-assign.** Decided, not built. One sub-decision first: how a zone is
+   represented and how a ticket gets one — four options are written out in `BACKLOG.md` so they do not
+   need re-deriving.
+4. **`README.md`** — the one fully unblocked item that needs no browser.
+5. **The internal-screen revamp** — large; scope before touching. Should settle `.o_sf_btn--primary`,
+   which still uses the ink mixin.
+6. Still outstanding from before: MapLibre swap (`core/shell.xml` `FauxMap`, `screens/workorders.xml`
+   ticket canvas), a stored sort key on `strataflow.workorder`, tests for `action_invoice_closed` and
+   `action_complete_locate`, and tenancy Phase 2.
 
 ## Landmines
-- **The automation tab stopped mounting the web client mid-session, and this is the big one.** Symptom:
-  `.o_web_client` present, `document.body.innerHTML` 24 characters, console showing only
-  `Error: Access to storage is not allowed from this context`. Odoo's boot needs `localStorage` and the page
-  context is denied it. **Earlier in the same session the workaround below worked repeatedly**, then stopped.
-  Verified it is *not* our code: stashing the entire skeleton change and restarting reproduced the identical
-  failure. Retry the recipe, but budget for it failing and fall back to JSON-RPC.
-- **The workaround that did work for most of the session:** navigate to `/web/login` first (this primes
-  storage for the origin), inject a `session_id` cookie obtained over JSON-RPC via
-  `document.cookie = "session_id=…; path=/; SameSite=Lax"`, then navigate to the action route. Note the probe
-  is misleading — `localStorage` from the extension's injected context reports `ok` while the *page's own*
-  context is still denied, so a passing probe does not mean Odoo will boot.
-- **First screenshot after any navigation comes back blank** even when the DOM is fully painted. One scroll
-  tick or a second capture fixes it. Probe the DOM before believing a blank screenshot.
+- **Do not "smooth" an async swap with `document.startViewTransition`.** I did, in `cd7d7390283`. It
+  snapshots the outgoing screen and holds that frame frozen until its callback resolves, so every screen
+  change sat on a dead picture for as long as the next action took to mount — no skeleton, nothing.
+  Stefan's words: "you did a horrible ux job with the loading". Reverted in `95868cd255a`. Feedback
+  first, decoration second.
+- **The data was never slow.** `get_board_data` answers in 26 ms with the demo set. If a screen feels
+  slow, measure before theorising — the three real causes were an optimistic-state bug, an animation on
+  chrome that never changes, and Odoo's own white showing between unmount and mount.
+- **The skeleton must not fake the chrome.** It used to draw its own top bar at `z-index: 999` over the
+  real one and then fade out, which read as the whole top of the app fading in on every load. The real
+  bar and footer now sit at `z-index: 1000` (`strataflow.scss:86`) above the skeleton. Anything added to
+  the shell that needs no data belongs above the skeleton, not boned out inside it.
+- **`holdPageGround` (`core/shell.js:29`) uses literal hex, not tokens, on purpose.** It paints
+  `<html>` to cover the gap between actions; the token block is scoped to `.o_sf`, and hoisting it to
+  `<html>` would leak Strataflow's tokens onto stock Odoo pages. The values are each theme's `--bg` and
+  must be kept in step with them by hand.
+- **The clean URLs have two halves that must agree.** `controllers/home.py:9` `SCREEN_PATHS` and
+  `static/src/core/router_paths.js` carry the same list, and each entry must match the `path` on that
+  screen's client action. Adding a screen means all three.
+- **Odoo forbids `@import` between asset files.** `Local import '../scss/tokens' is forbidden for
+  security reasons`, followed by `Error: no mixin named tokens-light`. Shared scss must be *listed* in
+  every bundle that needs it, before its consumers — see `static/scss/tokens.scss` in `__manifest__.py`.
+- **Login assets live outside `static/src` deliberately.** The backend globs are
+  `static/src/**/*.{scss,js,xml}`; anything for the login page under there would be swept into the
+  backend bundle and restyle every stock form control in the app.
+- **The automation tab cannot boot Odoo's web client, and it is not our code.** Stock Odoo fails
+  identically — `/odoo/settings` gives a 108-character body with `.o_web_client` present, console showing
+  only `Error: Access to storage is not allowed from this context`. The extension races Odoo's boot for
+  storage. After the failed boot the page's own context reports `localStorage` fine and
+  `hasStorageAccess()` true, so **the probe misleads**. Verify over JSON-RPC and by reading the served
+  bundles, and hand visuals to Stefan.
+- **The old cookie-injection recipe is dead in Odoo 19** — `session_id` is `httponly=True`
+  (`odoo/http.py:2528`) with rotation (`odoo/http.py:2180`), so `document.cookie` cannot overwrite it,
+  and the recipe's own first step (visit `/web/login`) is what plants the blocking cookie. Symptom:
+  `odoo.http.SessionExpiredException` from a session that works over curl. **Auth that does work:** load
+  `http://127.0.0.1:8069/web/static/img/favicon.ico` (static assets set no cookie, and 127.0.0.1 is a
+  fresh origin), plant a curl-minted `session_id` with `document.cookie`, then navigate. Gets you
+  authenticated; does not get you past the storage race.
+- **WebAuthn is origin-bound.** Passkeys enrolled on localhost will not work on
+  `<slug>.strataflow.co`, and every tenant subdomain is its own origin — a user with two workspaces
+  enrols twice.
 - **`post_init_hook` runs on install, never on `-u`.** And `data/strataflow_crm_account_data.xml` is
-  `noupdate="1"`, so a data-record override applies on a fresh install and silently does nothing on update.
-  Changing anything already present in a tenant database needs a migration script.
-- **Zero-specificity resets:** `strataflow.scss` wraps its element resets in `:where()` *on purpose* (see the
-  comment above them) so single-class component rules win. `h1` had been left out, which silently killed the
-  Home greeting's margin and `.o_sf_kv`'s `margin-top` on three `<dl>`s. If a component margin looks ignored,
-  check that reset first.
-- **OWL branch chains:** lifting a block out of a `t-if`/`t-elif` chain and re-inserting it creates a *second*
-  independent group, so two branches render at once. The Locator's stage chain must stay one chain
-  (`t-if` selDone → `t-elif` map → `t-elif` draw → `t-else` review).
-- **ReportLab writes `/Filter [/ASCII85Decode /FlateDecode]`.** Raw `zlib.decompress` over the PDF streams
-  yields nothing and will happily "prove" whatever you hoped — an empty extraction made a removed string look
-  absent. Use a real parser (`PyPDF2` is in the venv).
-- `--log-level=warn` suppresses the "Modules loaded" line, so an `until grep` wait on it never returns. Poll
-  HTTP instead.
-- Public Sans sets ~6.5% wider than the system stack it replaced. Fixed-width panels truncate sooner. Still
-  **analysis, not observation**.
-- A strataline key must pass as `?key=` from the browser; a cross-origin `X-Api-Key` header needs a CORS
-  preflight `serve.py` does not answer. Server-side the header is fine.
-- Search results are clipped to the key's bbox, so a wrong bbox gives an empty search, not an error.
-- `--with-demo` also installs crm/account demo data (Acme Corporation etc.); stat numbers include it.
-- Odoo 19 renames: `res.groups.privilege_id`, `crm.lead.recurring_plan`, luxon is a global, Sass swallows CSS
-  `min()`. Grep the stock model before using a field name from memory.
-- `get_board_data` (`models/strataflow_workorder.py:166`) returns every ticket; needs a domain/limit before
-  real volumes.
+  `noupdate="1"`. Changing anything already present in a tenant database needs a migration script.
+- **Action `path` is unique across every action table.** `ir_actions` is a Postgres inheritance parent,
+  so the unique index cannot enforce it and `_check_path` re-checks by hand. `crm` and `work-orders` are
+  already taken by stock addons — hence `pipeline` and `workorders`.
+- **Zero-specificity resets:** `strataflow.scss` wraps element resets in `:where()` on purpose. If a
+  component margin looks ignored, check that reset first.
+- **OWL branch chains:** lifting a block out of a `t-if`/`t-elif` chain and re-inserting it creates a
+  second independent group, so two branches render at once. The Locator's stage chain must stay one
+  chain.
+- **ReportLab writes `/Filter [/ASCII85Decode /FlateDecode]`.** Raw `zlib.decompress` over the PDF
+  streams yields nothing and will happily "prove" whatever you hoped. Use `PyPDF2`, which is in the venv.
+- `--log-level=warn` suppresses the "Modules loaded" line, so an `until grep` wait on it never returns.
+  Poll HTTP instead.
+- Odoo 19 renames: `res.groups.privilege_id`, `crm.lead.recurring_plan`, luxon is a global, Sass
+  swallows CSS `min()`. Grep the stock model before using a field name from memory.
+- `get_board_data` (`models/strataflow_workorder.py:166`) returns every ticket; needs a domain/limit
+  before real volumes.
 
 ## Environment / setup
 - Read `CLAUDE.md` (protocol), `BACKLOG.md` (the queue), then `ARCHITECTURE.md` (locked decisions).
 - `~/strataflow/.venv` (gitignored). Postgres via Homebrew; DB `strataflow_dev` with demo.
 - Run: `.venv/bin/python odoo-bin -d strataflow_dev --db_host=localhost --addons-path=addons --dev=xml --http-port=8069 --log-level=warn`
-  plus `-u strataflow_workorder` after any Python/XML/JS/SCSS change — **SCSS changes need the restart**, a
-  plain reload serves a stale bundle. Fresh DB: `dropdb strataflow_dev`, then the same command with
-  `-i strataflow_workorder --with-demo` (~4 min). A server may still be running on 8069 from this session.
+  plus `-u strataflow_workorder` after any Python/XML/JS/SCSS change — **SCSS changes need the restart**.
+  Fresh DB: `dropdb strataflow_dev`, then the same command with `-i strataflow_workorder --with-demo`
+  (~4 min). **A server is still running on 8069 from this session.**
+- Screens are now at `/home`, `/dispatch`, `/workorders`, `/pipeline`, `/invoices`, `/locator`; `/`
+  redirects to `/home`. `/odoo/<same path>` and the old `/odoo/action-<xmlid>` URLs still resolve, and
+  `/odoo` still reaches the stock backend — that last one is what the shell's avatar button depends on.
 - Verifying without a browser: `POST /web/session/authenticate` (admin/admin on the dev DB) and drive
-  `call_kw` from a small script. The agent does not type passwords into the browser.
-- Screens at `/odoo/action-strataflow_workorder.action_strataflow_<home|dispatch|workorders|crm|invoices|locator>`.
+  `call_kw` from a small script. The agent does not type passwords into the browser. The URL checks from
+  this session are in the scratchpad as `urlcheck2.py` — worth re-creating in the repo if they are going
+  to be run again.
 - Git identity is repo-local `Stefan Djordjevic <dev@authex.co>`; pushes use the `authexinc` GitHub login.
 
 ## Open decisions
-Two, both in `BACKLOG.md` › "Open questions", both needed before the dependent work can be planned:
-1. **How do we hook into the USP feed?** Transport, record shape, auth, cadence, and whether it lands in Odoo
-   directly or through the strataline API. Until it exists, `source` is always `manual`.
-2. **What should "Auto-assign" actually do?** The options put to Stefan, verbatim in the backlog: keep the
-   current-ticket approximation; add real locator GPS (needs a position source, a field, and a staff-tracking
-   privacy call); assign by workload or zone/skill instead of distance; or leave it stubbed.
+1. **How do we hook into the USP feed?** Transport, record shape, auth, cadence — and then whether ingest
+   runs per tenant DB or through one strataline-side service. Both halves in `BACKLOG.md`. Until it
+   exists, `source` is always `manual`.
+2. **How is a zone represented, and how does a ticket get one?** Blocks the auto-assign build. Four
+   options are written out verbatim in `BACKLOG.md` (a `strataflow.zone` model by postal prefix; the same
+   by ATS township/range off `lld`; a bbox per zone; a plain Char both sides).
 
-Answered this session and now locked in `ARCHITECTURE.md`: **tickets get a "+ New ticket" button in the
-shell**, matching CRM and Invoices.
+Answered this session and now locked in `ARCHITECTURE.md`: **Auto-assign is zone-first with workload as
+the tiebreak, and locator GPS is out of scope.** Also settled by Stefan in passing: the login page drops
+"Manage Databases" and "Powered by Odoo".
 
-Also still waiting on him from before: the two merges (`feat/search-key-scope` in `~/map-sys`, and this
-branch into `19.0`).
+Still waiting on him from before: the two merges (`feat/search-key-scope` in `~/map-sys`, and this branch
+into `19.0`), plus the push of this branch.

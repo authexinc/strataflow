@@ -3,6 +3,175 @@
 Newest first. Read the last 3–5 entries at session start. Failures are recorded on purpose; a
 workaround is labelled as one so it does not become permanent by accident.
 
+### 2026-09-08 — Screen changes: made worse, then actually fixed
+
+**FAILURE, and the user caught it: "you did a horrible ux job with the loading".** The previous
+entry's cross-fade used `document.startViewTransition` around the `doAction` that swaps one
+client action for another. That API snapshots the outgoing screen and holds that frame frozen
+until its callback resolves — so every screen change sat on a dead picture for as long as the
+next action took to mount. No skeleton, no spinner, no sign the click had landed. It converted
+a cut into several seconds of frozen UI, which is worse in every way. Reverted in
+`95868cd255a`. The guideline names it exactly — *Loading*: "Show something as soon as possible.
+If you make people wait for loading to complete before displaying anything, they can interpret
+the lack of content as a problem."
+
+**Measure before theorising.** The instinct was that the payload was slow. It is not:
+`get_board_data` answers in **26 ms** with the demo set (8.8 KB), `get_home_stats` in 18 ms.
+Three unrelated things were making the swap feel broken, and none was the data:
+
+1. **The nav pill did not move on click.** `is-on` was bound to `props.active`, which belongs to
+   the screen on its way *out*, so the highlight only moved once the next screen had mounted.
+   The click looked like it had done nothing at all. `shell.js:113` now exposes an `activeKey`
+   getter over an optimistic `pending` key set in `goNav` (`shell.js:124`) and reset if the
+   action rejects.
+2. **The whole shell faded in from zero.** Top bar, background map and glow are byte-identical
+   either side of a swap, so animating them made the parts that never change blink — the most
+   visible thing on screen. Only the content region fades now, 160 ms, via
+   `.o_sf > :not(.o_sf_topbar):not(.o_sf_foot):not(.o_sf_skeleton):not(.o_sf_glow):not(.o_sf_bgmap)`.
+3. **Nothing of ours was on the page during the swap.** Odoo unmounts the old action before
+   mounting the next, and its own white showed through — the "blank flash" the user described,
+   which predates all of this. `holdPageGround` (`shell.js:29`) paints the shell's ground on
+   `<html>`, released on a 600 ms timer that the next screen's mount cancels, so leaving
+   Strataflow still cleans up but moving between screens never uncovers it. Literal hex values
+   there on purpose: the token block is scoped to `.o_sf`, and hoisting it to `<html>` would
+   leak Strataflow's tokens onto stock Odoo pages.
+
+**Then the user caught a fourth: "the entire top part still fades in on every load".** It was
+not animating. The skeleton drew its *own* copy of the chrome — brand pill, nav chips, search,
+the two round buttons — at `z-index: 999` (`strataflow.scss:301`) over the real one, and the
+skeleton then faded out over 450 ms. What that looked like was the whole top of the app fading
+in on every screen load, for nothing: none of that chrome depends on data. The skeleton no
+longer fakes it, and `.o_sf_topbar` / `.o_sf_foot` moved to `z-index: 1000`
+(`strataflow.scss:86`) so the real bar paints immediately and holds still while only the content
+loads. Four SCSS rules orphaned by that removal were deleted with it (`.sk-topbar`, `.sk-pill`,
+`.sk-brand`/`.sk-chips`/`.sk-search`, `.sk-round`); `.sk-chip`, `.sk-dot` and `.sk-spacer` are
+still used by the content sections and stayed.
+
+**Lesson worth keeping:** a "smoothing" animation that waits on async work is not smoothing, it
+is a stall with a fade on the end. Feedback first, decoration second.
+
+### 2026-09-08 — /odoo out of the URLs, in two passes
+
+**First pass was right but timid.** Gave each screen an action `path`
+(`views/strataflow_actions.xml`), so `/odoo/dispatch` replaces
+`/odoo/action-strataflow_workorder.action_strataflow_dispatch`. `path` lives on
+`ir.actions.actions` (`odoo/addons/base/models/ir_actions.py:70`), is lowercase-only, may not
+start with `m-` or `action-`, and is unique across every action table — `ir_actions` is a
+Postgres inheritance parent, so the unique index cannot enforce it alone and `_check_path`
+re-checks by hand. **`crm` is already claimed by the stock crm module**
+(`addons/crm/data/ir_action_data.xml`), and `work-orders` is taken too; ours are
+home / dispatch / workorders / **pipeline** / invoices / locator.
+
+`/` was pointed at Home with a `Home.index` override rather than a per-user Home Action. The
+Home Action was rejected deliberately: it also hijacks `/odoo`, and `/odoo` is the only route
+back to the stock backend — the shell's avatar button goes there and Odoo 19 has no separate
+URL for the app switcher.
+
+**WRONG CLAIM, corrected same session.** I told Stefan that dropping `/odoo` itself needed an
+nginx rewrite or an upstream edit, because the routes are declared in
+`addons/web/controllers/home.py:46` as `['/web', '/odoo', '/odoo/<path:subpath>']` and the
+router hard-codes the prefix (`startUrl()` returns `"odoo"`). He asked again. Reading further,
+`web/static/src/core/browser/router.js` exports the router with the comment **"state <-> url
+conversions can be patched if needed in a custom webclient"** over `stateToUrl` / `urlToState`
+— an invited extension point. So it was doable from the module all along.
+
+Both halves are needed and must agree. Server: `controllers/home.py:42` routes the six paths at
+the root and delegates to `Home.web_client`, so the URLs can be typed, bookmarked and reloaded
+and the login redirect carries them through. Client: `static/src/core/router_paths.js:25`
+patches both conversions, or the first in-app navigation would rewrite the bar back to
+`/odoo/dispatch` and the clean URL would survive exactly one page load. The path list is
+duplicated in both files; adding a screen means adding it in both, and matching the action's
+`path`.
+
+Kept narrow on purpose — only those six exact paths, only as the whole path. Verified with
+`scratchpad/urlcheck2.py`: all six serve 200, `/` gives 303 to `/home`, `/odoo/dispatch` and the
+old xmlid URL both 200, and `/odoo` + `/odoo/settings` still serve the stock backend.
+
+### 2026-09-08 — Sign-in page in the glass language
+
+Ported strataline's login design onto Odoo's own login page. **The design is consumed, the
+source is not**: strataline paints real downtown geometry from `login-lines.json` (551 KB) onto
+a canvas, and that file stays in map-sys. The background reuses the street/block/utility geometry
+this module already draws in `FauxMap`, so signing in and arriving on Dispatch are visibly the
+same place. Pulses ride the three APWA runs as CSS `offset-path` on circles *inside* the SVG
+viewBox — the viewBox scales them with the geometry so no JS keeps them on the line, and a CSS
+animation is something `prefers-reduced-motion` can stop, which `<animateMotion>` is not.
+
+Only the surround is replaced; `t-out="0"` still renders Odoo's form, so csrf, database
+selector, caps-lock warning, OAuth and the alerts are untouched. That also means **passkeys
+already work** — `auth_passkey` and `auth_passkey_portal` are `auto_install` and installed, and
+"Use a Passkey" renders on the page; it was landing as a raw Bootstrap `list-group` and is now
+skinned. Enrolment is per user (My Profile › Account Security), and **WebAuthn is origin-bound**,
+so a passkey enrolled on localhost will not work on a tenant subdomain, and each tenant
+subdomain is its own origin.
+
+**FAILURE — Odoo forbids `@import` between asset files.** Extracting the shared tokens to a Sass
+partial and importing it from both stylesheets failed with `Local import '../scss/tokens' is
+forbidden for security reasons` and then `Error: no mixin named tokens-light`, compiling the
+whole `web.assets_frontend` bundle. Sharing scss means listing the file in every bundle that
+needs it, in order: `static/scss/tokens.scss` is now first in both bundles in `__manifest__.py`.
+The login assets live outside `static/src` so the backend globs cannot sweep them into the
+backend bundle, where they would restyle every stock form control; verified by checking the
+backend bundle contains no `o_sf_login` rules and the frontend one no shell rules.
+
+Reviewed with `apple-design` before and after. The after-pass moved the footer from `--faint` to
+`--muted` — measured 3.08:1 light / 3.90:1 dark on the card ground, below AA; muted is 6.11:1 /
+5.69:1. Placeholders stay faint deliberately: every field carries a real label.
+
+Later, on Stefan's call: "Manage Databases" and "Powered by Odoo" removed, and the background
+made richer — the river from the satellite basemap, a third finer street layer so the grid reads
+as texture rather than a wireframe, the app's two drifting glow blobs so login and Home share an
+atmosphere, and a slow map drift. The vignette is the one piece that is not decoration: artwork
+behind a translucent surface should stay calm under it, so a pool of light sits under the card
+and *raises* contrast in both themes. All ambient motion stops under `prefers-reduced-motion`.
+
+### 2026-09-08 — "+ New ticket", and the automation tab is finished as a verification route
+
+The button mirrors `newLead` / `newInvoice`: an act_window on the stock form with no extra
+context, so `source` keeps its `manual` default. Gated on `is_dispatcher` on Work Orders, which
+locators can also see; Dispatch needs no gate because its nav entry is already dispatcher-only.
+
+**FAILURE — the browser workaround from the last handoff is structurally dead in Odoo 19, and
+the tab is unusable regardless.** Two separate problems, worth separating:
+
+1. **Auth: solved, and the old recipe was self-defeating.** Odoo sets `session_id` with
+   `httponly=True` (`odoo/http.py:2528`) and rotates sessions (`odoo/http.py:2180`), so
+   `document.cookie` cannot overwrite it once any Odoo page has loaded — and the recipe's own
+   first step, visiting `/web/login`, is exactly what plants the blocking cookie. Injecting gave
+   `odoo.http.SessionExpiredException` from a session that worked fine over curl. **What works:**
+   static assets set no cookie, so load `http://127.0.0.1:8069/web/static/img/favicon.ico` — a
+   fresh origin with no Odoo cookie — plant a curl-minted `session_id` there, then navigate. The
+   action URL then loads authenticated instead of redirecting to login.
+2. **Boot: not solved, and not ours.** The page still dies on `Error: Access to storage is not
+   allowed from this context.` with a 24-character body. **Stock Odoo fails identically** —
+   `/odoo/settings` gives a 108-character body with `.o_web_client` present — so it is the
+   extension racing Odoo's boot for storage, not our code and not a site-data setting. After the
+   failed boot the page's own context reports `localStorage` fine and `hasStorageAccess()` true,
+   which is why the probe misleads.
+
+Everything this session was therefore verified over JSON-RPC and by reading the served bundles,
+never by looking at it. Stefan checked the visuals himself in a normal tab.
+
+### 2026-09-08 — Auto-assign rule locked, USP feed parked
+
+Stefan answered one of the two questions left open at the last wrap. **Auto-assign: zone first,
+workload as the tiebreak; locator GPS is out of scope.** That rules out both options needing a
+position source — real staff tracking with its privacy call, and the current-ticket
+approximation in `screens/dispatch.js:95` `crewAnchors`.
+
+**The backlog was wrong and said so: Auto-assign is not a stub.** It is built and really
+assigns — `planRoutes` (`core/geo.js:45`) is greedy nearest-neighbour and `applyRoutes`
+(`screens/dispatch.js:192`) calls `action_assign` per stop. So the task is a replacement of the
+rule, not a first build. Two things fall out of dropping distance: `crewAnchors` stops being an
+assignment input, and the current silent exclusion of tickets without `latitude`/`longitude`
+goes away — those are exactly the hand-entered ones. `get_board_data` already ships each
+locator's `open` count, so the workload half needs no new data.
+
+**USP feed stays open by Stefan's call**, with the dependent sub-question it was hiding now
+written down: under DB-per-tenant, ingest either runs as an `ir.cron` inside each tenant DB or
+as one strataline-side service writing in over JSON-RPC. Not answerable before the transport is
+known — an email-in alias has no fetch step at all.
+
 ### 2026-09-08 — Ticket creation: baseline read out of the code, then decided
 
 **The factual half was answerable without asking.** "How are tickets created?" turned out to have an
