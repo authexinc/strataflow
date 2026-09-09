@@ -142,6 +142,25 @@ class StrataflowWorkOrder(models.Model):
 
     # ---- payloads for the client actions --------------------------------------
 
+    @api.model
+    def get_map_config(self):
+        """What the browser needs to draw the live Strataline map: the service's
+        origin and this tenant's scoped API key.
+
+        The key goes to the browser on purpose (ARCHITECTURE.md › "Tile key
+        exposure", Phase 1): strataline scopes it by bbox, sources, zoom, daily
+        quota and registered origins, and echoes CORS only for those origins. It
+        is sent as `?key=` on every tile/glyph request because strataline has no
+        preflight handler, so a custom header would fail. Phase 2's provisioner
+        writes both parameters when it mints the tenant's key; until then they
+        are set by hand and `connected` is False, which the screens show as a
+        "not connected" ground instead of a map.
+        """
+        icp = self.env['ir.config_parameter'].sudo()
+        key = (icp.get_param('strataline.api_key') or '').strip()
+        base = (icp.get_param('strataline.base_url') or 'https://strataline.co').rstrip('/')
+        return {'connected': bool(key), 'base_url': base, 'api_key': key}
+
     @staticmethod
     def _initials(name):
         return ''.join(w[0] for w in (name or '').replace('.', ' ').split() if w)[:2].upper()

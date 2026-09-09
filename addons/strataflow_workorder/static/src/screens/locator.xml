@@ -15,21 +15,17 @@
 
         <!-- MAP MODE: unobstructed map -->
         <t t-if="state.view === 'map'">
-            <FauxMap basemap="state.basemap">
+            <StratalineMap markers="markers" basemap="state.basemap" utilities="state.layers" focus="state.mapFocus ? state.selId : false" padding="constructor.MAP_PADDING" onSelect.bind="selectStop" onReady.bind="onMapReady">
                 <span class="o_sf_bm o_sf_bm--top" role="group" aria-label="Basemap">
                     <button type="button" class="o_sf_bm_btn" t-att-class="{ 'is-on': state.basemap === 'streets' }" t-att-aria-pressed="state.basemap === 'streets'" t-on-click="() => (state.basemap = 'streets')">Map</button>
                     <button type="button" class="o_sf_bm_btn" t-att-class="{ 'is-on': state.basemap === 'satellite' }" t-att-aria-pressed="state.basemap === 'satellite'" t-on-click="() => (state.basemap = 'satellite')">Satellite</button>
                 </span>
-                <t t-if="state.mapFocus and selPin">
-                    <span class="o_sf_pin is-on" t-attf-style="left: {{ selPin.x }}%; top: {{ selPin.y }}%" aria-hidden="true"><span class="o_sf_dot" t-attf-class="o_sf_dot--{{ selPin.status }}"/></span>
-                    <div class="o_sf_pin_label" t-attf-style="left: {{ selPin.x }}%; top: {{ selPin.y }}%"><span class="o_sf_mono o_sf_note" t-esc="selPin.name"/><b t-esc="selPin.address"/></div>
-                    <button type="button" class="o_sf_btn o_sf_btn--primary o_sf_btn--float" t-on-click="() => { state.view = 'route'; state.mapFocus = false; }">← Back to ticket</button>
-                </t>
-            </FauxMap>
+                <button t-if="sel" type="button" class="o_sf_btn o_sf_btn--primary o_sf_btn--float" t-on-click="() => { state.view = 'route'; state.mapFocus = false; }">← Back to ticket</button>
+            </StratalineMap>
             <nav class="o_sf_rail" aria-label="Map controls">
-                <button type="button" class="o_sf_rail_btn" title="Zoom in" disabled="disabled">+</button>
-                <button type="button" class="o_sf_rail_btn" title="Zoom out" disabled="disabled">−</button>
-                <button type="button" class="o_sf_rail_btn is-on" title="Utility layers"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" aria-hidden="true"><polygon points="10,2 18,6.5 10,11 2,6.5"/><polyline points="2,10.5 10,15 18,10.5"/><polyline points="2,14.5 10,19 18,14.5"/></svg></button>
+                <button type="button" class="o_sf_rail_btn" title="Zoom in" t-on-click="() => this.zoom(1)">+</button>
+                <button type="button" class="o_sf_rail_btn" title="Zoom out" t-on-click="() => this.zoom(-1)">−</button>
+                <button type="button" class="o_sf_rail_btn" title="Utility layers" t-att-aria-pressed="state.layers" t-att-class="{ 'is-on': state.layers }" t-on-click="() => (state.layers = !state.layers)"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" aria-hidden="true"><polygon points="10,2 18,6.5 10,11 2,6.5"/><polyline points="2,10.5 10,15 18,10.5"/><polyline points="2,14.5 10,19 18,14.5"/></svg></button>
             </nav>
         </t>
 
@@ -153,7 +149,6 @@
 
         <t t-set-slot="footer" t-if="state.view === 'map'">
             <span class="o_sf_pill o_sf_pill--sm o_sf_pill--danger"><svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><g transform="translate(0 -1.4)"><path d="M10 3 L18 17 H2 Z" stroke-linejoin="round"/><line x1="10" y1="8.5" x2="10" y2="12.5"/><circle cx="10" cy="14.8" r="0.7" fill="currentColor" stroke="none"/></g></svg>Reference only — not a locate</span>
-            <span class="o_sf_pill o_sf_pill--sm o_sf_note">faux map · live Strataline tiles pending</span>
         </t>
     </StrataflowShell>
 </t>

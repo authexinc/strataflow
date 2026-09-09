@@ -4,12 +4,11 @@ import { _t } from "@web/core/l10n/translation";
 import { useService } from "@web/core/utils/hooks";
 import { standardActionServiceProps } from "@web/webclient/actions/action_service";
 import { StrataflowShell } from "../core/shell";
-import { FauxMap } from "../core/faux_map";
+import { StratalineMap } from "../core/strataline_map";
 import { LocateCanvas } from "../core/locate_canvas";
 import { LocatePreview } from "../core/locate_preview";
 import { auditDrawing, linesByUtility } from "../core/audit";
 import { fmtDate, fmtWhen } from "../core/format";
-import { bboxOf, project } from "../core/geo";
 
 const STAGES = [
     { key: "map", label: _t("On site") },
@@ -25,9 +24,11 @@ export class LocatorScreen extends Component {
     static template = "strataflow_workorder.Locator";
     // URL segment (/odoo/<path>). Keep in step with the action's `path` in strataflow_actions.xml.
     static path = "locator";
-    static components = { StrataflowShell, FauxMap, LocateCanvas, LocatePreview };
+    static components = { StrataflowShell, StratalineMap, LocateCanvas, LocatePreview };
     static props = { ...standardActionServiceProps };
     static target = "fullscreen";
+    // map mode is unobstructed: only the top bar, the rail and the footer sit on it
+    static MAP_PADDING = { top: 90, left: 40, right: 80, bottom: 80 };
 
     setup() {
         this.orm = useService("orm");
@@ -42,6 +43,7 @@ export class LocatorScreen extends Component {
             panelOpen: true,
             detailsOpen: false,
             basemap: "streets",
+            layers: true,
             mapFocus: false,
             audit: null,
             auditOpen: false,
@@ -142,10 +144,14 @@ export class LocatorScreen extends Component {
         return STAGES.map((s, i) => ({ ...s, label: `${i + 1} · ${s.label}`, on: i === idx, done: i < idx }));
     }
 
-    get selPin() {
-        const t = this.sel;
-        const p = t ? project(t, bboxOf(this.state.data.tickets)) : null;
-        return p ? { ...p, name: t.name, address: t.address, status: t.status } : null;
+    // the route on the map: every stop, numbered as in the list, the selected one labelled
+    get markers() {
+        return this.stops
+            .filter((s) => s.latitude && s.longitude)
+            .map((s) => ({
+                id: s.id, name: s.name, address: s.address, status: s.status, emergency: s.emergency,
+                latitude: s.latitude, longitude: s.longitude, on: s.id === this.state.selId, badge: String(s.n),
+            }));
     }
 
     get audit() {
@@ -178,6 +184,17 @@ export class LocatorScreen extends Component {
         this.flushDrawing();
         Object.assign(this.state, { selId: id, stage: "map", audit: null, auditOpen: false, detailsOpen: false, mapFocus: false });
         await this.loadAttachments();
+    }
+
+    onMapReady(api) {
+        this.mapApi = api;
+    }
+    zoom(dir) {
+        if (!this.mapApi) {
+            this.notification.add(_t("The map is not connected to Strataline yet."), { type: "info" });
+            return;
+        }
+        dir > 0 ? this.mapApi.zoomIn() : this.mapApi.zoomOut();
     }
 
     navigate() {

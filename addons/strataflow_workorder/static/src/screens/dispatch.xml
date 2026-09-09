@@ -13,20 +13,7 @@
             <button type="button" class="o_sf_pill o_sf_pillbtn o_sf_pill--primary" t-on-click="newTicket">+ New ticket</button>
         </t>
 
-        <FauxMap basemap="state.basemap">
-            <svg t-if="state.auto" class="o_sf_routes" viewBox="0 0 1440 900" preserveAspectRatio="none" aria-hidden="true">
-                <t t-foreach="routes" t-as="r" t-key="r.crew.id"><path t-att-d="r.d" fill="none" t-att-stroke="r.color" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="10 7" opacity="0.85"/></t>
-            </svg>
-            <t t-foreach="pins" t-as="pin" t-key="pin.id">
-                <button type="button" class="o_sf_pin" t-att-class="{ 'is-on': pin.on, 'is-emergency': pin.emergency }" t-attf-style="left: {{ pin.x }}%; top: {{ pin.y }}%" t-att-title="pin.name + ' · ' + pin.address" t-att-aria-pressed="pin.on" t-on-click="() => this.select(pin.id)">
-                    <span class="o_sf_dot" t-attf-class="o_sf_dot--{{ pin.status }}" aria-hidden="true"/>
-                    <span t-if="state.showCrew and pin.onsite and pin.locator" class="o_sf_pin_crew" t-esc="pin.locator.initials"/>
-                </button>
-            </t>
-            <div t-if="selPin" class="o_sf_pin_label" t-attf-style="left: {{ selPin.x }}%; top: {{ selPin.y }}%">
-                <span class="o_sf_mono o_sf_note" t-esc="selPin.name"/><b t-esc="selPin.address"/>
-            </div>
-        </FauxMap>
+        <StratalineMap markers="markers" routes="routes" basemap="state.basemap" utilities="state.layers" focus="state.selId" padding="constructor.MAP_PADDING" onSelect.bind="select" onReady.bind="onMapReady"/>
 
         <aside class="o_sf_panel o_sf_queue" aria-label="Ticket queue">
             <div class="o_sf_queue_head">
@@ -53,10 +40,10 @@
         </aside>
 
         <nav class="o_sf_rail" aria-label="Map controls">
-            <button type="button" class="o_sf_rail_btn" title="Zoom in" t-on-click="zoomSoon">+</button>
-            <button type="button" class="o_sf_rail_btn" title="Zoom out" t-on-click="zoomSoon">−</button>
+            <button type="button" class="o_sf_rail_btn" title="Zoom in" t-on-click="() => this.zoom(1)">+</button>
+            <button type="button" class="o_sf_rail_btn" title="Zoom out" t-on-click="() => this.zoom(-1)">−</button>
             <button type="button" class="o_sf_rail_btn" title="Crew positions" t-att-aria-pressed="state.showCrew" t-att-class="{ 'is-on': state.showCrew }" t-on-click="() => (state.showCrew = !state.showCrew)"><svg width="19" height="19" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="10" cy="10" r="5.5"/><circle cx="10" cy="10" r="1.6" fill="currentColor" stroke="none"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="10" y1="16" x2="10" y2="19"/><line x1="1" y1="10" x2="4" y2="10"/><line x1="16" y1="10" x2="19" y2="10"/></svg></button>
-            <button type="button" class="o_sf_rail_btn is-on" title="Utility layers" t-on-click="layersSoon"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" aria-hidden="true"><polygon points="10,2 18,6.5 10,11 2,6.5"/><polyline points="2,10.5 10,15 18,10.5"/><polyline points="2,14.5 10,19 18,14.5"/></svg></button>
+            <button type="button" class="o_sf_rail_btn" title="Utility layers" t-att-aria-pressed="state.layers" t-att-class="{ 'is-on': state.layers }" t-on-click="() => (state.layers = !state.layers)"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" aria-hidden="true"><polygon points="10,2 18,6.5 10,11 2,6.5"/><polyline points="2,10.5 10,15 18,10.5"/><polyline points="2,14.5 10,19 18,14.5"/></svg></button>
         </nav>
 
         <aside t-if="sel and state.cardOpen" class="o_sf_panel o_sf_card" aria-label="Assign ticket">

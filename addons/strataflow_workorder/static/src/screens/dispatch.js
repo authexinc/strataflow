@@ -4,9 +4,9 @@ import { _t } from "@web/core/l10n/translation";
 import { useService } from "@web/core/utils/hooks";
 import { standardActionServiceProps } from "@web/webclient/actions/action_service";
 import { StrataflowShell } from "../core/shell";
-import { FauxMap } from "../core/faux_map";
+import { StratalineMap } from "../core/strataline_map";
 import { fmtDate } from "../core/format";
-import { bboxOf, haversineKm, planRoutes, project } from "../core/geo";
+import { haversineKm, planRoutes } from "../core/geo";
 
 const STATUS_LABEL = { new: _t("New"), assigned: _t("Assigned"), onsite: _t("On site"), located: _t("Located"), closed: _t("Closed"), invoiced: _t("Invoiced") };
 const CHIPS = ["all", "new", "assigned", "onsite", "located", "closed"];
@@ -16,9 +16,11 @@ export class DispatchScreen extends Component {
     static template = "strataflow_workorder.Dispatch";
     // URL segment (/odoo/<path>). Keep in step with the action's `path` in strataflow_actions.xml.
     static path = "dispatch";
-    static components = { StrataflowShell, FauxMap };
+    static components = { StrataflowShell, StratalineMap };
     static props = { ...standardActionServiceProps };
     static target = "fullscreen";
+    // the part of the map the queue (left), rail (right), top bar and footer leave free
+    static MAP_PADDING = { top: 90, left: 360, right: 80, bottom: 70 };
 
     setup() {
         this.orm = useService("orm");
@@ -33,9 +35,11 @@ export class DispatchScreen extends Component {
             basemap: "streets",
             auto: false,
             showCrew: true,
+            layers: true,
             cardOpen: true,
             data: { me: { initials: "" }, utilities: [], crew: [], tickets: [] },
         });
+        this.mapApi = null; // { zoomIn, zoomOut } once the live map is up
         onMounted(() => this.load());
     }
 
@@ -77,20 +81,14 @@ export class DispatchScreen extends Component {
         return (this.sel?.utility_ids || []).map((id) => byId[id]).filter(Boolean);
     }
 
-    get bbox() {
-        return bboxOf(this.state.data.tickets);
-    }
-
-    get pins() {
-        const bbox = this.bbox;
+    get markers() {
         return this.state.data.tickets
-            .map((t) => ({ t, p: project(t, bbox) }))
-            .filter(({ p }) => p)
-            .map(({ t, p }) => ({ id: t.id, name: t.name, address: t.address, status: t.status, emergency: t.emergency, x: p.x, y: p.y, on: t.id === this.state.selId, locator: t.locator, onsite: t.status === "onsite" }));
-    }
-
-    get selPin() {
-        return this.pins.find((p) => p.on) || null;
+            .filter((t) => t.latitude && t.longitude)
+            .map((t) => ({
+                id: t.id, name: t.name, address: t.address, status: t.status, emergency: t.emergency,
+                latitude: t.latitude, longitude: t.longitude, on: t.id === this.state.selId,
+                badge: this.state.showCrew && t.status === "onsite" && t.locator ? t.locator.initials : "",
+            }));
     }
 
     // where each locator currently is: their on-site ticket, else their next assigned one
@@ -140,15 +138,11 @@ export class DispatchScreen extends Component {
         if (!this.state.auto) {
             return [];
         }
-        const bbox = this.bbox;
         const crewIndex = Object.fromEntries(this.state.data.crew.map((c, i) => [c.id, i]));
-        return planRoutes(this.state.data.tickets, this.state.data.crew, this.crewAnchors).map((r) => {
-            const pts = [this.crewAnchors[r.crew.id], ...r.stops].filter(Boolean).map((t) => project(t, bbox)).filter(Boolean);
-            return {
-                crew: r.crew, km: r.km, stops: r.stops, color: HUES[crewIndex[r.crew.id] % HUES.length],
-                d: "M " + pts.map((p) => `${(p.x * 14.4).toFixed(0)} ${(p.y * 9).toFixed(0)}`).join(" L "),
-            };
-        });
+        return planRoutes(this.state.data.tickets, this.state.data.crew, this.crewAnchors).map((r) => ({
+            id: r.crew.id, crew: r.crew, km: r.km, stops: r.stops, color: HUES[crewIndex[r.crew.id] % HUES.length],
+            coords: [this.crewAnchors[r.crew.id], ...r.stops].filter((t) => t?.latitude).map((t) => [t.longitude, t.latitude]),
+        }));
     }
 
     get routeSummary() {
@@ -214,11 +208,15 @@ export class DispatchScreen extends Component {
         this.action.doAction({ type: "ir.actions.client", tag: "strataflow_workorders", context: { active_id: this.sel?.id } });
     }
 
-    zoomSoon() {
-        this.notification.add(_t("Pan and zoom arrive with the live Strataline map."), { type: "info" });
+    onMapReady(api) {
+        this.mapApi = api;
     }
-    layersSoon() {
-        this.notification.add(_t("Utility layer toggles arrive with the live Strataline map."), { type: "info" });
+    zoom(dir) {
+        if (!this.mapApi) {
+            this.notification.add(_t("The map is not connected to Strataline yet."), { type: "info" });
+            return;
+        }
+        dir > 0 ? this.mapApi.zoomIn() : this.mapApi.zoomOut();
     }
     disclaimer() {
         this.notification.add(_t("Strataline is a reference aid, not a locate. The field locate governs."), { type: "warning", title: _t("Reference only") });

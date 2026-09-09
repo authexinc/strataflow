@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+<t t-name="strataflow_workorder.StratalineMap">
+    <div class="o_sf_map" t-att-class="{ 'is-satellite': props.basemap === 'satellite' }">
+        <div t-ref="map" class="o_sf_map_gl"/>
+        <!-- no key yet, or the service is unreachable: the faux ground stands in and says so -->
+        <FauxMap t-if="state.status === 'off' or state.status === 'error'" basemap="props.basemap"/>
+        <span t-if="state.message" class="o_sf_pill o_sf_pill--sm o_sf_map_note" role="status" t-esc="state.message"/>
+        <t t-slot="default"/>
+    </div>
+</t>
+
+</templates>
