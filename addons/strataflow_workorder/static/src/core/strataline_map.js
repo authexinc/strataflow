@@ -282,6 +282,11 @@ export class StratalineMap extends Component {
             () => this.syncDrawing(),
             () => [this.props.drawing, this.props.utils, this.map]
         );
+        // the note input exists only after the render that follows the click: focus it then
+        useEffect(
+            () => this.noteRef.el?.focus(),
+            () => [this.state.noteDraft]
+        );
     }
 
     get connected() {
@@ -637,7 +642,6 @@ export class StratalineMap extends Component {
         if (this.tool === "note") {
             this.state.noteDraft = { at, text: "" };
             this.trackNote();
-            requestAnimationFrame(() => this.noteRef.el?.focus());
             return;
         }
         this.live = { a: at, b: at, util: this.tool };

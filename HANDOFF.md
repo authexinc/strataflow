@@ -1,6 +1,13 @@
 # Handoff — 2026-09-09 (small hours)
 
-## Start here: two things are built, wired end-to-end, and seen working in a browser
+## Start here: map, layer panel and geo drawings are built and seen working in a browser
+
+Since the first wrap, on Stefan's two follow-ups: **strataline's layer panel** lives behind the rail's
+layers button (Dispatch and the Locator's map mode) — `core/layers.js` + `core/layer_panel.js`, rows
+from strataline's `layers.json` (keys may fetch it since map-sys `4b08efb`); and **locate drawings
+are geo-referenced** and drawn on the live map (`core/locate_geo.js`, decided by Stefan) — the
+drawing surface on Work Orders and the Locator's draw stage is a map with a toolbar. Old pixel
+drawings read as empty. Details in the top DEVLOG entry.
 
 1. **Live Strataline map** on Dispatch and the Locator's map mode (`80aa39b9542`), MapLibre in the web
    client, strataline over its API with the tenant's key. **Dev is fully wired**: local strataline on
@@ -39,9 +46,9 @@ Wrapping. Nothing in flight. `ARCHITECTURE.md` / `BACKLOG.md` / `DEVLOG.md` / th
 uncommitted changes; the wrap commit follows.
 
 ## Repo state
-- Branch `feat/strataflow-workorder`, **10 commits ahead of origin** (map `80aa39b9542`, revamp
-  `160e5704463`, fixes `160019716c6` `a5805d400b2` `535d05a7446` `af211077587`, docs); not pushed. Not merged into `19.0`. Merge and push are Stefan's call.
-- `~/map-sys` on `feat/search-key-scope` at `932baab` (4 unpushed commits on top of what Stefan has
+- Branch `feat/strataflow-workorder`, **12+ commits ahead of origin** (map `80aa39b9542`, revamp
+  `160e5704463`, browser fixes, layer panel + geo drawings `6323645be97`, docs); not pushed. Not merged into `19.0`. Merge and push are Stefan's call.
+- `~/map-sys` on `feat/search-key-scope` at `4b08efb` (5 unpushed commits on top of what Stefan has
   seen), working tree clean. `main` there self-deploys — merging is the deploy. `data/api_keys.json`
   (gitignored) holds the dev key `k_17c57c69` and a revoked duplicate `k_b0d0818e`.
 - Still no automated tests for this module.
@@ -95,6 +102,11 @@ uncommitted changes; the wrap commit follows.
 - **"Verified server-side" is not "verified".** Three visual bugs shipped past every HTTP check this
   session and were found in the first browser open. The automation tab boots the web client again
   (the storage exception still logs, harmlessly) — use it before calling anything done.
+- **`map.isStyleLoaded()` is not "the style is ready"** — it is false while any tile streams. Guard
+  layer/source work on a flag set in the `style.load` handler (`styleReady`), never on that call.
+- **The Sass `min()` landmine bit again**: `min(52%, 460px)` broke the whole bundle, and Odoo served
+  the *previous* CSS with only a red banner at the bottom of the page. `height: 52%; max-height:
+  460px` instead. Grep new SCSS for `min(`/`max(` with mixed units before restarting.
 - **maplibre-gl.css loads after our sheet** (lazy `loadCSS`): any rule on a MapLibre-classed element
   needs more than one class of specificity or it loses. Marker elements are positioned by MapLibre
   with an inline transform — style their size and look, never their `position`.

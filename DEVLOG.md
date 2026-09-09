@@ -3,6 +3,49 @@
 Newest first. Read the last 3–5 entries at session start. Failures are recorded on purpose; a
 workaround is labelled as one so it does not become permanent by accident.
 
+### 2026-09-09 (later) — Strataline's layer panel in the shell; locate drawings become a geo layer on the map
+
+**Built and seen working.** Stefan's two follow-ups on seeing the map: "all the layer filtering
+functionality we have on strataline" and "the tickets need to be a dynamic view of the map, not the
+placeholder screenshot" — the second turned out to mean the locate drawing surface, which still sat
+on a faux SVG.
+
+**Layer panel.** Strataline's own panel is driven by `layers.json` (355 datasets, 32 merged style
+layers, `sub_layer` attribute) and applies visibility as a `setFilter` on each merged layer; the
+manifest was session-only, so `4b08efb` on map-sys grants it to keys like `style.json`. Odoo side:
+`core/layers.js` is the store (rows from the manifest plus our own basemap/ATS/address rows,
+overrides in localStorage, presets, tri-state groups, safety rows pinned on), `core/layer_panel.js`
+the glass panel, and the map composes `["!", ["in", ["get","sub_layer"], hidden]]` with each layer's
+*baked* filter — `setFilter` replaces the baked one (the abandoned split), so it is restated every
+time rather than copied. Privacy exclusions are mirrored from strataline's client list for now; the
+right place is a flag in `layers.json`. ATS grid and house numbers are drawn now too (they were
+granted sources nothing used), per level only once readable — the first cut at z10 was a purple cage
+over the whole city.
+
+**Geo drawings (decided with Stefan: geo-referenced, not pixels over a frozen map).**
+`core/locate_geo.js` defines `{v: 2, segments: [{a, b, util}], notes: [{at, text}]}` in `[lng, lat]`
+and a north-up `projectDrawing` for prints; `controllers/export.py` mirrors it in Python. The map
+draws the print as a GeoJSON layer (gas dotted; `line-dasharray` cannot vary per feature, so two line
+layers; labels `symbol-placement: line-center` lead with the class letter so colour never carries the
+utility alone) and draws *on* it: with a utility tool selected `dragPan` is off and map
+mousedown/move/up unproject to coordinates; "Pan" hands the map back. Preview, PNG, CSV, PDF and the
+audit all re-project or measure with haversine. Old pixel drawings read as empty; demo data had none.
+
+**Bugs found in the browser, in order.** `min(52%, 460px)` broke the *entire* stylesheet ("Incompatible
+units: 'px' and '%'", the landmine again) — Odoo served the previous CSS with a red banner. Then
+drawing saved to the DB but never showed: `map.isStyleLoaded()` is false whenever a tile is still
+streaming, so every sync guarded on it silently dropped the update; a `styleReady` flag set on
+`style.load` replaces it (this also explains why the first visibility toggle "worked" — tiles had
+finished). Then the note input never got focus (`requestAnimationFrame` ran before OWL rendered
+it) — an effect on `noteDraft` now. The ticket pin swallowed drags that started on it —
+`pointer-events: none` while a tool is active. The panel overlapped Dispatch's ticket card — it stops
+above it there.
+
+**Seen working:** panel open/close, group off with safety pinned, dataset rows, presets; gas lines
+dragged on the Locator with labels and metres, undo/clear, the review preview and totals, the audit,
+the PDF (north up, 10 mm ≈ 8.0 m). **Not seen:** the Note tool end-to-end after the focus fix,
+Satellite under a drawing, the Work Orders side of the same canvas.
+
 ### 2026-09-09 — Live Strataline map replaces the faux SVGs; stock views restyled; primary goes accent
 
 **Built, HTTP-verified, not seen in a browser.** Two of the open tasks, on Stefan's pick at the start of

@@ -68,7 +68,9 @@ Locked product decisions are in `ARCHITECTURE.md` › "Product decisions" and ar
 - [ ] **Finish looking at the live map.** Seen 2026-09-09: Dispatch in both themes, Satellite, zoom,
       pins + label, utility overlay with labels, the Locator's on-site stage and map mode. Not seen:
       route lines (demo data has 0 `new` tickets, so Auto-assign draws nothing — set one ticket back to
-      `new` to check), the layers toggle, `keepInView` panning, the "not connected" fallback.
+      `new` to check), `keepInView` panning, the "not connected" fallback. Seen since: the layer panel
+      (groups, rows, safety, presets), drawing gas lines on the Locator, the review preview, the PDF.
+      Not seen: the Note tool end-to-end, Satellite under a drawing, the panel on the Locator's map mode.
       **Basemap data question for Stefan:** at city scale (z10–12) a broad straight NW–SE band paints
       in the `water` colour across Calgary — a polygon in the `basemap` extract's `water` layer at low
       zoom, not one of our layers (it vanishes by z13). Check `basemap_calgary.pmtiles` in map-sys.
@@ -78,12 +80,20 @@ Locked product decisions are in `ARCHITECTURE.md` › "Product decisions" and ar
       `backend_variables.dark.scss` prepended, and a dark `stock.scss` — the variable file already mirrors
       `tokens-light`, so `tokens-dark` is the map. Also: `holdPageGround` paints `<html>` in the *shell's*
       theme for 600 ms after leaving a dark screen, so a light stock page flashes dark once.
+- [ ] **Layer panel follow-ups**: the company filter (`owners.json`, session-only on strataline — needs
+      a key grant like `layers.json` got); `EXCLUDED_SUBS` should become a flag in `layers.json` on
+      strataline's side instead of a mirrored list in `core/layers.js`; the settings for the panel are
+      per device (localStorage) — per user would mean an `ir.config_parameter`-style store on `res.users`.
+- [ ] **Old pixel drawings**: any `drawing` without `v: 2` (there were a few in the dev DB) reads as empty.
+      Nothing to migrate for real tenants; clear them with
+      `update strataflow_workorder set drawing='{}' where drawing::text not like '%"v": 2%'` when convenient.
 - [ ] **Map follow-ups**, in no order: cluster overlapping pins at low zoom (Guideline — Maps); an ATS
       section-grid layer for rural tickets (`ats` source is granted, nothing draws it yet); dark-theme
       recolour of the grey *utility* layers (strataline's own `themedStyle` does this — only
       `metadata.dark` overrides are applied here); a tile 429 arrives as a CORS error because strataline's
       rate-limit path skips `cors()` (`serve.py` `serve_tile`, the `throttle` branch); the small faux-map
-      thumbnails in the Work Orders and Locator detail panes are still decorative SVG.
+      thumbnails in the Work Orders and Locator detail panes are still decorative SVG (the drawing canvas
+      and the on-site stage are live now).
 
 Review UI work with the `apple-design` skill before and after (CLAUDE.md non-negotiable).
 
