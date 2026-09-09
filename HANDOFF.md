@@ -73,9 +73,16 @@ was verified and committed.
   `<html>` to cover the gap between actions; the token block is scoped to `.o_sf`, and hoisting it to
   `<html>` would leak Strataflow's tokens onto stock Odoo pages. The values are each theme's `--bg` and
   must be kept in step with them by hand.
-- **The clean URLs have two halves that must agree.** `controllers/home.py:9` `SCREEN_PATHS` and
-  `static/src/core/router_paths.js` carry the same list, and each entry must match the `path` on that
-  screen's client action. Adding a screen means all three.
+- **The clean URLs need THREE declarations to agree**, and the third is easy to miss: the
+  `<field name="path">` on the `ir.actions.client` record, `SCREEN_PATHS` in `controllers/home.py:9`,
+  and **`static path` on the screen component**. `goNav` launches screens by tag, so the record's
+  `path` never reaches them — the action service takes it from the registry entry
+  (`action_service.js:1298`) and without it `makeState` falls back to the tag, giving
+  `/odoo/strataflow_home`. `scratchpad/pathcheck.py` cross-checks all three; run it after adding a
+  screen.
+- **An HTTP 200 on `/dispatch` proves nothing about client routing.** It only means the server served
+  the web client shell. That is exactly how the missing `static path` above got through a green check.
+  For anything the router does, read the bundle or have Stefan look.
 - **Odoo forbids `@import` between asset files.** `Local import '../scss/tokens' is forbidden for
   security reasons`, followed by `Error: no mixin named tokens-light`. Shared scss must be *listed* in
   every bundle that needs it, before its consumers — see `static/scss/tokens.scss` in `__manifest__.py`.

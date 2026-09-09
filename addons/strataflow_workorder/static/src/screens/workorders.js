@@ -34,6 +34,8 @@ const STAGE = { new: 0, assigned: 1, onsite: 2, located: 3, closed: 4, invoiced:
 
 export class WorkOrdersScreen extends Component {
     static template = "strataflow_workorder.WorkOrders";
+    // URL segment — see core/router_paths.js. Keep in step with strataflow_actions.xml.
+    static path = "workorders";
     static components = { StrataflowShell, LocateCanvas, Dropdown, DropdownItem };
     static props = { ...standardActionServiceProps };
     static target = "fullscreen";

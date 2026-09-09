@@ -83,9 +83,27 @@ patches both conversions, or the first in-app navigation would rewrite the bar b
 duplicated in both files; adding a screen means adding it in both, and matching the action's
 `path`.
 
-Kept narrow on purpose — only those six exact paths, only as the whole path. Verified with
-`scratchpad/urlcheck2.py`: all six serve 200, `/` gives 303 to `/home`, `/odoo/dispatch` and the
-old xmlid URL both 200, and `/odoo` + `/odoo/settings` still serve the stock backend.
+Kept narrow on purpose — only those six exact paths, only as the whole path.
+
+**FAILURE, caught by Stefan after I had already called this done: "the /odoo is not out of the
+URLs. home is still /odoo/strataflow_home".** Note *what* was in the URL — the action **tag**,
+not the path. A third declaration is needed and I had missed it. The `path` on the
+`ir.actions.client` record only applies to an action loaded by id or xml_id; `goNav` launches
+these by tag, so the action service fills the path in from the **registry entry** instead
+(`action_service.js:1298`, `action.path ||= clientAction.path`) and resolves a URL back the same
+way (`action_service.js:529`). With no `static path` on the component, `makeState`
+(`action_service.js:1814`) falls back to `action.tag`, giving `/odoo/strataflow_home` — which is
+neither the clean path nor anything the rewrite map recognises. Fixed by adding `static path` to
+each of the six screen components.
+
+**Why the verification missed it, which is the real lesson.** `urlcheck2.py` asserted that
+`/home` and the rest return **200** — but 200 only proves the *server* served the web client
+shell. It says nothing about whether the client then resolved a screen, and in fact it could not
+have: the registry lookup at `action_service.js:529` matches on a `path` none of the components
+declared. An HTTP status is not evidence about client-side routing. Replaced with
+`scratchpad/pathcheck.py`, which cross-checks the three declarations against each other — record
+`path`, `SCREEN_PATHS` in the controller, and the component `static path` — and fails if any
+screen is missing from any of them. That is a check that could actually have caught this.
 
 ### 2026-09-08 — Sign-in page in the glass language
 

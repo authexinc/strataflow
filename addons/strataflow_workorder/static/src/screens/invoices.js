@@ -11,6 +11,8 @@ const STATUS_STYLE = { draft: "closed", sent: "new", paid: "located", overdue: "
 
 export class InvoicesScreen extends Component {
     static template = "strataflow_workorder.Invoices";
+    // URL segment — see core/router_paths.js. Keep in step with strataflow_actions.xml.
+    static path = "invoices";
     static components = { StrataflowShell };
     static props = { ...standardActionServiceProps };
     static target = "fullscreen";

@@ -15,8 +15,18 @@ import { router } from "@web/core/browser/router";
  * action keeps Odoo's own URL untouched. Stock screens are never affected, so /odoo remains
  * the way into the backend.
  *
- * The list is duplicated in controllers/home.py `SCREEN_PATHS`; adding a screen means adding
- * it in both, and it must match the `path` on that screen's client action.
+ * Three places have to agree, and a screen needs all three:
+ *   - `<field name="path">` on its `ir.actions.client` record (views/strataflow_actions.xml),
+ *   - `SCREEN_PATHS` in controllers/home.py, so the root URL is actually served,
+ *   - `static path` on the screen component (static/src/screens/*.js).
+ *
+ * That last one is the non-obvious one. The record's `path` only applies to an action loaded by
+ * id or xml_id, and `goNav` launches these by tag — the action service fills the path in from the
+ * registry entry instead (`action_service.js` `_executeClientAction`: `action.path ||=
+ * clientAction.path`), and resolves a URL back the same way (`actionRegistry.getEntries().find(
+ * (a) => a[1].path === state.action)`). Without the static, `makeState` falls back to the tag and
+ * the URL reads /odoo/strataflow_home, which is neither the clean path nor something the map
+ * below rewrites.
  */
 const SCREENS = ["home", "dispatch", "workorders", "pipeline", "invoices", "locator"];
 const TO_CLEAN = new Map(SCREENS.map((s) => [`/odoo/${s}`, `/${s}`]));

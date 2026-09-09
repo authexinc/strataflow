@@ -14,6 +14,8 @@ const HUES = ["#0f6ed8", "#0a9648", "#c08a1e", "#7a5cc4", "#0e93c9", "#c2453e"];
 
 export class DispatchScreen extends Component {
     static template = "strataflow_workorder.Dispatch";
+    // URL segment — see core/router_paths.js. Keep in step with strataflow_actions.xml.
+    static path = "dispatch";
     static components = { StrataflowShell, FauxMap };
     static props = { ...standardActionServiceProps };
     static target = "fullscreen";

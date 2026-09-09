@@ -22,6 +22,8 @@ const APPS = [
 
 export class HomeScreen extends Component {
     static template = "strataflow_workorder.Home";
+    // URL segment — see core/router_paths.js. Keep in step with strataflow_actions.xml.
+    static path = "home";
     static components = { StrataflowShell };
     static props = { ...standardActionServiceProps };
     static target = "fullscreen";

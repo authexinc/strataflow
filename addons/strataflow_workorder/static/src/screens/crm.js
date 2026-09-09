@@ -11,6 +11,8 @@ const TAG_STYLE = { "Annual contract": "new", Project: "assigned", "One-off": "c
 
 export class CrmScreen extends Component {
     static template = "strataflow_workorder.Crm";
+    // URL segment — see core/router_paths.js. Keep in step with strataflow_actions.xml.
+    static path = "pipeline";
     static components = { StrataflowShell };
     static props = { ...standardActionServiceProps };
     static target = "fullscreen";
