@@ -27,7 +27,7 @@ Nothing in flight; working tree clean. The session ended on a `/wrap` right afte
 was verified and committed.
 
 ## Repo state
-- Branch `feat/strataflow-workorder`, working tree clean, **11 commits ahead of
+- Branch `feat/strataflow-workorder`, working tree clean, **14 commits ahead of
   `origin/feat/strataflow-workorder` — not pushed.**
 - This session's commits, oldest first:
   - `ff6cbb6f16c` [DOC] lock the auto-assign rule, park the USP feed
@@ -42,6 +42,8 @@ was verified and committed.
   - `f6058106a12` [DOC] session wrap
   - `28d5087bf95` [FIX] the clean URLs needed a third declaration  ← the URL work was **not**
     actually working until this; see the landmine on the three declarations
+  - `d0d9e7a` [DOC] correct the handoff repo state
+  - `28d5087bf95`+ [FIX] sign in lands on Home, not Discuss
 - Not merged into `19.0`. Merge is Stefan's call.
 - `~/map-sys` is on `feat/search-key-scope`, in sync with its origin, still awaiting Stefan's review.
   Untouched this session.
@@ -49,7 +51,7 @@ was verified and committed.
 
 ## Next steps
 `BACKLOG.md` is the queue. In the order I would take them:
-1. **Push this branch** — 11 commits sitting local.
+1. **Push this branch** — 14 commits sitting local.
 2. **Answer the USP feed question** (`BACKLOG.md` › Open questions). It now carries its dependent
    sub-question: under DB-per-tenant, does ingest run as an `ir.cron` per tenant DB, or as one
    strataline-side service writing in over JSON-RPC? Not answerable before the transport is known.
@@ -87,6 +89,10 @@ was verified and committed.
   (`action_service.js:1298`) and without it `makeState` falls back to the tag, giving
   `/odoo/strataflow_home`. `scratchpad/pathcheck.py` cross-checks all three; run it after adding a
   screen.
+- **Post-login lands where `_login_redirect` says, not where `/` says.** Stock sends an internal user
+  with no explicit redirect to `/odoo`, which opens the first app in the menu — Discuss here. The
+  override in `controllers/home.py` returns `/home` instead, but leaves an explicit `redirect` and
+  partial MFA sessions to stock. `scratchpad/logincheck.py` drives the real form and asserts both.
 - **An HTTP 200 on `/dispatch` proves nothing about client routing.** It only means the server served
   the web client shell. That is exactly how the missing `static path` above got through a green check.
   For anything the router does, read the bundle or have Stefan look.
