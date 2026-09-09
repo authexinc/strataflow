@@ -9,6 +9,9 @@
                 <button type="button" class="o_sf_navbtn" t-att-class="{ 'is-on': state.basemap === 'satellite' }" t-att-aria-pressed="state.basemap === 'satellite'" t-on-click="() => (state.basemap = 'satellite')">Satellite</button>
             </span>
         </t>
+        <t t-set-slot="headerRight">
+            <button type="button" class="o_sf_pill o_sf_pillbtn o_sf_pill--primary" t-on-click="newTicket">+ New ticket</button>
+        </t>
 
         <FauxMap basemap="state.basemap">
             <svg t-if="state.auto" class="o_sf_routes" viewBox="0 0 1440 900" preserveAspectRatio="none" aria-hidden="true">

@@ -49,7 +49,7 @@ export class WorkOrdersScreen extends Component {
             chip: "all",
             query: "",
             selId: this.props.action?.context?.active_id || null,
-            data: { me: { initials: "" }, utilities: [], crew: [], tickets: [] },
+            data: { me: { initials: "", is_dispatcher: true }, utilities: [], crew: [], tickets: [] },
         });
         this.assignPopover = usePopover(AssignLocatorPopover, { position: "bottom-end", popoverClass: "o_sf_popover" });
         onMounted(() => this.load());
@@ -215,6 +215,13 @@ export class WorkOrdersScreen extends Component {
 
     openInvoice(moveId) {
         this.action.doAction({ type: "ir.actions.act_window", res_model: "account.move", res_id: moveId, views: [[false, "form"]], target: "current" });
+    }
+
+    newTicket() {
+        this.action.doAction({
+            type: "ir.actions.act_window", res_model: "strataflow.workorder", views: [[false, "form"]],
+            target: "current", name: _t("New ticket"),
+        });
     }
 
     openRecord() {

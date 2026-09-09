@@ -3,6 +3,9 @@
 
 <t t-name="strataflow_workorder.WorkOrders">
     <StrataflowShell active="'workorders'" me="state.data.me" loading="state.loading" skeleton="'list'" searchPlaceholder="'Search work orders…'" onSearch.bind="onSearch">
+        <t t-set-slot="headerRight">
+            <button t-if="state.data.me.is_dispatcher" type="button" class="o_sf_pill o_sf_pillbtn o_sf_pill--primary" t-on-click="newTicket">+ New ticket</button>
+        </t>
         <div class="o_sf_body" t-ref="root">
             <aside class="o_sf_panel o_sf_list" aria-label="Work orders">
                 <div class="o_sf_chips" role="group" aria-label="Filter by status">

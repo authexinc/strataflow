@@ -201,6 +201,13 @@ export class DispatchScreen extends Component {
         await this.load();
     }
 
+    newTicket() {
+        this.action.doAction({
+            type: "ir.actions.act_window", res_model: "strataflow.workorder", views: [[false, "form"]],
+            target: "current", name: _t("New ticket"),
+        });
+    }
+
     openTicket() {
         this.action.doAction({ type: "ir.actions.client", tag: "strataflow_workorders", context: { active_id: this.sel?.id } });
     }
