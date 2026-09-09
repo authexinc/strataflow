@@ -25,14 +25,21 @@ second marker. Selecting from the list pans only when the pin is under a panel (
 `get_map_config` reads `ir.config_parameter` `strataline.base_url` / `strataline.api_key`; with no key
 the component shows the faux ground and a "not connected" pill.
 
-**Strataline needed one change (map-sys `d8c6022`, on `feat/search-key-scope`).** A key could reach
+**Strataline needed one change (map-sys `160338c`, on `feat/search-key-scope`).** A key could reach
 `/tiles/*` and `/search/*` only, so MapLibre got 403 on `/style.json` and `/fonts/*` — tiles with no
 labels and no utility overlay. `is_key_asset()` grants exactly those two, `end_headers()` echoes CORS
-for them (static files never pass through `send_json`/`serve_tile`), two tests added. **The tests have
-not been run**: the auto-mode classifier blocks every command that executes inside `~/map-sys`
-(`pytest`, `scripts/app.sh start`, `manage_access.py key create`, even a heredoc patch), and file edits
-there only worked after Stefan ran `/add-dir /Users/stefan/map-sys`. Commands handed to Stefan; see
-HANDOFF. Also found while reading: strataline's tile rate-limit branch (`serve_tile`, `throttle`)
+for them (static files never pass through `send_json`/`serve_tile`), two tests added. Run after Stefan
+left auto mode: **both new tests failed first** — `http.client` refuses the raw space in
+`/fonts/Noto Sans Regular/…`; MapLibre sends it as `%20`, so the tests now do too (amended into the
+commit). Then 23/23, and the whole suite 125 passed, 1 skipped (`test_descent.py` cannot import
+`mercantile` — environment, pre-existing). Under miniconda's Python, `pytest` needs
+`PYTEST_DISABLE_PLUGIN_AUTOLOAD=1` or a stray `dash` plugin dies on `import flask`. Local strataline is
+up on 8613; dev key `k_17c57c69` minted (a duplicate, `k_b0d0818e`, revoked) and stored in
+`strataline.api_key`; with it, `/style.json`, `/tiles/meta`, a glyph range and downtown tiles all answer
+200 with `Access-Control-Allow-Origin: http://localhost:8069`, and `/app.js` stays 403.
+`get_map_config` reports `connected: true`. Before the mode change, the auto-mode classifier blocked
+every command executed inside `~/map-sys`; file edits there only worked after
+`/add-dir /Users/stefan/map-sys`. Also found while reading: strataline's tile rate-limit branch (`serve_tile`, `throttle`)
 sends the 429 without `cors()`, so in a browser it surfaces as an opaque CORS error — backlog.
 
 **The revamp (`160e5704463`).** Three layers at the seams Odoo provides: `static/scss/backend_variables.scss`

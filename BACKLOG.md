@@ -70,7 +70,7 @@ Locked product decisions are in `ARCHITECTURE.md` › "Product decisions" and ar
 - [ ] **Look at the live map in a normal tab** once `strataline.api_key` is set: pins, the selected
       label, route lines with Auto-assign on, the Satellite toggle, the layers rail button, the
       attribution pill, and the dark theme. Then the Locator's map mode. Console will show any 403 from
-      strataline (glyphs and style need `d8c6022` on the strataline side; tiles work without it).
+      strataline (glyphs and style need `160338c` on the strataline side; tiles work without it).
 - [ ] **Stock views, dark.** Odoo CE serves one colour scheme (`ir.http.color_scheme()` is hard-coded to
       `light`); the shell's dark toggle stops at the shell. Doing it means overriding `color_scheme()`
       from a cookie the shell's toggle also sets, a `web.assets_web_dark` bundle with a

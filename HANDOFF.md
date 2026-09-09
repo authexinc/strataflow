@@ -1,27 +1,16 @@
 # Handoff — 2026-09-09 (small hours)
 
-## Start here: two things are built and unseen; three commands are Stefan's
+## Start here: two things are built, wired end-to-end over HTTP, and unseen in a browser
 
-**Built this session, HTTP-verified, not yet looked at in a browser:**
 1. **Live Strataline map** on Dispatch and the Locator's map mode (`80aa39b9542`), MapLibre in the web
-   client, strataline over its API with the tenant's key. Shows "Strataline not connected" until
-   `strataline.api_key` is set — see "Stefan's three commands".
+   client, strataline over its API with the tenant's key. **Dev is fully wired**: local strataline on
+   8613, dev key `k_17c57c69` in `strataline.api_key`, `get_map_config` says `connected: true`, and with
+   that key `/style.json`, `/tiles/meta`, glyphs and downtown tiles all answer 200 with CORS for
+   `http://localhost:8069`. Open `http://localhost:8069/odoo/dispatch` in a normal tab.
 2. **Stock views in the Strataline language** (`160e5704463`): every form, list, kanban, dialog, Settings
    page. Tenant-wide, light only. Primary buttons are accent now, shell and stock alike.
 
-**Stefan's three commands** (the auto-mode classifier blocks me from executing anything inside
-`~/map-sys`; edits there work after `/add-dir`, which is already saved):
-```
-cd ~/map-sys && python3 -m pytest tests/test_api_keys.py -q
-bash ~/map-sys/scripts/app.sh start 8613
-python3 ~/map-sys/scripts/manage_access.py key create --org "Strataflow dev" --contact dev@authex.co --bbox=-114.6,50.7,-113.6,51.4 --sources utilities,basemap,ats,addr,search --max-zoom 15 --origins http://localhost:8069,http://127.0.0.1:8069
-```
-The first checks `d8c6022` (two new tests, **never run by me**). The third prints an `sk_live_…` once;
-store it with
-```
-psql -d strataflow_dev -c "insert into ir_config_parameter (key,value,create_uid,write_uid,create_date,write_date) values ('strataline.api_key','sk_live_…',1,1,now(),now()) on conflict (key) do update set value=excluded.value"
-```
-`strataline.base_url` is already `http://localhost:8613` in the dev DB. Then open `/odoo/dispatch`.
+`BACKLOG.md` › UI has the two "look at it" checklists. Nothing visual has been seen by me.
 
 ## Current state
 `addons/strataflow_workorder` on Odoo 19 CE. Six fullscreen OWL screens at `/odoo/desk`, `/odoo/dispatch`,
@@ -36,8 +25,9 @@ Landed this session:
   `static/scss/backend_bootstrap.scss` (prepended to `web._assets_backend_helpers`),
   `static/src/stock/stock.scss` (material). Manifest comments say why prepend.
 - `.o_sf_btn--primary` → accent (`strataflow.scss:151`).
-- map-sys `d8c6022` on `feat/search-key-scope`: keys may fetch `/style.json` and `/fonts/*`, CORS
-  echoed. Not merged, not deployed, tests unrun.
+- map-sys `160338c` on `feat/search-key-scope`: keys may fetch `/style.json` and `/fonts/*`, CORS
+  echoed. 23/23 key tests pass, whole suite 125 pass (`test_descent.py` needs the `mercantile` package,
+  pre-existing). Not merged, not deployed.
 - Decisions locked in `ARCHITECTURE.md`: tenant-wide stock styling, accent primaries, `postal_code`
   on the ticket, the map integration shape. `BACKLOG.md` › UI has the two "look at it" items.
 
@@ -48,15 +38,16 @@ uncommitted changes; the wrap commit follows.
 ## Repo state
 - Branch `feat/strataflow-workorder`, **2 commits ahead of origin** (`80aa39b9542`, `160e5704463`) plus
   the wrap commit; not pushed this session. Not merged into `19.0`. Merge and push are Stefan's call.
-- `~/map-sys` on `feat/search-key-scope` at `d8c6022` (3 unpushed commits on top of what Stefan has
-  seen), working tree clean. `main` there self-deploys — merging is the deploy.
+- `~/map-sys` on `feat/search-key-scope` at `160338c` (3 unpushed commits on top of what Stefan has
+  seen), working tree clean. `main` there self-deploys — merging is the deploy. `data/api_keys.json`
+  (gitignored) holds the dev key `k_17c57c69` and a revoked duplicate `k_b0d0818e`.
 - Still no automated tests for this module.
 - A dev server is running on 8069 (`--log-level=info --log-handler=werkzeug:INFO`, log at
-  `scratchpad/odoo.log`). No strataline on 8613 until Stefan starts it.
+  `scratchpad/odoo.log`). Strataline is running on 8613 (`scripts/app.sh status|stop`, log at
+  `~/map-sys/data/serve.log`).
 
 ## Next steps
-1. **Run the three commands above, then look**: `BACKLOG.md` › UI lists what to check on the stock
-   views and on the map. Anything off in the revamp is a one-line change in `stock.scss` or a variable
+1. **Look**: `BACKLOG.md` › UI lists what to check on the stock views and on the map. Anything off in the revamp is a one-line change in `stock.scss` or a variable
    in `backend_variables.scss`; the Odoo class map is in DEVLOG (2026-09-09) and the variable names in
    the manifest comments.
 2. **Zone-first auto-assign** — fully decided now (zone model, postal-code prefix, `postal_code` on the
@@ -69,13 +60,14 @@ uncommitted changes; the wrap commit follows.
    `action_complete_locate`, `get_board_data` needs a domain/limit, tenancy Phase 2 (nginx prefix strip).
 
 ## Landmines
-- **Anything executed inside `~/map-sys` is classifier-denied in auto mode** — pytest, `app.sh`,
-  `manage_access.py`, heredoc patches, even building a patch from copies. Edits with the Edit tool
-  and `git commit` there work (after `/add-dir`). Hand Stefan the commands; do not retry variants.
+- **In auto mode, anything executed inside `~/map-sys` is classifier-denied** — pytest, `app.sh`,
+  `manage_access.py`, heredoc patches. Stefan leaving auto mode unblocked it. Edits and `git commit`
+  there work after `/add-dir`. Under miniconda's Python, run pytest as
+  `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python3 -m pytest …` or a stray `dash` plugin dies on `import flask`.
 - **Strataline has no `OPTIONS` handler**: a custom header (`X-Api-Key`) triggers a preflight and
   fails from the browser. Everything goes as `?key=`. `origins` only governs the CORS echo; it is not an
   access gate, and `localhost:8069` and `127.0.0.1:8069` are two origins.
-- **Until `d8c6022` is deployed on strataline.co**, a keyed map against prod draws tiles with no labels
+- **Until `160338c` is deployed on strataline.co**, a keyed map against prod draws tiles with no labels
   and no utility overlay (403 on `/style.json` and `/fonts/*`). Against local 8613 it works once
   started. A strataline 429 (tile throttle) arrives as an opaque CORS error — `serve_tile`'s
   `throttle` branch skips `cors()`.
@@ -134,5 +126,5 @@ uncommitted changes; the wrap commit follows.
 Locked this session (`ARCHITECTURE.md`): tenant-wide light stock styling; accent primaries; `postal_code`
 on the ticket; the map integration shape (key in the browser as `?key=`, nothing copied from map-sys).
 
-Still waiting on Stefan: the three commands above; merges (`feat/search-key-scope` in `~/map-sys`,
-this branch into `19.0`); a browser pass over the revamp and the map.
+Still waiting on Stefan: merges (`feat/search-key-scope` in `~/map-sys`, this branch into `19.0`); a
+browser pass over the revamp and the map.

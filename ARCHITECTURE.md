@@ -53,7 +53,7 @@ itself, so the merge is Stefan's call. Until it lands, prod keys still reach `/t
    key's bbox inside the SQL, and `daily_searches` is counted apart from `daily_tiles`.
 2. `scripts/manage_access.py`: `create_key(...)` is importable by the provisioner and returns
    `(record, raw_secret)`; the CLI is a wrapper over it. No new public endpoint.
-3. (2026-09-09, `d8c6022` on the same branch) `web/serve.py`: a key may also fetch `/style.json`
+3. (2026-09-09, `160338c` on the same branch) `web/serve.py`: a key may also fetch `/style.json`
    and `/fonts/*`, with CORS echoed for its registered origins — what MapLibre in the Odoo client
    needs besides tiles. The map shell itself (`index.html`, `app.js`, `layers.json`) stays
    session-only. Until this deploys, a keyed map draws tiles with no labels and no utility overlay.
@@ -61,7 +61,7 @@ itself, so the merge is Stefan's call. Until it lands, prod keys still reach `/t
 ## Phases
 | Phase | Where | Status |
 |---|---|---|
-| 0 | strataline key scope + importable key minting + key access to `/style.json` and `/fonts/*` | **built** (map-sys `feat/search-key-scope` at `d8c6022`, not merged/deployed) |
+| 0 | strataline key scope + importable key minting + key access to `/style.json` and `/fonts/*` | **built** (map-sys `feat/search-key-scope` at `160338c`, not merged/deployed) |
 | 1 | `strataflow_workorder` — six screens on the glass shell, live Strataline map, stock views restyled | **done** (map needs a key in `strataline.api_key`; browser check of the revamp pending) |
 | 2 | control plane: template DB, provisioner, wildcard nginx + dbfilter (+ the `/odoo` prefix strip for clean tenant URLs), welcome-page hook | not started |
 | 3 | per-user tile tokens, tenant delete/backup, monitoring | not started |
