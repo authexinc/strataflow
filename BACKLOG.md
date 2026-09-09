@@ -26,13 +26,6 @@ Locked product decisions are in `ARCHITECTURE.md` › "Product decisions" and ar
 
 ## Behaviour / correctness
 
-- [ ] **Add a "+ New ticket" button to the Strataflow shell** (Stefan, 2026-09-08 — locked in
-      `ARCHITECTURE.md` › "Product decisions"). Match the existing `+ New lead` (`screens/crm.js`
-      `newLead`) and `+ New invoice` (`screens/invoices.js` `newInvoice`), which open the stock form in a
-      dialog — so the same treatment on Work Orders, and probably Dispatch too. Required fields are
-      `address` and `dig_date`; `create()` stamps the sequence and auto-links the requester's won
-      `crm.lead`. It should write `source = 'manual'` (the default), leaving `usp` for the feed.
-
 - [ ] **Rebuild Auto-assign as zone-first, workload-tiebreak** (Stefan, 2026-09-08 — locked in
       `ARCHITECTURE.md` › "Product decisions"). **Correction to this file's earlier note: Auto-assign is
       not a stub.** It is built and it really assigns — `planRoutes` (`core/geo.js:45`) is greedy
@@ -53,14 +46,15 @@ Locked product decisions are in `ARCHITECTURE.md` › "Product decisions" and ar
 
 ## UI / design language
 
-- [ ] Port the strataline login screen style to strataflow (`~/map-sys/web/login.js` + `app.css` tokens).
-      Consume the design, do not copy map-sys source into this repo.
 - [ ] **Verify the skeleton fade in a browser.** The strataline fade-out and map ground landed 2026-09-08
       but could not be seen running: Odoo's boot dies on `Access to storage is not allowed from this
       context` in the automation tab. Confirmed not to be our code (stashing the change reproduced the
       same failure). Check the skeleton fades rather than pops, and that the map ground lines up with the
       real background. `core/shell.js` still hides the skeleton after 4 s regardless — that fence stays
-      until screen `load()` is properly awaited.
+      until screen `load()` is properly awaited. **2026-09-08: the automation tab is out as a way to
+      check this** — stock Odoo fails to mount there too (`/odoo/settings` gives a 108-character body),
+      so it is the extension racing Odoo's boot for storage, not our code and not a site-data setting.
+      Handed to Stefan to look at in a normal tab.
 - [ ] Revamp every internal screen — individual invoices, the CRM record views, and the rest of the stock
       form/list views — into the strataflow language. Swap Odoo styling out across all pages, not just the six
       fullscreen OWL screens.
@@ -73,7 +67,19 @@ Review UI work with the `apple-design` skill before and after (CLAUDE.md non-neg
 
 ## Platform
 
-- [ ] Drop Odoo branding from the URL structure. The Home screen should be the base URL, not
-      `/odoo/action-strataflow_workorder.action_strataflow_home`. Affects routing, menus and every bookmark in
-      the handoff; scope it before touching it.
+- [ ] **The `/odoo` prefix on inner screens is all that is left of the URL cleanup** (2026-09-08). Done:
+      every screen has a readable path (`/odoo/home|dispatch|workorders|pipeline|invoices|locator` —
+      `crm` was already taken by the stock crm module, hence `pipeline`), and `/` redirects Strataflow
+      users straight to `/odoo/home` via a `Home.index` override in `controllers/home.py`. What is not
+      done is dropping `/odoo` itself: those routes are declared in `addons/web/controllers/home.py` as
+      `['/web', '/odoo', '/odoo/<path:subpath>']`, and editing upstream is out of bounds. Serving
+      `https://<slug>.strataflow.co/dispatch` means an nginx rewrite to `/odoo/dispatch` at the tenant
+      edge, which belongs with the Phase 2 control plane rather than in this module. Note the deliberate
+      choice not to set a per-user Home Action: that would have hijacked `/odoo` too, and `/odoo` is the
+      only way back to the stock backend — the shell's avatar button goes there, and Odoo 19 has no
+      separate URL for the app switcher.
+- [ ] **Decide whether the login page keeps "Powered by Odoo"** (2026-09-08). The restyled sign-in page
+      rebuilds the stock footer and kept both links — that one and "Manage Databases" — rather than
+      quietly dropping Odoo's attribution while restyling around it. LGPL-3 does not require the link,
+      so this is a product call, not a legal one.
 - [ ] Write comprehensive docs in `README.md`.

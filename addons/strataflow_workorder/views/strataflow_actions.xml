@@ -1,23 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- Product screens: OWL client actions, fullscreen (own header, no Odoo navbar) -->
+    <!-- Product screens: OWL client actions, fullscreen (own header, no Odoo navbar).
+         `path` gives each one a readable URL — /odoo/dispatch rather than
+         /odoo/action-strataflow_workorder.action_strataflow_dispatch. Paths are unique
+         across every action table in the database (ir_actions is a Postgres inheritance
+         parent, so the unique index alone can't enforce it and _check_path re-checks by
+         hand), lowercase, and may not start with `m-` or `action-`. -->
     <record id="action_strataflow_home" model="ir.actions.client">
-        <field name="name">Home</field><field name="tag">strataflow_home</field>
+        <field name="name">Home</field><field name="tag">strataflow_home</field><field name="path">home</field>
     </record>
     <record id="action_strataflow_dispatch" model="ir.actions.client">
-        <field name="name">Dispatch</field><field name="tag">strataflow_dispatch</field>
+        <field name="name">Dispatch</field><field name="tag">strataflow_dispatch</field><field name="path">dispatch</field>
     </record>
     <record id="action_strataflow_workorders" model="ir.actions.client">
-        <field name="name">Work Orders</field><field name="tag">strataflow_workorders</field>
+        <field name="name">Work Orders</field><field name="tag">strataflow_workorders</field><field name="path">workorders</field>
     </record>
     <record id="action_strataflow_crm" model="ir.actions.client">
-        <field name="name">CRM</field><field name="tag">strataflow_crm</field>
+        <field name="name">CRM</field><field name="tag">strataflow_crm</field><field name="path">pipeline</field>
     </record>
     <record id="action_strataflow_invoices" model="ir.actions.client">
-        <field name="name">Invoices</field><field name="tag">strataflow_invoices</field>
+        <field name="name">Invoices</field><field name="tag">strataflow_invoices</field><field name="path">invoices</field>
     </record>
     <record id="action_strataflow_locator" model="ir.actions.client">
-        <field name="name">Locator view</field><field name="tag">strataflow_locator</field>
+        <field name="name">Locator view</field><field name="tag">strataflow_locator</field><field name="path">locator</field>
     </record>
 
     <menuitem id="menu_strataflow_root" name="Strataflow" sequence="5" groups="group_strataflow_user" action="action_strataflow_home"/>
