@@ -70,7 +70,7 @@ Locked product decisions are in `ARCHITECTURE.md` › "Product decisions" and ar
       route lines (demo data has 0 `new` tickets, so Auto-assign draws nothing — set one ticket back to
       `new` to check), `keepInView` panning, the "not connected" fallback. Seen since: the layer panel
       (groups, rows, safety, presets), drawing gas lines on the Locator, the review preview, the PDF.
-      Not seen: the Note tool end-to-end, Satellite under a drawing, the panel on the Locator's map mode.
+      Not seen: Satellite under a drawing, the panel on the Locator's map mode, the Work Orders side of the canvas.
       **Basemap data question for Stefan:** at city scale (z10–12) a broad straight NW–SE band paints
       in the `water` colour across Calgary — a polygon in the `basemap` extract's `water` layer at low
       zoom, not one of our layers (it vanishes by z13). Check `basemap_calgary.pmtiles` in map-sys.

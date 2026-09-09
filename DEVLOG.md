@@ -43,8 +43,8 @@ above it there.
 
 **Seen working:** panel open/close, group off with safety pinned, dataset rows, presets; gas lines
 dragged on the Locator with labels and metres, undo/clear, the review preview and totals, the audit,
-the PDF (north up, 10 mm ≈ 8.0 m). **Not seen:** the Note tool end-to-end after the focus fix,
-Satellite under a drawing, the Work Orders side of the same canvas.
+the PDF (north up, 10 mm ≈ 8.0 m). **Not seen:** Satellite under a drawing, the Work Orders side of the same canvas. The Note tool
+was seen working after the focus fix (dot + "hand dig only" on the map, hint reads 1 note).
 
 ### 2026-09-09 — Live Strataline map replaces the faux SVGs; stock views restyled; primary goes accent
 
