@@ -68,7 +68,7 @@
 .o-mail-Form-chatter { background: transparent; border-left: 0.5px solid var(--hairline-soft); }
 .o-mail-Chatter { background: transparent; }
 
-.o_list_view .o_list_renderer { background: var(--logo-bg); border: 0.5px solid var(--edge); border-radius: 22px; box-shadow: var(--shadow);
+.o_list_view .o_list_renderer { background: var(--logo-bg); border: 0.5px solid var(--edge); border-radius: 22px; box-shadow: var(--shadow); margin: 0 12px 12px;
   .o_list_table thead th { @include eyebrow; background: var(--logo-bg); border-bottom: 0.5px solid var(--hairline); }
   .o_list_table .o_group_header { background: var(--chip-bg); font-weight: 700; }
   .o_data_row.o_data_row_selected > td { background: var(--accent-soft); } }

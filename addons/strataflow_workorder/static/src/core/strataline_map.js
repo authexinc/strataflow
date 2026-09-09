@@ -147,10 +147,11 @@ export class StratalineMap extends Component {
         utilities: { type: Boolean, optional: true }, // utility overlay on/off
         focus: { type: [Number, Boolean], optional: true }, // marker id to keep in view
         padding: { type: Object, optional: true }, // viewport padding, px — where the panels sit
+        zoom: { type: Number, optional: true }, // zoom for a single marker (a bbox fit sets its own)
         onSelect: { type: Function, optional: true },
         onReady: { type: Function, optional: true }, // receives { zoomIn, zoomOut }
     };
-    static defaultProps = { markers: [], routes: [], basemap: "streets", utilities: true, padding: { top: 90, left: 40, right: 80, bottom: 70 } };
+    static defaultProps = { markers: [], routes: [], basemap: "streets", utilities: true, padding: { top: 90, left: 40, right: 80, bottom: 70 }, zoom: 14 };
 
     setup() {
         this.orm = useService("orm");
@@ -328,6 +329,12 @@ export class StratalineMap extends Component {
             }
         }
         this.syncLabel(selected);
+        // a wholly different set of tickets (the Locator's on-site map moving to the next stop)
+        // is a new subject: frame it again. A changed selection within the same set is not.
+        if (this.shownIds?.size && ![...seen].some((id) => this.shownIds.has(id))) {
+            this.fitted = false;
+        }
+        this.shownIds = seen;
         if (!this.fitted && seen.size) {
             this.fit();
         }
@@ -399,7 +406,7 @@ export class StratalineMap extends Component {
         }
         this.fitted = true;
         if (pts.length === 1) {
-            this.map.jumpTo({ center: [pts[0].longitude, pts[0].latitude], zoom: 14, padding: this.props.padding });
+            this.map.jumpTo({ center: [pts[0].longitude, pts[0].latitude], zoom: this.props.zoom, padding: this.props.padding });
             return;
         }
         const b = new this.gl.LngLatBounds();

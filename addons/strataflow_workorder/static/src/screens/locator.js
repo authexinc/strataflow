@@ -29,6 +29,8 @@ export class LocatorScreen extends Component {
     static target = "fullscreen";
     // map mode is unobstructed: only the top bar, the rail and the footer sit on it
     static MAP_PADDING = { top: 90, left: 40, right: 80, bottom: 80 };
+    // the on-site map in the route view: the basemap toggle top-left, the address card right
+    static SITE_PADDING = { top: 50, left: 30, right: 330, bottom: 40 };
 
     setup() {
         this.orm = useService("orm");
@@ -142,6 +144,12 @@ export class LocatorScreen extends Component {
         // a finished ticket is past every stage, whatever `state.stage` happens to hold
         const idx = this.selDone ? STAGES.length : STAGES.findIndex((s) => s.key === this.state.stage);
         return STAGES.map((s, i) => ({ ...s, label: `${i + 1} · ${s.label}`, on: i === idx, done: i < idx }));
+    }
+
+    // the on-site map: this ticket alone, centred
+    get siteMarkers() {
+        const t = this.sel;
+        return t?.latitude ? [{ id: t.id, name: t.name, address: t.address, status: t.status, emergency: t.emergency, latitude: t.latitude, longitude: t.longitude, on: true }] : [];
     }
 
     // the route on the map: every stop, numbered as in the list, the selected one labelled

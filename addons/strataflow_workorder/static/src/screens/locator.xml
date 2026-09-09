@@ -77,12 +77,7 @@
                 <t t-elif="state.stage === 'map'">
                     <div class="o_sf_site">
                         <div class="o_sf_canvas o_sf_canvas--site" t-att-class="{ 'is-satellite': state.basemap === 'satellite' }">
-                            <svg class="o_sf_canvas_map" viewBox="0 0 400 330" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-                                <g class="o_sf_bgmap_line" stroke-width="2"><line x1="0" y1="85" x2="400" y2="85"/><line x1="0" y1="230" x2="400" y2="230"/><line x1="90" y1="0" x2="90" y2="330"/><line x1="230" y1="0" x2="230" y2="330"/><line x1="330" y1="0" x2="330" y2="330"/></g>
-                                <rect class="o_sf_bgmap_block" x="105" y="108" width="70" height="90" rx="4"/><rect class="o_sf_bgmap_block" x="245" y="108" width="60" height="90" rx="4"/><rect class="o_sf_bgmap_block" x="105" y="250" width="90" height="60" rx="4"/>
-                                <g class="o_sf_cadastral" stroke-width="1.2" stroke-dasharray="6 4" fill="none"><rect x="95" y="95" width="95" height="115"/><rect x="235" y="95" width="85" height="115"/><rect x="95" y="238" width="115" height="85"/></g>
-                                <path d="M0 178 C 120 168, 260 192, 400 172" fill="none" stroke="#f2b705" stroke-width="2.5" stroke-dasharray="1 8" stroke-linecap="round" opacity="0.6"/><path d="M160 0 C 168 110, 156 220, 164 330" fill="none" stroke="#e8721c" stroke-width="2.5" opacity="0.6"/>
-                            </svg>
+                            <StratalineMap markers="siteMarkers" basemap="state.basemap" zoom="16" padding="constructor.SITE_PADDING" onReady.bind="onMapReady"/>
                             <span class="o_sf_bm" role="group" aria-label="Basemap">
                                 <button type="button" class="o_sf_bm_btn" t-att-class="{ 'is-on': state.basemap === 'streets' }" t-on-click="() => (state.basemap = 'streets')">Map</button>
                                 <button type="button" class="o_sf_bm_btn" t-att-class="{ 'is-on': state.basemap === 'satellite' }" t-on-click="() => (state.basemap = 'satellite')">Satellite</button>
@@ -93,7 +88,7 @@
                                     <div class="o_sf_site_row"><span class="o_sf_dot" t-attf-style="background: {{ u.color }}" aria-hidden="true"/><span t-esc="u.name"/><span class="o_sf_status o_sf_status--located">on ticket</span></div>
                                 </t>
                                 <div class="o_sf_site_row"><span class="o_sf_dot o_sf_dot--cadastral" aria-hidden="true"/><span>Property lines · cadastral</span><span class="o_sf_status">layer on</span></div>
-                                <div class="o_sf_note o_sf_mt-s">Live Strataline utility layer joins this card with the tile integration — verify on-site records before digging clearance.</div>
+                                <div class="o_sf_note o_sf_mt-s">Utility lines are Strataline's live layer at this address — verify on-site records before digging clearance.</div>
                                 <button type="button" class="o_sf_chip o_sf_chip--wide" t-on-click="() => (state.detailsOpen = !state.detailsOpen)" t-att-aria-expanded="state.detailsOpen"><t t-esc="state.detailsOpen ? 'Hide details' : 'View all details'"/></button>
                                 <dl t-if="state.detailsOpen" class="o_sf_kv o_sf_kv--card">
                                     <dt>Requested by</dt><dd class="o_sf_mono" t-esc="sel.requester || '—'"/>
@@ -104,7 +99,6 @@
                                     <dt class="o_sf_kv_top">Scope note</dt><dd t-esc="sel.scope_note || '—'"/>
                                 </dl>
                             </div>
-                            <span class="o_sf_canvas_cap o_sf_mono">strataline · utilities + cadastral layers</span>
                         </div>
                     </div>
                     <div class="o_sf_stage_actions">
