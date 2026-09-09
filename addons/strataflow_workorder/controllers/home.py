@@ -3,24 +3,32 @@ from odoo.http import request
 from odoo.addons.web.controllers.home import Home
 from odoo.addons.web.controllers.utils import is_user_internal
 
+# The six product screens, by the `path` on their client action (views/strataflow_actions.xml).
+# Each is served at the bare root as well as at Odoo's own /odoo/<path>; the client-side half
+# of this lives in static/src/core/router_paths.js.
+SCREEN_PATHS = ['home', 'dispatch', 'workorders', 'pipeline', 'invoices', 'locator']
+
 
 class StrataflowHome(Home):
-    """Land Strataflow users on the Home screen at the bare domain.
+    """Serve the product screens at the root of the domain, with no /odoo in the URL.
 
-    Stock `/` redirects to `/odoo`, which opens whatever the web client decides —
-    the app switcher, or the user's Home Action. Neither is what a tenant should
-    see at `https://<slug>.strataflow.co/`.
+    A tenant at https://<slug>.strataflow.co should see /dispatch, not
+    /odoo/action-strataflow_workorder.action_strataflow_dispatch, and not
+    /odoo/dispatch either.
 
-    Done as a redirect on `/` rather than by setting each user's Home Action,
-    which was the other way to do it: the Home Action also hijacks `/odoo`, and
-    `/odoo` is the only route back to the stock backend — the shell's avatar
-    button ("Open Odoo", `core/shell.js` `openOdoo`) goes there, and Odoo 19 has
-    no separate URL for the app switcher to send it to instead. Overriding `/`
-    leaves that escape hatch working.
+    Two halves. Here, each screen gets a real route at the root that serves the
+    web client exactly as /odoo does — so the URL can be typed, bookmarked,
+    linked and reloaded. In `static/src/core/router_paths.js`, the web client's
+    router is taught the same mapping, so that once it has booted it keeps
+    writing /dispatch into the address bar instead of rewriting it back to
+    /odoo/dispatch on the first navigation. The router documents both
+    conversions as patchable ("state <-> url conversions can be patched if
+    needed in a custom webclient"), so this is an extension point rather than a
+    hack, but the two halves have to agree: adding a screen means adding its
+    path in both places.
 
-    Anyone who is not a Strataflow user — a portal user, or an internal user in a
-    database where this module is installed but they are not on the locate desk —
-    falls through to Odoo's own behaviour.
+    /odoo/<path> keeps working, and so does /odoo itself — that is still the way
+    into the stock backend, which the shell's avatar button relies on.
     """
 
     @http.route()
@@ -28,5 +36,15 @@ class StrataflowHome(Home):
         if request.db and request.session.uid and is_user_internal(request.session.uid):
             user = request.env['res.users'].sudo().browse(request.session.uid)
             if user.has_group('strataflow_workorder.group_strataflow_user'):
-                return request.redirect_query('/odoo/home', query=request.params)
+                return request.redirect_query('/home', query=request.params)
         return super().index(*args, **kw)
+
+    @http.route(['/' + p for p in SCREEN_PATHS], type='http', auth='none')
+    def strataflow_screen(self, **kw):
+        """Serve the web client for a screen addressed at the root.
+
+        Delegating to `web_client` rather than reimplementing it keeps the whole
+        boot sequence — ensure_db, the session check, the login redirect that
+        carries this path through as `redirect` — identical to /odoo's.
+        """
+        return self.web_client(**kw)
