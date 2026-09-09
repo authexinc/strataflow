@@ -23,7 +23,7 @@ const DONE_LABEL = { located: _t("Located"), closed: _t("Closed"), invoiced: _t(
 
 export class LocatorScreen extends Component {
     static template = "strataflow_workorder.Locator";
-    // URL segment — see core/router_paths.js. Keep in step with strataflow_actions.xml.
+    // URL segment (/odoo/<path>). Keep in step with the action's `path` in strataflow_actions.xml.
     static path = "locator";
     static components = { StrataflowShell, FauxMap, LocateCanvas, LocatePreview };
     static props = { ...standardActionServiceProps };
