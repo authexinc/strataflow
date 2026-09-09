@@ -10,10 +10,20 @@
 
 // ---- shell -------------------------------------------------------------------
 // Screens are separate client actions, so switching one destroys the old `.o_sf` and mounts a new
-// one — a hard cut. Fading the incoming screen in softens that. Opacity only, deliberately: `.o_sf`
-// hosts `position: fixed` children (the topbar and footer when scrolling), and a transform here
-// would make it their containing block mid-animation and shift them.
+// one — a hard cut. Two things soften it, and they are mutually exclusive:
+//
+// 1. Where the browser has the View Transitions API, `goNav` runs the swap inside one, so the old
+//    and new screens are both on screen and genuinely cross-fade. `.o_sf_swapping` is on <html>
+//    for the duration and stands the fallback down, or the incoming screen would fade in twice.
+// 2. Everywhere else, the incoming screen fades in on its own (o_sf_enter). Better than nothing,
+//    but there is still a frame with no screen at all, which is what "it just cuts" describes.
+//
+// Opacity only in both cases, deliberately: `.o_sf` hosts `position: fixed` children (the topbar
+// and footer when scrolling), and a transform here would make it their containing block
+// mid-animation and shift them.
 @keyframes o_sf_enter { from { opacity: 0; } to { opacity: 1; } }
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: .26s; animation-timing-function: ease; }
+.o_sf_swapping .o_sf { animation: none; }
 .o_sf {
   position: absolute; inset: 0; overflow: hidden;
   animation: o_sf_enter .22s ease-out;

@@ -75,16 +75,32 @@ export class StrataflowShell extends Component {
         return NAV.filter((n) => dispatcher || !n.dispatcher);
     }
 
+    // Each screen is its own client action, so switching destroys the old `.o_sf` before the
+    // new one mounts. Fading the incoming screen in (o_sf_enter) does not hide that: for a
+    // frame or two there is no screen at all, which reads as a cut with a flash in it. The
+    // View Transitions API is the only way to have both frames on screen at once here — it
+    // snapshots the old DOM, runs the callback, then cross-fades to the new one. Where it is
+    // missing, the o_sf_enter fallback still runs and behaves exactly as before.
     goNav(key) {
         if (key === this.props.active) {
             return;
         }
         const tag = `strataflow_${key}`;
-        if (registry.category("actions").contains(tag)) {
-            this.action.doAction({ type: "ir.actions.client", tag }, { clearBreadcrumbs: true });
-        } else {
+        if (!registry.category("actions").contains(tag)) {
             this.notification.add(_t("%s is coming soon.", key), { type: "info" });
+            return;
         }
+        const swap = () => this.action.doAction({ type: "ir.actions.client", tag }, { clearBreadcrumbs: true });
+        // Reduce Motion asks for cross-fades in place of movement, so the transition stays on;
+        // it is the incoming-only fade that gets switched off in the stylesheet.
+        if (!document.startViewTransition) {
+            swap();
+            return;
+        }
+        // suppress o_sf_enter for this swap, or the new screen fades in twice over
+        document.documentElement.classList.add("o_sf_swapping");
+        const transition = document.startViewTransition(() => swap());
+        transition.finished.finally(() => document.documentElement.classList.remove("o_sf_swapping"));
     }
 
     toggleTheme() {
