@@ -26,6 +26,21 @@ Locked product decisions are in `ARCHITECTURE.md` › "Product decisions" and ar
 
 ## Behaviour / correctness
 
+- [ ] **Signing in lands on `/odoo/discuss` instead of Home — UNFIXED** (2026-09-08). Three attempts
+      missed; the trail is in the top `DEVLOG.md` entry and the warning at the top of `HANDOFF.md`.
+      The server redirect is verified correct (signed out, `/` gives
+      `/web/login?redirect=%2Fhome%3F`, and a real form POST with that redirect returns 303 to
+      `/home`). Everything after the form POST is unverified — the automation tab cannot boot the web
+      client. Prime hypothesis is client-side: the web client boots at `/home`, fails to resolve the
+      path to a screen, falls back to the default menu action (Discuss) and rewrites the URL. Check
+      `router.js:325` first — its internal-link interceptor only runs when
+      `location.pathname.startsWith("/odoo")`, which is false on `/home`, and unlike `stateToUrl` /
+      `urlToState` it is not a documented patch point.
+- [ ] **Decide: keep the root-path URLs, or revert to `/odoo/<path>` plus an nginx strip at the tenant
+      edge** (2026-09-08). Depends on the item above. `/odoo/<path>` worked and was verified; the
+      root-path serving is the change under suspicion, and the router assumes its own prefix in places
+      it offers no hook for. My recommendation is to revert and do the strip in nginx with Phase 2.
+
 - [ ] **Rebuild Auto-assign as zone-first, workload-tiebreak** (Stefan, 2026-09-08 — locked in
       `ARCHITECTURE.md` › "Product decisions"). **Correction to this file's earlier note: Auto-assign is
       not a stub.** It is built and it really assigns — `planRoutes` (`core/geo.js:45`) is greedy

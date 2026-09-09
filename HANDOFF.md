@@ -1,140 +1,149 @@
-# Handoff — 2026-09-08 (evening)
+# Handoff — 2026-09-08 (late)
+
+## ⚠ Start here: signing in still lands on /odoo/discuss
+
+**This is broken and was not fixed.** Stefan reported it three times; three attempts missed. Read the
+top `DEVLOG.md` entry before touching anything — it has the full trail so you do not repeat it.
+
+Symptom: signed out, click Log in, end up on `/odoo/discuss` instead of the Strataflow Home screen.
+
+What is genuinely verified now:
+- Signed out, `/` lands on `/web/login?redirect=%2Fhome%3F`, and the form's hidden `redirect` field
+  reads `/home?`. **Seen in Chrome**, not just over HTTP.
+- POSTing the real login form with `redirect=/home?` returns `303 -> /home`. Redirect matrix over
+  HTTP: `/odoo?`, `/odoo`, `/web` all give `/home`; `/dispatch` and `/odoo/settings` are honoured.
+
+What has never been verified, and is where the bug almost certainly lives:
+- **Everything after the form POST.** I have never completed a login in a browser — the automation
+  tab cannot boot Odoo's web client, and I do not type passwords into browsers. So the entire
+  client-side half is unchecked.
+
+**Prime hypothesis: it is client-side, not the redirect.** The server sends you to `/home`; the web
+client boots there and must resolve that path to a screen itself. If it fails it falls back to the
+default menu action — Discuss — and rewrites the URL to `/odoo/discuss`, which is exactly the
+reported symptom and would look identical however correct the server redirect is. Two things to
+check, in order:
+
+1. **`router.js:325` is a hard dependency on the literal `/odoo` prefix, and it is not patchable.**
+   The internal-link interceptor only runs when `browser.location.pathname.startsWith("/odoo")`. On
+   `/home` that is false, so the whole click-interception / `ROUTE_CHANGE` path is skipped. Upstream
+   documents `stateToUrl` / `urlToState` as the seam for custom URLs and both are patched
+   (`static/src/core/router_paths.js`) — this guard is not, and reads `browser.location` directly.
+2. **`action_service.js:529`** resolves a client action from a URL via
+   `actionRegistry.getEntries().find((a) => a[1].path === state.action)`. That needs the `static path`
+   on each screen component (added in `28d5087bf95`) to match at runtime. Confirmed present in the
+   served bundle; never confirmed as actually matching.
+
+**Recommendation: strongly consider reverting the root-path serving.** Take out `SCREEN_PATHS` in
+`controllers/home.py` and `static/src/core/router_paths.js`, go back to `/odoo/<path>` — which worked
+and was verified — and do the prefix strip in nginx at the tenant edge. That is how I originally
+scoped it before finding the `stateToUrl` comment and talking myself into the in-app approach. Point 1
+is one place the router assumes its own prefix with no hook; there are likely others. A clean URL is
+worth having, but not at the cost of an unstable web client.
 
 ## Current state
-`addons/strataflow_workorder` is the only custom module on this Odoo 19 CE fork. Six fullscreen OWL screens
-(Home, Dispatch, Work Orders, CRM, Invoices, Locator) render in the Strataline glass shell, backed by stock
-`crm.lead` and `account.move`, with tickets as `mail.thread` records. Maps are still faux SVGs.
+`addons/strataflow_workorder` is the only custom module on this Odoo 19 CE fork. Six fullscreen OWL
+screens (Home, Dispatch, Work Orders, CRM, Invoices, Locator) render in the Strataline glass shell,
+backed by stock `crm.lead` and `account.move`, with tickets as `mail.thread` records. Maps are still
+faux SVGs.
 
-Since the last handoff, four things landed and one decision was locked:
-
-- **A "+ New ticket" button** on Work Orders and Dispatch — the shell had no create path for a ticket at all.
-- **The sign-in page** in the glass language, with a live map background. Passkeys turned out to already
-  work (`auth_passkey` is `auto_install`); the button just needed skinning.
-- **`/odoo` is gone from the product URLs.** `/dispatch`, `/workorders`, `/pipeline`, `/invoices`,
-  `/locator`, `/home`, and `/` redirects to `/home`. This took two goes — the first left the action
-  *tag* in the URL (`/odoo/strataflow_home`) and my check did not catch it.
-- **Screen switching was rebuilt twice** — I made it materially worse first (see Landmines) before it
-  ended up genuinely responsive.
-- **Auto-assign is locked**: zone first, workload as the tiebreak, no locator GPS.
-
-Stefan reviewed the transition work in a normal browser tab and signed off ("Now we're talking"),
-then caught that the URLs were still wrong. **The URL fix in `28d5087bf95` has not been seen in a
-browser by anyone** — it is verified only by `scratchpad/pathcheck.py` and by reading the served
-bundle. That is the first thing to confirm next session.
+Landed this session:
+- **"+ New ticket"** on Work Orders and Dispatch — the shell had no create path for a ticket at all.
+- **The sign-in page** in the glass language, with a live map background. Odoo's footer links removed
+  on Stefan's call. Passkeys already worked (`auth_passkey` is `auto_install`); the button was skinned.
+- **Screen switching** — rebuilt twice. I made it materially worse first with a View Transition; the
+  version Stefan signed off ("Now we're talking") is optimistic nav highlight + content-only fade +
+  a page ground held across the action swap.
+- **Auto-assign decision locked**: zone first, workload as the tiebreak, no locator GPS.
+- **Clean URLs** — and see the warning at the top: this is the change under suspicion.
 
 ## What I was doing when this ended
-Nothing in flight; working tree clean. The session ended on a `/wrap` right after the last transition fix
-was verified and committed.
+Third failed attempt at the login redirect, then wrapping on Stefan's instruction. Working tree clean.
 
 ## Repo state
-- Branch `feat/strataflow-workorder`, working tree clean, **14 commits ahead of
+- Branch `feat/strataflow-workorder`, working tree clean, **17 commits ahead of
   `origin/feat/strataflow-workorder` — not pushed.**
-- This session's commits, oldest first:
-  - `ff6cbb6f16c` [DOC] lock the auto-assign rule, park the USP feed
-  - `6549ae14d38` [ADD] "+ New ticket" button on Work Orders and Dispatch
-  - `3c43ffe7e35` [ADD] sign-in page in the Strataline glass language
-  - `44aa458433a` [IMP] readable URLs, and Home at the bare domain
-  - `cd7d7390283` [FIX] cross-fade between screens instead of cutting  ← **this one was a regression**
-  - `d32fe2f6cfc` [IMP] drop /odoo from the product URLs
-  - `c826ab246d2` [IMP] richer login background, and drop Odoo's login footer
-  - `95868cd255a` [FIX] make screen changes respond instantly again  ← reverts the guts of `cd7d7390283`
-  - `515bae96c1c` [FIX] stop the top bar fading in on every screen load
-  - `f6058106a12` [DOC] session wrap
-  - `28d5087bf95` [FIX] the clean URLs needed a third declaration  ← the URL work was **not**
-    actually working until this; see the landmine on the three declarations
-  - `036f1f36d90` [DOC] correct the handoff repo state
-  - `fd5a38aabe5` [FIX] sign in lands on Home, not Discuss
-  - `04a8ce5071b` [DOC] handoff — login redirect landmine
+- The load-bearing ones, oldest first: `ff6cbb6f16c` (auto-assign decision), `6549ae14d38` (+ New
+  ticket), `3c43ffe7e35` (sign-in page), `44aa458433a` (readable URLs), `cd7d7390283` (**regression** —
+  the View Transition), `d32fe2f6cfc` (drop /odoo from URLs), `c826ab246d2` (login background, footer),
+  `95868cd255a` (reverts the guts of `cd7d7390283`), `515bae96c1c` (top bar no longer fades),
+  `28d5087bf95` (`static path` on components — the URL work did not work before this),
+  `fd5a38aabe5` (login redirect, attempt 1 — **did not fix it**), `e592e9946ea` (attempt 2 —
+  **did not fix it**), plus doc commits.
 - Not merged into `19.0`. Merge is Stefan's call.
-- `~/map-sys` is on `feat/search-key-scope`, in sync with its origin, still awaiting Stefan's review.
-  Untouched this session.
+- `~/map-sys` is on `feat/search-key-scope`, in sync with its origin, untouched this session.
 - Still no automated tests for this module.
 
 ## Next steps
-`BACKLOG.md` is the queue. In the order I would take them:
-1. **Push this branch** — 14 commits sitting local.
-2. **Answer the USP feed question** (`BACKLOG.md` › Open questions). It now carries its dependent
-   sub-question: under DB-per-tenant, does ingest run as an `ir.cron` per tenant DB, or as one
-   strataline-side service writing in over JSON-RPC? Not answerable before the transport is known.
-3. **Build zone-first auto-assign.** Decided, not built. One sub-decision first: how a zone is
-   represented and how a ticket gets one — four options are written out in `BACKLOG.md` so they do not
-   need re-deriving.
-4. **`README.md`** — the one fully unblocked item that needs no browser.
-5. **The internal-screen revamp** — large; scope before touching. Should settle `.o_sf_btn--primary`,
-   which still uses the ink mixin.
-6. Still outstanding from before: MapLibre swap (`core/shell.xml` `FauxMap`, `screens/workorders.xml`
-   ticket canvas), a stored sort key on `strataflow.workorder`, tests for `action_invoice_closed` and
-   `action_complete_locate`, and tenancy Phase 2.
+1. **Fix the login redirect** — top of this file. Consider the revert before adding more code.
+2. **Push the branch** — 17 commits sitting local.
+3. **Answer the USP feed question** (`BACKLOG.md` › Open questions), including its dependent
+   sub-question: `ir.cron` per tenant DB, or one strataline-side service over JSON-RPC?
+4. **Build zone-first auto-assign.** Decided, not built; one sub-decision first (how a zone is
+   represented), four options written out in `BACKLOG.md`.
+5. **`README.md`** — unblocked, needs no browser.
+6. **The internal-screen revamp** — large; should settle `.o_sf_btn--primary`, still on the ink mixin.
+7. Older: MapLibre swap, a stored sort key on `strataflow.workorder`, tests for
+   `action_invoice_closed` and `action_complete_locate`, tenancy Phase 2.
 
 ## Landmines
-- **Do not "smooth" an async swap with `document.startViewTransition`.** I did, in `cd7d7390283`. It
-  snapshots the outgoing screen and holds that frame frozen until its callback resolves, so every screen
-  change sat on a dead picture for as long as the next action took to mount — no skeleton, nothing.
-  Stefan's words: "you did a horrible ux job with the loading". Reverted in `95868cd255a`. Feedback
-  first, decoration second.
-- **The data was never slow.** `get_board_data` answers in 26 ms with the demo set. If a screen feels
-  slow, measure before theorising — the three real causes were an optimistic-state bug, an animation on
-  chrome that never changes, and Odoo's own white showing between unmount and mount.
-- **The skeleton must not fake the chrome.** It used to draw its own top bar at `z-index: 999` over the
-  real one and then fade out, which read as the whole top of the app fading in on every load. The real
-  bar and footer now sit at `z-index: 1000` (`strataflow.scss:86`) above the skeleton. Anything added to
-  the shell that needs no data belongs above the skeleton, not boned out inside it.
-- **`holdPageGround` (`core/shell.js:29`) uses literal hex, not tokens, on purpose.** It paints
-  `<html>` to cover the gap between actions; the token block is scoped to `.o_sf`, and hoisting it to
-  `<html>` would leak Strataflow's tokens onto stock Odoo pages. The values are each theme's `--bg` and
-  must be kept in step with them by hand.
-- **The clean URLs need THREE declarations to agree**, and the third is easy to miss: the
-  `<field name="path">` on the `ir.actions.client` record, `SCREEN_PATHS` in `controllers/home.py:9`,
-  and **`static path` on the screen component**. `goNav` launches screens by tag, so the record's
-  `path` never reaches them — the action service takes it from the registry entry
-  (`action_service.js:1298`) and without it `makeState` falls back to the tag, giving
-  `/odoo/strataflow_home`. `scratchpad/pathcheck.py` cross-checks all three; run it after adding a
-  screen.
-- **Post-login lands where `_login_redirect` says, and `/odoo` counts as "nowhere".** Signed out, stock
-  `/` sends you to `/odoo`, which bounces to `/web/login?redirect=/odoo?` — an *explicit* redirect that
-  means only "the backend", and honouring it drops you on the first app in the menu (Discuss here).
-  `controllers/home.py` sends anonymous visitors to `/home` and treats `/odoo` and `/web` as no
-  destination, while still honouring a real one like `/dispatch`. Testing `/web/login` directly will
-  **not** catch a regression here — there is no redirect on that path. Use `scratchpad/logincheck.py`,
-  and check the chain from `/`.
-- **An HTTP 200 on `/dispatch` proves nothing about client routing.** It only means the server served
-  the web client shell. That is exactly how the missing `static path` above got through a green check.
-  For anything the router does, read the bundle or have Stefan look.
-- **Odoo forbids `@import` between asset files.** `Local import '../scss/tokens' is forbidden for
-  security reasons`, followed by `Error: no mixin named tokens-light`. Shared scss must be *listed* in
-  every bundle that needs it, before its consumers — see `static/scss/tokens.scss` in `__manifest__.py`.
-- **Login assets live outside `static/src` deliberately.** The backend globs are
-  `static/src/**/*.{scss,js,xml}`; anything for the login page under there would be swept into the
-  backend bundle and restyle every stock form control in the app.
+- **"Verified server-side" is not "verified".** Three times this session I called something fixed on
+  evidence that could not support it: an HTTP 200 that only proved the server served a shell, a login
+  test on a path the user never takes, and a browser check that stopped at the form. Every miss was
+  client-side, and Stefan found each in seconds. When the app cannot be run, the honest word is
+  **unverified**.
+- **Test the entry point the user actually uses.** `/web/login` has no redirect; `/` does. The whole
+  login bug lived in that difference.
+- **The router assumes its own `/odoo` prefix in places it does not expose a hook for** —
+  `router.js:325` is the one found so far. `stateToUrl` / `urlToState` are patchable; this is not.
+- **The clean URLs need THREE declarations to agree**: `<field name="path">` on the
+  `ir.actions.client` record, `SCREEN_PATHS` in `controllers/home.py`, and **`static path` on the
+  screen component**. `goNav` launches screens by tag, so the record's `path` never reaches them —
+  without the static, `makeState` falls back to the tag and you get `/odoo/strataflow_home`.
+  `scratchpad/pathcheck.py` cross-checks all three.
+- **Do not "smooth" an async swap with `document.startViewTransition`.** It snapshots the outgoing
+  screen and freezes that frame until the callback resolves, so every screen change sat on a dead
+  picture for as long as the next action took to mount. Reverted in `95868cd255a`. Feedback first,
+  decoration second.
+- **The data was never slow.** `get_board_data` answers in 26 ms. Measure before theorising.
+- **The skeleton must not fake chrome that needs no data.** It drew its own top bar at `z-index: 999`
+  over the real one and faded out, which read as the whole top of the app fading in on every load.
+  Real bar and footer now sit at `z-index: 1000` (`strataflow.scss:86`).
+- **`holdPageGround` (`core/shell.js:29`) uses literal hex, not tokens, on purpose** — it paints
+  `<html>`, and hoisting the `.o_sf`-scoped token block there would leak onto stock Odoo pages. The
+  values are each theme's `--bg` and must be kept in step by hand.
+- **Odoo forbids `@import` between asset files** — `Local import '../scss/tokens' is forbidden for
+  security reasons`, then `Error: no mixin named tokens-light`. Shared scss must be *listed* in every
+  bundle that needs it, before its consumers.
+- **Login assets live outside `static/src` deliberately** — the backend globs would otherwise sweep
+  them into the backend bundle and restyle every stock form control.
 - **The automation tab cannot boot Odoo's web client, and it is not our code.** Stock Odoo fails
-  identically — `/odoo/settings` gives a 108-character body with `.o_web_client` present, console showing
-  only `Error: Access to storage is not allowed from this context`. The extension races Odoo's boot for
-  storage. After the failed boot the page's own context reports `localStorage` fine and
-  `hasStorageAccess()` true, so **the probe misleads**. Verify over JSON-RPC and by reading the served
-  bundles, and hand visuals to Stefan.
+  identically (`/odoo/settings` gives a 108-character body), console showing only `Error: Access to
+  storage is not allowed from this context`. After the failed boot the page reports `localStorage`
+  fine and `hasStorageAccess()` true, so **the probe misleads**.
 - **The old cookie-injection recipe is dead in Odoo 19** — `session_id` is `httponly=True`
-  (`odoo/http.py:2528`) with rotation (`odoo/http.py:2180`), so `document.cookie` cannot overwrite it,
-  and the recipe's own first step (visit `/web/login`) is what plants the blocking cookie. Symptom:
-  `odoo.http.SessionExpiredException` from a session that works over curl. **Auth that does work:** load
-  `http://127.0.0.1:8069/web/static/img/favicon.ico` (static assets set no cookie, and 127.0.0.1 is a
-  fresh origin), plant a curl-minted `session_id` with `document.cookie`, then navigate. Gets you
-  authenticated; does not get you past the storage race.
+  (`odoo/http.py:2528`) with rotation (`odoo/http.py:2180`), and the recipe's own first step (visit
+  `/web/login`) plants the blocking cookie. Symptom: `odoo.http.SessionExpiredException` from a session
+  that works over curl. **Auth that does work:** load
+  `http://127.0.0.1:8069/web/static/img/favicon.ico` (static assets set no cookie, 127.0.0.1 is a fresh
+  origin), plant a curl-minted `session_id`, then navigate. Gets you authenticated; does not get you
+  past the storage race.
+- **127.0.0.1 and localhost are separate cookie origins.** Useful: it lets you test a signed-out flow
+  without logging Stefan out of his own session.
 - **WebAuthn is origin-bound.** Passkeys enrolled on localhost will not work on
-  `<slug>.strataflow.co`, and every tenant subdomain is its own origin — a user with two workspaces
-  enrols twice.
-- **`post_init_hook` runs on install, never on `-u`.** And `data/strataflow_crm_account_data.xml` is
-  `noupdate="1"`. Changing anything already present in a tenant database needs a migration script.
-- **Action `path` is unique across every action table.** `ir_actions` is a Postgres inheritance parent,
-  so the unique index cannot enforce it and `_check_path` re-checks by hand. `crm` and `work-orders` are
-  already taken by stock addons — hence `pipeline` and `workorders`.
+  `<slug>.strataflow.co`, and every tenant subdomain is its own origin.
+- **`post_init_hook` runs on install, never on `-u`**, and `data/strataflow_crm_account_data.xml` is
+  `noupdate="1"`. Changing anything already in a tenant DB needs a migration script.
+- **Action `path` is unique across every action table** (`ir_actions` is a Postgres inheritance parent,
+  so `_check_path` re-checks by hand). `crm` and `work-orders` are taken by stock addons — hence
+  `pipeline` and `workorders`.
 - **Zero-specificity resets:** `strataflow.scss` wraps element resets in `:where()` on purpose. If a
   component margin looks ignored, check that reset first.
 - **OWL branch chains:** lifting a block out of a `t-if`/`t-elif` chain and re-inserting it creates a
-  second independent group, so two branches render at once. The Locator's stage chain must stay one
-  chain.
+  second independent group, so two branches render at once. The Locator's stage chain must stay one.
 - **ReportLab writes `/Filter [/ASCII85Decode /FlateDecode]`.** Raw `zlib.decompress` over the PDF
-  streams yields nothing and will happily "prove" whatever you hoped. Use `PyPDF2`, which is in the venv.
-- `--log-level=warn` suppresses the "Modules loaded" line, so an `until grep` wait on it never returns.
+  streams yields nothing and will happily "prove" whatever you hoped. Use `PyPDF2`, in the venv.
+- `--log-level=warn` suppresses the "Modules loaded" line, so an `until grep` on it never returns.
   Poll HTTP instead.
 - Odoo 19 renames: `res.groups.privilege_id`, `crm.lead.recurring_plan`, luxon is a global, Sass
   swallows CSS `min()`. Grep the stock model before using a field name from memory.
@@ -146,28 +155,29 @@ was verified and committed.
 - `~/strataflow/.venv` (gitignored). Postgres via Homebrew; DB `strataflow_dev` with demo.
 - Run: `.venv/bin/python odoo-bin -d strataflow_dev --db_host=localhost --addons-path=addons --dev=xml --http-port=8069 --log-level=warn`
   plus `-u strataflow_workorder` after any Python/XML/JS/SCSS change — **SCSS changes need the restart**.
-  Fresh DB: `dropdb strataflow_dev`, then the same command with `-i strataflow_workorder --with-demo`
-  (~4 min). **A server is still running on 8069 from this session.**
-- Screens are now at `/home`, `/dispatch`, `/workorders`, `/pipeline`, `/invoices`, `/locator`; `/`
-  redirects to `/home`. `/odoo/<same path>` and the old `/odoo/action-<xmlid>` URLs still resolve, and
-  `/odoo` still reaches the stock backend — that last one is what the shell's avatar button depends on.
-- Verifying without a browser: `POST /web/session/authenticate` (admin/admin on the dev DB) and drive
-  `call_kw` from a small script. The agent does not type passwords into the browser. The URL checks from
-  this session are in the scratchpad as `urlcheck2.py` — worth re-creating in the repo if they are going
-  to be run again.
-- Git identity is repo-local `Stefan Djordjevic <dev@authex.co>`; pushes use the `authexinc` GitHub login.
+  Fresh DB: `dropdb strataflow_dev`, then the same with `-i strataflow_workorder --with-demo` (~4 min).
+  **A server is still running on 8069 from this session.**
+- Screens are at `/home`, `/dispatch`, `/workorders`, `/pipeline`, `/invoices`, `/locator`; `/`
+  redirects to `/home`. `/odoo/<same path>` and old `/odoo/action-<xmlid>` URLs still resolve, and
+  `/odoo` still reaches the stock backend — the shell's avatar button depends on that.
+- The throwaway checks from this session are in the scratchpad and are worth re-creating in the repo
+  if they will be run again: `pathcheck.py` (the three path declarations agree), `logincheck.py`
+  (drives the real login form), `urlcheck2.py` (URL resolution — note its 200-only assertions are the
+  weak kind that missed a bug).
+- Git identity is repo-local `Stefan Djordjevic <dev@authex.co>`; pushes use the `authexinc` login.
 
 ## Open decisions
-1. **How do we hook into the USP feed?** Transport, record shape, auth, cadence — and then whether ingest
+1. **How do we hook into the USP feed?** Transport, record shape, auth, cadence — then whether ingest
    runs per tenant DB or through one strataline-side service. Both halves in `BACKLOG.md`. Until it
    exists, `source` is always `manual`.
-2. **How is a zone represented, and how does a ticket get one?** Blocks the auto-assign build. Four
-   options are written out verbatim in `BACKLOG.md` (a `strataflow.zone` model by postal prefix; the same
-   by ATS township/range off `lld`; a bbox per zone; a plain Char both sides).
+2. **How is a zone represented, and how does a ticket get one?** Blocks the auto-assign build; four
+   options written out verbatim in `BACKLOG.md`.
+3. **Keep the root-path URLs, or revert to `/odoo/<path>` plus an nginx strip?** See the top of this
+   file. My recommendation is to revert; it is Stefan's call.
 
-Answered this session and now locked in `ARCHITECTURE.md`: **Auto-assign is zone-first with workload as
-the tiebreak, and locator GPS is out of scope.** Also settled by Stefan in passing: the login page drops
-"Manage Databases" and "Powered by Odoo".
+Locked in `ARCHITECTURE.md` this session: **Auto-assign is zone-first with workload as the tiebreak,
+locator GPS out of scope.** Settled in passing: the login page drops "Manage Databases" and "Powered
+by Odoo".
 
-Still waiting on him from before: the two merges (`feat/search-key-scope` in `~/map-sys`, and this branch
-into `19.0`), plus the push of this branch.
+Still waiting on Stefan from before: the two merges (`feat/search-key-scope` in `~/map-sys`, and this
+branch into `19.0`), plus the push of this branch.

@@ -3,6 +3,78 @@
 Newest first. Read the last 3–5 entries at session start. Failures are recorded on purpose; a
 workaround is labelled as one so it does not become permanent by accident.
 
+### 2026-09-08 — Login still lands in Discuss. Three fixes, three misses, handed over unresolved
+
+**STILL BROKEN AT HANDOFF.** Stefan reported it three times and it is still wrong. Nothing below
+is a fix; it is the trail, so the next session does not repeat it.
+
+**Symptom:** signed out, clicking Log in ends on `/odoo/discuss` instead of the Strataflow Home
+screen.
+
+**Attempt 1 — `_login_redirect` override (`fd5a38aabe5`).** Stock `_get_login_redirect_url`
+sends an internal user with no explicit redirect to `/odoo`, which opens the web client with no
+action, and the client falls through to the first app in the menu — Discuss in this database.
+Overrode `_login_redirect` to return `/home`. **Verified by driving the real login form** with
+its csrf token: plain sign-in gave `303 -> /home`. Reported as fixed. It was not.
+
+**Why attempt 1 missed: I tested the wrong entry point.** The test hit `/web/login` directly,
+where there is no redirect at all, so the override's `if not redirect` branch was the one being
+exercised. Stefan's actual route is `/`, and signed out that goes
+`/` -> (stock) `/odoo` -> `/web/login?redirect=%2Fodoo%3F`. That redirect **is** explicit, so my
+own code deliberately honoured it and sent him back to `/odoo`. A green test on a path the user
+never takes is worth nothing.
+
+**Attempt 2 — anonymous `/` and placeholder redirects (`e592e9946ea`).** Two changes: `index`
+sends anonymous visitors to `/home` too, so the login carries `/home` through; and
+`_login_redirect` treats `/odoo` and `/web` as *no destination* rather than as targets, since
+they arrive as explicit redirects meaning only "the backend". **Verified in Chrome this time**,
+signed out on the 127.0.0.1 origin (a separate cookie origin, so Stefan's own session was not
+disturbed): `/` lands on `/web/login?redirect=%2Fhome%3F`, the form's hidden redirect field
+reads `/home?`, the page is the Strataflow login with no Odoo footer links. Also a redirect
+matrix over HTTP: `/odoo?`, `/odoo`, `/web` all give `/home`; `/dispatch` and `/odoo/settings`
+are still honoured. **Stefan: "it still isn't working."**
+
+**What is actually verified, and what never was.** Everything above stops at the login form. The
+form POST and everything after it has never been seen in a browser by me, because the automation
+tab cannot boot Odoo's web client (`Error: Access to storage is not allowed from this context`,
+stock Odoo fails identically), and I do not type passwords into browsers. So the whole
+client-side half — what happens once `/home` actually loads — is unverified, and that is exactly
+where the remaining bug most likely is.
+
+**Prime hypothesis for next session: this is client-side, not the redirect.** The server now
+sends you to `/home`; the web client then boots there and has to resolve the path to a screen
+itself. If it fails, it falls back to the default menu action — Discuss — and rewrites the URL
+to `/odoo/discuss`, which is *precisely* the reported symptom, and would look identical no
+matter how correct the server redirect is. Two concrete things to check:
+
+1. `action_service.js:529` resolves a client action from a URL by
+   `actionRegistry.getEntries().find((a) => a[1].path === state.action)`. That needs the
+   `static path` added to each screen component in `28d5087bf95` to be present in the bundle the
+   browser actually has. Confirmed present when served; **not** confirmed as matching at runtime.
+2. **`router.js:325` is a hard dependency on the literal prefix that is not patchable.** The
+   internal-link interceptor only runs when
+   `browser.location.pathname.startsWith("/odoo")`. On `/home` that guard is false, so the
+   entire click-interception and `ROUTE_CHANGE` path is skipped. Upstream documents
+   `stateToUrl` / `urlToState` as the seam for custom URLs, and those are patched — this guard
+   is not, and reads `browser.location` directly.
+
+**Which makes the approach itself suspect, and that is the real lesson.** Serving the screens at
+the domain root means fighting a router that assumes its own prefix in places it does not offer
+a hook for. Point 2 is one such place found by reading; there may be others. **Recommendation:
+seriously consider reverting the root-path serving** (`controllers/home.py` `SCREEN_PATHS`,
+`static/src/core/router_paths.js`) back to `/odoo/<path>`, which worked and was verified, and
+doing the prefix strip in nginx at the tenant edge — which is what I originally scoped it as
+before being talked out of it by finding the `stateToUrl` comment. The clean URL is worth having;
+it is not worth an unstable web client.
+
+**Process failure worth naming, since it repeated all session.** Three times I called something
+verified on evidence that could not support the claim: an HTTP 200 that only proved the server
+served a shell (`/dispatch`, the `static path` bug), a login test on a path the user never takes,
+and a browser check that stopped at the form. Each time the gap was the client side, and each
+time Stefan found it in seconds. When the automation tab cannot run the app, the honest report is
+"unverified", not "verified server-side" — those are not the same claim, and only one of them is
+useful to him.
+
 ### 2026-09-08 — Screen changes: made worse, then actually fixed
 
 **FAILURE, and the user caught it: "you did a horrible ux job with the loading".** The previous
