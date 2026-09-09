@@ -8,9 +8,45 @@ Locked product decisions are in `ARCHITECTURE.md` › "Product decisions" and ar
 
 ---
 
+## Task briefs — `tasks/`
+
+Stefan's 2026-09-09 list of 20 items was decomposed into 14 implementation briefs under `tasks/`,
+one per unit of work, each fact-checked against the tree. **`tasks/00-INDEX.md` is the entry point**:
+it carries the wave order, the file-collision groups, the decisions still waiting on Stefan, and
+the five places where the request turned out to be wrong about the code.
+
+The rule: one session, one brief. This file stays the queue; the briefs hold the detail. Where an
+entry below has a brief, work from the brief, not from the line here.
+
+| Brief | Covers | Blocked? |
+|---|---|---|
+| `01-usp-intake` | USP feed transport + how tickets are created | yes — ten questions for USP |
+| `02-auto-assign-zones` | zone model, `postal_code`, zone-first rule | no |
+| `03-stock-view-sweep` | every remaining stock Odoo surface | one design call |
+| `04-home-hover-greeting` | tile hover + rotating greeting | yes — pick a hover treatment |
+| `05-theme-system-mode` | three-state theme that keeps following the OS | no |
+| `06-profile-page` | avatar → a real profile screen, not Discuss | no |
+| `07-notifications` | toast styling, incl. dark toasts from dark screens | no |
+| `08-crm-board` | board chrome + stage-to-stage drag | no |
+| `09-branding-and-errors` | favicon, tab titles, designed error pages | four design calls |
+| `10-ticket-lifecycle` | dispatcher reopen + where completed docs live | one policy call |
+| `11-readme` | replace the stock Odoo README | yes — public repo? key rotation |
+| `12-map-inspect-geolocate` | click a feature for attributes; real GPS button | no |
+| `13-draw-filter-toggle` | utility chips isolate as well as draw | no |
+| `14-drawing-editing` | **split into 14a–14f**; 14a is a `v:3` format change | one definition call |
+
+**Precondition, all of it:** Strataline dev key `k_17c57c69` is live and unrevoked and is committed
+at `HANDOFF.md:22`, `:58` and `DEVLOG.md:80`, plus git history at `f2667ecd25c`. `origins` governs
+only the CORS echo, not access, so it works from curl. The branch is unpushed — rotate before the
+push, or it becomes a history rewrite.
+
+---
+
 ## Open questions (answer before the dependent work is planned)
 
 - [ ] **How do we actually hook into the USP feed?** No integration exists today; tickets are created by hand.
+      → **`tasks/01-usp-intake.md`** is the decision memo: it compares the four realistic transports, specifies
+      the one transport-agnostic seam that survives all of them, and lists the ten questions to put to USP.
       Need: the feed's transport (poll, push, email, portal scrape), its record shape, auth, and cadence, then
       a decision on whether it lands in Odoo directly or through the strataline API. Blocks any real ticket
       intake: until it exists, `source` is always `manual` and every screen footer reads "USP feed · not
@@ -26,7 +62,8 @@ Locked product decisions are in `ARCHITECTURE.md` › "Product decisions" and ar
 
 ## Behaviour / correctness
 
-- [ ] **Rebuild Auto-assign as zone-first, workload-tiebreak** (Stefan, 2026-09-08 — locked in
+- [ ] **Rebuild Auto-assign as zone-first, workload-tiebreak** → **`tasks/02-auto-assign-zones.md`**
+      (Stefan, 2026-09-08 — locked in
       `ARCHITECTURE.md` › "Product decisions"). **Correction to this file's earlier note: Auto-assign is
       not a stub.** It is built and it really assigns — `planRoutes` (`core/geo.js:45`) is greedy
       nearest-neighbour from `crewAnchors`, the toggle draws the routes, and `applyRoutes`
@@ -61,7 +98,8 @@ Locked product decisions are in `ARCHITECTURE.md` › "Product decisions" and ar
       check this** — stock Odoo fails to mount there too (`/odoo/settings` gives a 108-character body),
       so it is the extension racing Odoo's boot for storage, not our code and not a site-data setting.
       Handed to Stefan to look at in a normal tab.
-- [ ] **Finish looking at the stock-view revamp.** Seen 2026-09-09 in the automation tab (it boots the
+- [ ] **Finish looking at the stock-view revamp.** → **`tasks/03-stock-view-sweep.md`** turns this into
+      a finite seven-commit inventory. Seen 2026-09-09 in the automation tab (it boots the
       web client again): Settings, the Records list, the ticket form + chatter — all fine. Not yet seen:
       a CRM lead, an invoice, a kanban, a dialog, a dropdown, the statusbar arrows. Settings' section
       title bands (`--settings__title-bg`) are heavier than the rest; consider `var(--chip-bg)`.
@@ -80,11 +118,13 @@ Locked product decisions are in `ARCHITECTURE.md` › "Product decisions" and ar
       `backend_variables.dark.scss` prepended, and a dark `stock.scss` — the variable file already mirrors
       `tokens-light`, so `tokens-dark` is the map. Also: `holdPageGround` paints `<html>` in the *shell's*
       theme for 600 ms after leaving a dark screen, so a light stock page flashes dark once.
-- [ ] **Layer panel follow-ups**: the company filter (`owners.json`, session-only on strataline — needs
+- [ ] **Layer panel follow-ups** (the store also gains an `isolate` field in **`tasks/13-draw-filter-toggle.md`**
+      and a `sub_layer` index in **`tasks/12-map-inspect-geolocate.md`** — sequence against those): the company filter (`owners.json`, session-only on strataline — needs
       a key grant like `layers.json` got); `EXCLUDED_SUBS` should become a flag in `layers.json` on
       strataline's side instead of a mirrored list in `core/layers.js`; the settings for the panel are
       per device (localStorage) — per user would mean an `ir.config_parameter`-style store on `res.users`.
-- [ ] **Old pixel drawings**: any `drawing` without `v: 2` (there were a few in the dev DB) reads as empty.
+- [ ] **Old pixel drawings** (folded into **`tasks/14-drawing-editing.md`** › 14a, which specifies the
+      `v: 3` format and its migration): any `drawing` without `v: 2` (there were a few in the dev DB) reads as empty.
       Nothing to migrate for real tenants; clear them with
       `update strataflow_workorder set drawing='{}' where drawing::text not like '%"v": 2%'` when convenient.
 - [ ] **Map follow-ups**, in no order: cluster overlapping pins at low zoom (Guideline — Maps); an ATS
@@ -99,7 +139,8 @@ Review UI work with the `apple-design` skill before and after (CLAUDE.md non-neg
 
 ## Platform
 
-- [ ] Write comprehensive docs in `README.md`.
+- [ ] Write comprehensive docs in `README.md`. → **`tasks/11-readme.md`** (full outline, every setup
+      command pre-verified; blocked on the key rotation and on whether the repo goes public).
 - [ ] **nginx `/odoo` prefix strip at the tenant edge** (2026-09-08, with Phase 2):
       `https://<slug>.strataflow.co/dispatch` proxies to `/odoo/dispatch`, and the web client's own
       `/odoo/...` URLs are rewritten on the way out. Replaces the reverted in-app root-path serving
