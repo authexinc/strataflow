@@ -42,8 +42,9 @@ was verified and committed.
   - `f6058106a12` [DOC] session wrap
   - `28d5087bf95` [FIX] the clean URLs needed a third declaration  ← the URL work was **not**
     actually working until this; see the landmine on the three declarations
-  - `d0d9e7a` [DOC] correct the handoff repo state
-  - `28d5087bf95`+ [FIX] sign in lands on Home, not Discuss
+  - `036f1f36d90` [DOC] correct the handoff repo state
+  - `fd5a38aabe5` [FIX] sign in lands on Home, not Discuss
+  - `04a8ce5071b` [DOC] handoff — login redirect landmine
 - Not merged into `19.0`. Merge is Stefan's call.
 - `~/map-sys` is on `feat/search-key-scope`, in sync with its origin, still awaiting Stefan's review.
   Untouched this session.
