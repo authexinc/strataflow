@@ -26,21 +26,6 @@ Locked product decisions are in `ARCHITECTURE.md` › "Product decisions" and ar
 
 ## Behaviour / correctness
 
-- [ ] **Signing in lands on `/odoo/discuss` instead of Home — UNFIXED** (2026-09-08). Three attempts
-      missed; the trail is in the top `DEVLOG.md` entry and the warning at the top of `HANDOFF.md`.
-      The server redirect is verified correct (signed out, `/` gives
-      `/web/login?redirect=%2Fhome%3F`, and a real form POST with that redirect returns 303 to
-      `/home`). Everything after the form POST is unverified — the automation tab cannot boot the web
-      client. Prime hypothesis is client-side: the web client boots at `/home`, fails to resolve the
-      path to a screen, falls back to the default menu action (Discuss) and rewrites the URL. Check
-      `router.js:325` first — its internal-link interceptor only runs when
-      `location.pathname.startsWith("/odoo")`, which is false on `/home`, and unlike `stateToUrl` /
-      `urlToState` it is not a documented patch point.
-- [ ] **Decide: keep the root-path URLs, or revert to `/odoo/<path>` plus an nginx strip at the tenant
-      edge** (2026-09-08). Depends on the item above. `/odoo/<path>` worked and was verified; the
-      root-path serving is the change under suspicion, and the router assumes its own prefix in places
-      it offers no hook for. My recommendation is to revert and do the strip in nginx with Phase 2.
-
 - [ ] **Rebuild Auto-assign as zone-first, workload-tiebreak** (Stefan, 2026-09-08 — locked in
       `ARCHITECTURE.md` › "Product decisions"). **Correction to this file's earlier note: Auto-assign is
       not a stub.** It is built and it really assigns — `planRoutes` (`core/geo.js:45`) is greedy
@@ -51,8 +36,12 @@ Locked product decisions are in `ARCHITECTURE.md` › "Product decisions" and ar
       assignment input (it can stay for the drawn routes), and the current silent exclusion of tickets
       without `latitude`/`longitude` from auto-assign goes away — those are exactly the hand-entered
       tickets. `get_board_data` already ships each locator's `open` count, so the workload half needs no
-      new data. **Still to decide before building: how a zone is represented and how a ticket gets one.**
-      The options, so the next session does not re-derive them: (a) a `strataflow.zone` model, many2many
+      new data. **Zone representation decided 2026-09-08 (Stefan): a `strataflow.zone` model, many2many
+      on `res.users`, matched to the ticket by postal-code prefix** — locked in `ARCHITECTURE.md`. Still
+      open on the ticket side: a ticket has no postal code field today, so either add one (and have the
+      USP feed / "+ New ticket" populate it) or derive it from the address on the partner; decide with
+      the build.
+      The options that were weighed: (a) a `strataflow.zone` model, many2many
       on `res.users`, matched to the ticket by postal-code prefix; (b) the same model matched by ATS
       township/range off the existing `lld` field, which suits the rural dispatch this app is aimed at;
       (c) a bbox per zone matched against `latitude`/`longitude`, which reintroduces the coordinate
@@ -83,3 +72,7 @@ Review UI work with the `apple-design` skill before and after (CLAUDE.md non-neg
 ## Platform
 
 - [ ] Write comprehensive docs in `README.md`.
+- [ ] **nginx `/odoo` prefix strip at the tenant edge** (2026-09-08, with Phase 2):
+      `https://<slug>.strataflow.co/dispatch` proxies to `/odoo/dispatch`, and the web client's own
+      `/odoo/...` URLs are rewritten on the way out. Replaces the reverted in-app root-path serving
+      (`b13cadcd239`); see `ARCHITECTURE.md` › "Product URLs".
