@@ -338,7 +338,8 @@ export class StratalineMap extends Component {
             el.className = "o_sf_pin_label";
             el.append(document.createElement("span"), document.createElement("b"));
             el.firstChild.className = "o_sf_mono o_sf_note";
-            this.label = new this.gl.Marker({ element: el, anchor: "left", offset: [22, 0] }).addTo(this.map);
+            // position before addTo: MapLibre reads the LngLat when the marker joins the map
+            this.label = new this.gl.Marker({ element: el, anchor: "left", offset: [22, 0] }).setLngLat([m.longitude, m.latitude]).addTo(this.map);
         }
         const el = this.label.getElement();
         el.firstChild.textContent = m.name;
