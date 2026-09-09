@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- The sign-in page in the Strataline glass language. Only the surround is replaced:
+         `t-out="0"` still renders Odoo's own form, so the csrf token, database selector,
+         caps-lock warning, OAuth buttons and error alerts all keep working untouched. -->
+    <template id="strataflow_login_layout" inherit_id="web.login_layout" name="Strataflow login layout">
+        <xpath expr="//t[@t-set='body_classname']" position="replace">
+            <t t-set="body_classname" t-value="'o_sf_login_body'"/>
+        </xpath>
+
+        <xpath expr="//div[hasclass('container')]" position="replace">
+            <div class="o_sf_login">
+                <!-- The ground the app itself paints (see core/shell.xml FauxMap), so signing
+                     in and arriving on Dispatch are visibly the same place. Geometry is this
+                     module's own; nothing is pulled from map-sys. -->
+                <svg class="o_sf_login_map" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+                    <g class="o_sf_login_line" stroke-width="2">
+                        <line x1="0" y1="150" x2="1440" y2="150"/><line x1="0" y1="330" x2="1440" y2="330"/>
+                        <line x1="0" y1="520" x2="1440" y2="520"/><line x1="0" y1="700" x2="1440" y2="700"/>
+                        <line x1="0" y1="840" x2="1440" y2="840"/><line x1="180" y1="0" x2="180" y2="900"/>
+                        <line x1="420" y1="0" x2="420" y2="900"/><line x1="660" y1="0" x2="660" y2="900"/>
+                        <line x1="940" y1="0" x2="940" y2="900"/><line x1="1180" y1="0" x2="1180" y2="900"/>
+                        <line x1="300" y1="0" x2="900" y2="900"/><line x1="1440" y1="80" x2="700" y2="900"/>
+                    </g>
+                    <g class="o_sf_login_line" stroke-width="6">
+                        <line x1="0" y1="430" x2="1440" y2="430"/><line x1="540" y1="0" x2="540" y2="900"/>
+                        <line x1="1060" y1="0" x2="1440" y2="480"/>
+                    </g>
+                    <g class="o_sf_login_block">
+                        <rect x="200" y="170" width="200" height="140" rx="6"/><rect x="680" y="170" width="230" height="140" rx="6"/>
+                        <rect x="960" y="340" width="200" height="70" rx="6"/><rect x="200" y="540" width="180" height="140" rx="6"/>
+                        <rect x="680" y="450" width="240" height="230" rx="6"/><rect x="1200" y="540" width="180" height="140" rx="6"/>
+                        <rect x="440" y="340" width="80" height="70" rx="6"/>
+                    </g>
+                    <g class="o_sf_login_cadastral" stroke-width="1.3" stroke-dasharray="7 5" fill="none">
+                        <rect x="190" y="160" width="220" height="160"/><rect x="670" y="160" width="250" height="160"/>
+                        <rect x="670" y="440" width="260" height="250"/><rect x="1190" y="530" width="200" height="160"/>
+                    </g>
+                    <!-- the three utility runs, in APWA colours, and the pulses that ride them -->
+                    <g fill="none" stroke-linecap="round" opacity="0.5">
+                        <path d="M0 470 C 300 430, 620 500, 900 460 S 1300 420, 1440 445" stroke="#f2b705" stroke-width="3" stroke-dasharray="1 9"/>
+                        <path d="M560 0 C 590 260, 540 520, 610 900" stroke="#de2d26" stroke-width="3" stroke-dasharray="14 7"/>
+                        <path d="M0 700 C 400 720, 800 660, 1440 690" stroke="#e8721c" stroke-width="3" stroke-dasharray="4 6"/>
+                    </g>
+                    <circle r="3.5" class="o_sf_login_pulse o_sf_login_pulse--gas"/>
+                    <circle r="3" class="o_sf_login_pulse o_sf_login_pulse--gas o_sf_login_pulse--b"/>
+                    <circle r="3.5" class="o_sf_login_pulse o_sf_login_pulse--power"/>
+                    <circle r="3" class="o_sf_login_pulse o_sf_login_pulse--power o_sf_login_pulse--b"/>
+                    <circle r="3.5" class="o_sf_login_pulse o_sf_login_pulse--telecom"/>
+                    <circle r="3" class="o_sf_login_pulse o_sf_login_pulse--telecom o_sf_login_pulse--b"/>
+                </svg>
+                <div class="o_sf_login_haze"/>
+
+                <main class="o_sf_login_card">
+                    <div class="o_sf_login_head">
+                        <svg class="o_sf_login_logo" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                            <path d="M3 7.5c4-2.5 8 2.5 12 0s6-1.5 6-1.5" stroke="#f2b705" stroke-width="2" stroke-linecap="round"/>
+                            <path d="M3 12.5c4-2.5 8 2.5 12 0s6-1.5 6-1.5" stroke="#de2d26" stroke-width="2" stroke-linecap="round"/>
+                            <path d="M3 17.5c4-2.5 8 2.5 12 0s6-1.5 6-1.5" stroke="#0f6ed8" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                        <span>
+                            <span class="o_sf_login_name">Strataflow</span>
+                            <span class="o_sf_login_tag">by Strataline</span>
+                        </span>
+                    </div>
+                    <p class="o_sf_login_blurb">Sign in to your locate desk.</p>
+
+                    <t t-out="0"/>
+
+                    <div class="o_sf_login_foot" t-if="not disable_footer">
+                        <t t-if="not disable_database_manager">
+                            <a class="border-end pe-2 me-1" href="/web/database/manager">Manage Databases</a>
+                        </t>
+                        <a href="https://www.odoo.com?utm_source=db&amp;utm_medium=auth" target="_blank">Powered by <span>Odoo</span></a>
+                    </div>
+                </main>
+            </div>
+        </xpath>
+    </template>
+</odoo>

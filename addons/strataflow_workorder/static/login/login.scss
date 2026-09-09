@@ -1,0 +1,167 @@
+// Strataflow sign-in — the Strataline login design, rebuilt on this repo's own geometry.
+//
+// Strataline's version (map-sys/web/login.{html,css,js}) paints real downtown lines from
+// login-lines.json onto a canvas and runs pulses along them. That data stays in map-sys —
+// nothing from it is copied here. Instead the background reuses the street/block/utility
+// geometry this module already draws in `FauxMap` and the shell skeleton, so the login and
+// the app behind it are visibly the same place, and the pulses ride the same three APWA
+// paths in pure CSS (`offset-path`) rather than a canvas loop.
+
+.o_sf_login {
+  @include tokens-light;
+  position: fixed; inset: 0; overflow: hidden;
+  display: grid; place-items: center;
+  background: var(--bg); color: var(--text);
+  font-family: var(--font); font-size: 13px; line-height: 1.35;
+  * { box-sizing: border-box; }
+}
+// Three states, same as the app: an explicit choice wins in both directions, and with no
+// choice stored the page follows the device. Defaulting to the device rather than to light
+// keeps a dark-mode user from getting a white flash before login.js runs — the script only
+// ever stamps data-theme when localStorage actually holds a preference.
+@media (prefers-color-scheme: dark) {
+  .o_sf_login:not([data-theme="light"]) { @include tokens-dark; }
+}
+.o_sf_login[data-theme="dark"] { @include tokens-dark; }
+
+// ---- background --------------------------------------------------------------
+// The same ground the app paints, so signing in doesn't cut to a different world.
+.o_sf_login_map { position: absolute; inset: 0; width: 100%; height: 100%; }
+.o_sf_login_line { stroke: var(--map-line); fill: none; stroke-linecap: round; }
+.o_sf_login_block { fill: var(--map-block); }
+.o_sf_login_cadastral { stroke: var(--cadastral); }
+
+// Haze: the card sits on busy, moving geometry, and glass alone is not enough to hold
+// 4.5:1 over it. Guideline — Liquid Glass > Clear: bright underlying content needs a
+// dimming layer. This is that layer, tinted per theme rather than a flat black.
+.o_sf_login_haze {
+  position: absolute; inset: 0;
+  background: var(--bg); opacity: .45;
+  backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px);
+}
+
+// Pulses travelling the utility runs. The circles live inside the SVG, in the same
+// 1440x900 viewBox as the paths they ride, so `preserveAspectRatio` scales them with the
+// geometry and no JS is needed to keep them on the line. CSS `offset-path` rather than
+// SVG <animateMotion> for one reason: `prefers-reduced-motion` can switch a CSS animation
+// off, and cannot touch an SMIL one.
+.o_sf_login_pulse {
+  offset-rotate: 0deg;
+  animation: o_sf_login_run 14s linear infinite;
+}
+@keyframes o_sf_login_run { from { offset-distance: 0%; } to { offset-distance: 100%; } }
+
+// Matching FauxMap's gas / electric / telecom runs, in APWA colours.
+.o_sf_login_pulse--gas {
+  offset-path: path("M0 470 C 300 430, 620 500, 900 460 S 1300 420, 1440 445");
+  fill: #f2b705; filter: drop-shadow(0 0 6px rgba(242,183,5,.75));
+  animation-duration: 17s;
+}
+.o_sf_login_pulse--power {
+  offset-path: path("M560 0 C 590 260, 540 520, 610 900");
+  fill: #de2d26; filter: drop-shadow(0 0 6px rgba(222,45,38,.7));
+  animation-duration: 13s; animation-delay: -6s;
+}
+.o_sf_login_pulse--telecom {
+  offset-path: path("M0 700 C 400 720, 800 660, 1440 690");
+  fill: #e8721c; filter: drop-shadow(0 0 6px rgba(232,114,28,.7));
+  animation-duration: 21s; animation-delay: -11s;
+}
+.o_sf_login_pulse--b { animation-delay: -8s; opacity: .75; }
+
+@media (prefers-reduced-motion: reduce) {
+  .o_sf_login_pulse { animation: none; offset-distance: 40%; }
+  .o_sf_login_pulse--b { offset-distance: 75%; }
+}
+
+// ---- card --------------------------------------------------------------------
+// Regular-variant glass: this panel is nearly all text, so legibility beats translucency.
+// Guideline — Liquid Glass > Regular: "Use for components with significant text."
+.o_sf_login_card {
+  @include glass(var(--glass-72));
+  position: relative; width: 392px; max-width: calc(100vw - 32px);
+  padding: 28px; border-radius: 22px; box-shadow: var(--shadow-hi);
+}
+
+.o_sf_login_head { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; }
+.o_sf_login_logo {
+  width: 36px; height: 36px; flex: none; padding: 6px;
+  background: var(--logo-bg); border: 0.5px solid var(--logo-edge); border-radius: 12px;
+}
+.o_sf_login_name { font-weight: 800; font-size: 20px; line-height: 1.1; letter-spacing: -0.02em; }
+.o_sf_login_tag { display: block; @include eyebrow; font-size: 9.5px; margin-top: 2px; }
+.o_sf_login_blurb { font-size: 13px; line-height: 1.5; color: var(--muted); margin: 0 0 18px; }
+
+// ---- the stock form, restyled ------------------------------------------------
+// Odoo's markup is left intact — csrf token, database selector, caps-lock warning, oauth
+// buttons and the error/success alerts all still render. Only their skin changes, so
+// nothing about signing in depends on this file being right.
+.o_sf_login {
+  .oe_login_form { margin: 0; }
+
+  label, .form-label { display: block; @include eyebrow; margin-bottom: 6px; }
+
+  .form-control {
+    display: block; width: 100%; height: 44px; padding: 0 14px;
+    background: var(--glass-80); border: 0.5px solid var(--hairline); border-radius: 999px;
+    font: inherit; font-size: 14px; color: var(--text); outline: none;
+    &::placeholder { color: var(--faint); }
+    &:focus {
+      border: 1.5px solid var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-soft);
+    }
+    &[readonly] { color: var(--muted); }
+  }
+  .mb-3, .o_caps_lock_warning { margin-bottom: 14px !important; }
+
+  // password reveal: Odoo renders it as an input-group sibling, so it has to be pulled
+  // back over the rounded field rather than sitting beside it as a square button.
+  .input-group { position: relative; display: block; }
+  .o_show_password {
+    position: absolute; right: 5px; top: 50%; transform: translateY(-50%);
+    width: 36px; height: 36px; padding: 0; border: 0; border-radius: 999px;
+    display: grid; place-items: center; background: transparent; color: var(--muted);
+    &:hover { color: var(--text); background: var(--chip-bg); }
+  }
+  .input-group .form-control { padding-right: 46px; }
+
+  // one primary action per screen, and it takes the accent fill — the app's rule since
+  // ink and accent were split. Guideline — Liquid Glass > Color: "To emphasize primary
+  // actions, prefer coloring the background over foreground."
+  .btn-primary {
+    width: 100%; height: 44px; border: 0; border-radius: 999px;
+    @include accent-btn;
+    font: inherit; font-size: 13.5px; font-weight: 700;
+    &:hover { background: var(--accent-hover); color: var(--accent-text); }
+    &:active { background: var(--accent-active); }
+  }
+  .btn-link, .btn-secondary {
+    background: none; border: 0; color: var(--accent); font-size: 12px; font-weight: 600;
+  }
+  .oe_login_buttons { display: grid; gap: 8px; margin-top: 18px; }
+
+  // alerts keep their words — colour is never the only carrier. Guideline —
+  // Accessibility: don't rely on colour alone to convey information.
+  .alert {
+    padding: 10px 12px; margin: 0 0 12px; border-radius: 14px;
+    font-size: 12.5px; line-height: 1.45; border: 0.5px solid transparent;
+  }
+  .alert-danger { color: var(--danger); background: var(--danger-bg); border-color: var(--danger-edge); }
+  .alert-success { color: var(--ok); background: rgba(10,150,72,.1); border-color: rgba(10,150,72,.35); }
+
+  a { color: var(--accent); }
+  :where(button, input, a, [tabindex]):focus-visible { outline: none; box-shadow: var(--focus); }
+}
+
+// --muted, not --faint: measured on the card ground (#fcfcfc light, #161c21 dark) faint is
+// 3.08:1 / 3.90:1 and misses AA, muted is 6.11:1 / 5.69:1. The placeholders keep faint —
+// every field here carries a real label, so the placeholder is a hint, not the content.
+.o_sf_login_foot {
+  margin-top: 18px; padding-top: 14px; border-top: 0.5px solid var(--hairline-soft);
+  font-size: 11px; color: var(--muted); text-align: center;
+  a { color: var(--muted); text-decoration: none; &:hover { text-decoration: underline; } }
+}
+
+@media (max-width: 480px) {
+  .o_sf_login_card { padding: 22px; border-radius: 18px; }
+}

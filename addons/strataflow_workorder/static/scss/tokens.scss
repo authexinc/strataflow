@@ -1,0 +1,78 @@
+// Shared type, design tokens and material mixins for the Strataline glass language.
+//
+// Listed first in both the backend and frontend bundles in __manifest__.py, because Odoo
+// refuses local `@import` between asset files ("Local import ... is forbidden for security
+// reasons") — sharing scss means listing the file in every bundle that needs it, in order.
+// It lives outside static/src so the backend globs don't also pick it up. Only the
+// @font-face rules below emit CSS; the rest is mixins, so the cost per bundle is the two
+// font declarations and nothing else.
+
+// The design's type, self-hosted: variable woff2, latin subset, 27 KB + 40 KB.
+// Served from this addon rather than a font CDN — a tenant subdomain should not
+// call out to a third party to render its own UI, and the files are OFL (licences
+// beside them in static/fonts/). `swap` paints in the system stack below first,
+// so a cold cache never blocks first paint. Decided 2026-09-08.
+
+@font-face {
+  font-family: 'Public Sans';
+  src: url('/strataflow_workorder/static/fonts/public-sans-latin-var.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  src: url('/strataflow_workorder/static/fonts/jetbrains-mono-latin-var.woff2') format('woff2');
+  font-weight: 100 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+@mixin tokens-light {
+  --font: 'Public Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --bg: #f4f5f3; --text: #1a1d21; --text-2: #3a4045; --muted: #5b6167; --faint: #8b9294;
+  --glass: rgba(255,255,255,.62); --glass-72: rgba(255,255,255,.72); --glass-80: rgba(255,255,255,.80);
+  --edge: rgba(190,193,200,.7); --hairline: rgba(120,126,134,.3); --hairline-soft: rgba(120,126,134,.25);
+  --chip-bg: rgba(28,33,36,.06); --chip-bg-hi: rgba(28,33,36,.11); --accent: #0f6ed8; --accent-soft: rgba(15,110,216,.09);
+  // filled primary action: text flips per theme so the fill stays AA (4.95:1 here)
+  --accent-hover: #0d63c2; --accent-active: #0a5299; --accent-text: #fff;
+  --ink: #1c2124; --ink-hover: #30373d; --ink-active: #0f1316; --ink-text: #fff; --ok: #0a9648; --warn-icon: #8a6116; --cyan: #0b6f99;
+  --danger: #b1332c; --danger-bg: rgba(214,40,40,.1); --danger-edge: rgba(214,40,40,.35);
+  --map-line: rgba(28,33,36,.08); --map-block: rgba(28,33,36,.035); --logo-bg: #fbfcfa; --logo-edge: rgba(28,33,36,.16); --cadastral: rgba(122,92,196,.55);
+  --shadow: 0 1px 1px rgba(0,0,0,.04), 0 4px 14px rgba(0,0,0,.06), 0 16px 40px rgba(0,0,0,.08);
+  --shadow-hi: 0 1px 1px rgba(0,0,0,.05), 0 6px 20px rgba(0,0,0,.10), 0 24px 60px rgba(0,0,0,.14);
+  --sk-bone: rgba(28,33,36,.08); --sk-bone-hi: rgba(28,33,36,.16); --sk-sheen: rgba(255,255,255,.4);
+  --sk-map-line: rgba(28,33,36,.08); --sk-map-block: rgba(28,33,36,.035);
+  --focus: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent);
+}
+@mixin tokens-dark {
+  --bg: #14181d; --text: #e8ecee; --text-2: #c3ccd2; --muted: #8b969e; --faint: #6e7a82;
+  --glass: rgba(23,29,35,.62); --glass-72: rgba(23,29,35,.72); --glass-80: rgba(23,29,35,.78);
+  --edge: rgba(255,255,255,.1); --hairline: rgba(255,255,255,.12); --hairline-soft: rgba(255,255,255,.09);
+  --chip-bg: rgba(255,255,255,.06); --chip-bg-hi: rgba(255,255,255,.12); --accent: #3fc6ff; --accent-soft: rgba(63,198,255,.1);
+  // the dark-theme accent is light, so the label goes dark (9.68:1)
+  --accent-hover: #6ad4ff; --accent-active: #22b0ee; --accent-text: #0d1116;
+  --ink: #e8ecee; --ink-hover: #ffffff; --ink-active: #cdd5da; --ink-text: #14181d; --ok: #22b366; --warn-icon: #d9a83f; --cyan: #3fc6ff;
+  --danger: #f08a8a; --danger-bg: rgba(214,40,40,.1); --danger-edge: rgba(214,40,40,.35);
+  --map-line: rgba(255,255,255,.055); --map-block: rgba(255,255,255,.028); --logo-bg: #0c0f12; --logo-edge: rgba(255,255,255,.14); --cadastral: rgba(160,135,220,.6);
+  --shadow: 0 1px 1px rgba(0,0,0,.4), 0 6px 20px rgba(0,0,0,.45);
+  --shadow-hi: 0 1px 1px rgba(0,0,0,.5), 0 8px 24px rgba(0,0,0,.55), 0 28px 70px rgba(0,0,0,.65);
+  --sk-bone: rgba(255,255,255,.07); --sk-bone-hi: rgba(255,255,255,.17); --sk-sheen: rgba(255,255,255,.045);
+  --sk-map-line: rgba(255,255,255,.055); --sk-map-block: rgba(255,255,255,.028);
+}
+
+@mixin glass($bg: var(--glass)) {
+  background: $bg;
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  border: 0.5px solid var(--edge);
+  box-shadow: var(--shadow);
+  @media (prefers-reduced-transparency: reduce) { background: var(--bg); backdrop-filter: none; -webkit-backdrop-filter: none; }
+}
+@mixin eyebrow { font-size: 10.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+@mixin ink-btn { background: var(--ink); color: var(--ink-text); box-shadow: inset 0 1px 0 rgba(255,255,255,.14); }
+// ink says "you are here" (selected nav); accent says "this is the action". Keeping both
+// on ink made the primary CTA and the active nav pill render identically in both themes.
+@mixin accent-btn { background: var(--accent); color: var(--accent-text); box-shadow: inset 0 1px 0 rgba(255,255,255,.18); }
+
