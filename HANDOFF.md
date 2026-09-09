@@ -90,10 +90,13 @@ was verified and committed.
   (`action_service.js:1298`) and without it `makeState` falls back to the tag, giving
   `/odoo/strataflow_home`. `scratchpad/pathcheck.py` cross-checks all three; run it after adding a
   screen.
-- **Post-login lands where `_login_redirect` says, not where `/` says.** Stock sends an internal user
-  with no explicit redirect to `/odoo`, which opens the first app in the menu — Discuss here. The
-  override in `controllers/home.py` returns `/home` instead, but leaves an explicit `redirect` and
-  partial MFA sessions to stock. `scratchpad/logincheck.py` drives the real form and asserts both.
+- **Post-login lands where `_login_redirect` says, and `/odoo` counts as "nowhere".** Signed out, stock
+  `/` sends you to `/odoo`, which bounces to `/web/login?redirect=/odoo?` — an *explicit* redirect that
+  means only "the backend", and honouring it drops you on the first app in the menu (Discuss here).
+  `controllers/home.py` sends anonymous visitors to `/home` and treats `/odoo` and `/web` as no
+  destination, while still honouring a real one like `/dispatch`. Testing `/web/login` directly will
+  **not** catch a regression here — there is no redirect on that path. Use `scratchpad/logincheck.py`,
+  and check the chain from `/`.
 - **An HTTP 200 on `/dispatch` proves nothing about client routing.** It only means the server served
   the web client shell. That is exactly how the missing `static path` above got through a green check.
   For anything the router does, read the bundle or have Stefan look.
