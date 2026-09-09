@@ -7,7 +7,7 @@
          parent, so the unique index alone can't enforce it and _check_path re-checks by
          hand), lowercase, and may not start with `m-` or `action-`. -->
     <record id="action_strataflow_home" model="ir.actions.client">
-        <field name="name">Home</field><field name="tag">strataflow_home</field><field name="path">home</field>
+        <field name="name">Home</field><field name="tag">strataflow_home</field><field name="path">desk</field>
     </record>
     <record id="action_strataflow_dispatch" model="ir.actions.client">
         <field name="name">Dispatch</field><field name="tag">strataflow_dispatch</field><field name="path">dispatch</field>

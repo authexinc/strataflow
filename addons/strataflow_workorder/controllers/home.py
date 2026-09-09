@@ -12,7 +12,12 @@ from odoo.addons.web.controllers.utils import is_user_internal
 # 2026-09-08 and reverted: Odoo's router assumes its own /odoo prefix in places it offers no
 # hook for (web/static/src/core/browser/router.js, the internal-link guard), and the web client
 # fell back to the default app. See DEVLOG 2026-09-08.
-HOME_URL = '/odoo/home'
+#
+# The Home screen's path is `desk`, not `home`: stock Odoo registers a client action with the
+# *tag* `home` (web/static/src/webclient/actions/client_actions.js) that navigates to "/", and
+# the web client resolves a URL's action by registry tag before it tries action paths. So
+# /odoo/home ran stock's action, which went to "/", which came back here: a reload loop.
+HOME_URL = '/odoo/desk'
 
 
 class StrataflowHome(Home):

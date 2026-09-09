@@ -23,7 +23,10 @@ const APPS = [
 export class HomeScreen extends Component {
     static template = "strataflow_workorder.Home";
     // URL segment (/odoo/<path>). Keep in step with the action's `path` in strataflow_actions.xml.
-    static path = "home";
+    // Not "home": stock Odoo registers a client action with the tag `home` (web/static/src/webclient/
+    // actions/client_actions.js) that navigates to "/", and the URL resolver checks registry tags
+    // before action paths, so /odoo/home ran that instead of this screen and looped through /.
+    static path = "desk";
     static components = { StrataflowShell };
     static props = { ...standardActionServiceProps };
     static target = "fullscreen";
