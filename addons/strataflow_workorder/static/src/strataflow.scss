@@ -80,9 +80,12 @@ html.o_sf_page[data-sf-theme="dark"] .o_action_manager { background: #14181d; }
 .o_sf_cadastral { stroke: var(--cadastral); }
 
 // ---- top bar + footer --------------------------------------------------------
-.o_sf_topbar { position: absolute; top: 16px; left: 16px; right: 16px; z-index: 20; display: flex; align-items: center; gap: 10px; }
+// z-index 1000 puts the chrome above .o_sf_skeleton (999) rather than under it: the top bar and
+// footer carry no data, so they render immediately and stay put while the content loads instead
+// of being covered by bones and then revealed by the skeleton's fade.
+.o_sf_topbar { position: absolute; top: 16px; left: 16px; right: 16px; z-index: 1000; display: flex; align-items: center; gap: 10px; }
 .o_sf--scroll .o_sf_topbar, .o_sf--scroll .o_sf_foot { position: fixed; }
-.o_sf_foot { position: absolute; left: 16px; right: 16px; bottom: 16px; z-index: 20; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.o_sf_foot { position: absolute; left: 16px; right: 16px; bottom: 16px; z-index: 1000; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .o_sf_pill { @include glass; display: flex; align-items: center; gap: 10px; height: 48px; padding: 0 16px; border-radius: 999px; flex: none; }
 .o_sf_pill--sm { height: 32px; padding: 0 13px; gap: 8px; font-size: 11px; font-weight: 700; color: var(--text-2); }
 .o_sf_pill--danger { color: var(--danger); background: linear-gradient(var(--danger-bg), var(--danger-bg)), var(--glass); border-color: var(--danger-edge); }
@@ -305,10 +308,6 @@ html.o_sf_page[data-sf-theme="dark"] .o_action_manager { background: #14181d; }
   .sk-bone { display: block; flex: none; border-radius: 6px; background: linear-gradient(100deg, var(--sk-bone) 38%, var(--sk-bone-hi) 50%, var(--sk-bone) 62%) 0 0/220% 100%; animation: o_sf_sk_sweep 1.5s linear infinite; }
   .sk-dot { border-radius: 50%; } .sk-chip { height: 28px; border-radius: 999px; } .sk-spacer { flex: 1; }
   .sk-sect { position: absolute; animation: o_sf_sk_in .45s ease both; }
-  .sk-topbar { top: 16px; left: 16px; right: 16px; display: flex; align-items: center; gap: 10px; animation-delay: .1s; }
-  .sk-pill { @include glass(var(--glass-72)); display: flex; align-items: center; gap: 10px; height: 48px; padding: 0 16px; border-radius: 999px; }
-  .sk-brand { padding: 0 16px 0 10px; } .sk-chips { gap: 4px; padding: 0 6px; } .sk-search { width: 300px; padding: 0 17px; }
-  .sk-round { @include glass(var(--glass-72)); width: 48px; height: 48px; flex: none; border-radius: 999px; display: grid; place-items: center; }
   .sk-panel { @include glass(var(--glass-80)); top: 80px; bottom: 16px; border-radius: 22px; display: flex; flex-direction: column; overflow: hidden; }
   .sk-list { left: 16px; width: 372px; animation-delay: .24s; } .sk-main { left: 400px; right: 16px; animation-delay: .4s; }
   .sk-col { bottom: 58px; .sk-panel-head { border-bottom: 0.5px solid var(--hairline-soft); } }

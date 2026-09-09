@@ -90,14 +90,10 @@
                 </g>
             </svg>
             <div class="sk-sheen"/>
-            <div class="sk-sect sk-topbar">
-                <div class="sk-pill sk-brand"><i class="sk-bone" style="width:28px;height:28px;border-radius:9px"/><i class="sk-bone" style="width:88px;height:13px"/></div>
-                <div class="sk-pill sk-chips"><i class="sk-bone sk-chip" style="width:58px"/><i class="sk-bone sk-chip" style="width:72px"/><i class="sk-bone sk-chip" style="width:86px"/><i class="sk-bone sk-chip" style="width:54px"/><i class="sk-bone sk-chip" style="width:70px"/></div>
-                <div class="sk-pill sk-search"><i class="sk-bone sk-dot" style="width:16px;height:16px"/><i class="sk-bone" style="flex:1;height:11px"/><i class="sk-bone" style="width:28px;height:17px"/></div>
-                <div class="sk-spacer"/>
-                <div class="sk-round"><i class="sk-bone sk-dot" style="width:32px;height:32px"/></div>
-                <div class="sk-round"><i class="sk-bone sk-dot" style="width:18px;height:18px"/></div>
-            </div>
+            <!-- No skeleton chrome. The top bar needs no data — brand, nav, search and the theme
+                 toggle are all static — so the real one renders straight away above this overlay
+                 (see the z-index pair in strataflow.scss). Boning it out here meant the whole top
+                 of the app faded in on every single screen load for nothing. -->
             <t t-if="props.skeleton === 'board'">
                 <t t-foreach="[0, 1, 2, 3]" t-as="c" t-key="c">
                     <div class="sk-sect sk-panel sk-col" t-attf-style="left: calc(16px + {{ c }} * (100% - 32px + 12px) / 4); width: calc((100% - 32px - 36px) / 4); animation-delay: {{ .2 + c * .1 }}s">
