@@ -61,16 +61,17 @@ Locked product decisions are in `ARCHITECTURE.md` › "Product decisions" and ar
       check this** — stock Odoo fails to mount there too (`/odoo/settings` gives a 108-character body),
       so it is the extension racing Odoo's boot for storage, not our code and not a site-data setting.
       Handed to Stefan to look at in a normal tab.
-- [ ] **Look at the stock-view revamp in a normal tab** (built 2026-09-09, `160e5704463`, seen only as
-      compiled CSS — the automation tab cannot boot the web client). Walk `/odoo/settings`, a ticket form
-      via "+ New ticket", a CRM lead, an invoice, the Records list, one dialog (Discard changes) and one
-      dropdown. Things most likely to need a hand: the navbar app menu on the light ground, the
-      statusbar arrows, chatter density, and anything Bootstrap paints with `$primary` that should not
-      be accent (e.g. a selected row).
-- [ ] **Look at the live map in a normal tab** once `strataline.api_key` is set: pins, the selected
-      label, route lines with Auto-assign on, the Satellite toggle, the layers rail button, the
-      attribution pill, and the dark theme. Then the Locator's map mode. Console will show any 403 from
-      strataline (glyphs and style need `160338c` on the strataline side; tiles work without it).
+- [ ] **Finish looking at the stock-view revamp.** Seen 2026-09-09 in the automation tab (it boots the
+      web client again): Settings, the Records list, the ticket form + chatter — all fine. Not yet seen:
+      a CRM lead, an invoice, a kanban, a dialog, a dropdown, the statusbar arrows. Settings' section
+      title bands (`--settings__title-bg`) are heavier than the rest; consider `var(--chip-bg)`.
+- [ ] **Finish looking at the live map.** Seen 2026-09-09: Dispatch in both themes, Satellite, zoom,
+      pins + label, utility overlay with labels, the Locator's on-site stage and map mode. Not seen:
+      route lines (demo data has 0 `new` tickets, so Auto-assign draws nothing — set one ticket back to
+      `new` to check), the layers toggle, `keepInView` panning, the "not connected" fallback.
+      **Basemap data question for Stefan:** at city scale (z10–12) a broad straight NW–SE band paints
+      in the `water` colour across Calgary — a polygon in the `basemap` extract's `water` layer at low
+      zoom, not one of our layers (it vanishes by z13). Check `basemap_calgary.pmtiles` in map-sys.
 - [ ] **Stock views, dark.** Odoo CE serves one colour scheme (`ir.http.color_scheme()` is hard-coded to
       `light`); the shell's dark toggle stops at the shell. Doing it means overriding `color_scheme()`
       from a cookie the shell's toggle also sets, a `web.assets_web_dark` bundle with a

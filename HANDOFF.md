@@ -1,6 +1,6 @@
 # Handoff — 2026-09-09 (small hours)
 
-## Start here: two things are built, wired end-to-end over HTTP, and unseen in a browser
+## Start here: two things are built, wired end-to-end, and seen working in a browser
 
 1. **Live Strataline map** on Dispatch and the Locator's map mode (`80aa39b9542`), MapLibre in the web
    client, strataline over its API with the tenant's key. **Dev is fully wired**: local strataline on
@@ -10,7 +10,10 @@
 2. **Stock views in the Strataline language** (`160e5704463`): every form, list, kanban, dialog, Settings
    page. Tenant-wide, light only. Primary buttons are accent now, shell and stock alike.
 
-`BACKLOG.md` › UI has the two "look at it" checklists. Nothing visual has been seen by me.
+Seen in the automation tab (it boots the web client again): Dispatch both themes + Satellite + zoom +
+pins + label + utility overlay, the Locator's on-site map and map mode, Settings, the Records list, the
+ticket form. `BACKLOG.md` › UI lists what is still unseen (route lines, a dialog, CRM/invoice forms) and
+one basemap data question for Stefan (a water-coloured band across Calgary at z10–12).
 
 ## Current state
 `addons/strataflow_workorder` on Odoo 19 CE. Six fullscreen OWL screens at `/odoo/desk`, `/odoo/dispatch`,
@@ -36,9 +39,9 @@ Wrapping. Nothing in flight. `ARCHITECTURE.md` / `BACKLOG.md` / `DEVLOG.md` / th
 uncommitted changes; the wrap commit follows.
 
 ## Repo state
-- Branch `feat/strataflow-workorder`, **2 commits ahead of origin** (`80aa39b9542`, `160e5704463`) plus
-  the wrap commit; not pushed this session. Not merged into `19.0`. Merge and push are Stefan's call.
-- `~/map-sys` on `feat/search-key-scope` at `160338c` (3 unpushed commits on top of what Stefan has
+- Branch `feat/strataflow-workorder`, **10 commits ahead of origin** (map `80aa39b9542`, revamp
+  `160e5704463`, fixes `160019716c6` `a5805d400b2` `535d05a7446` `af211077587`, docs); not pushed. Not merged into `19.0`. Merge and push are Stefan's call.
+- `~/map-sys` on `feat/search-key-scope` at `932baab` (4 unpushed commits on top of what Stefan has
   seen), working tree clean. `main` there self-deploys — merging is the deploy. `data/api_keys.json`
   (gitignored) holds the dev key `k_17c57c69` and a revoked duplicate `k_b0d0818e`.
 - Still no automated tests for this module.
@@ -89,8 +92,12 @@ uncommitted changes; the wrap commit follows.
   `registry.category("actions").add("…")` across `addons/*/static/src`.
 - **Never plant a `session_id` cookie on `localhost` with `document.cookie`** — two cookies at two
   Paths split the profile into two sessions. Delete the stray one in DevTools if login "does nothing".
-- **"Verified server-side" is not "verified".** Everything visual this session is unverified; the
-  automation tab cannot boot the web client (`Access to storage is not allowed from this context`).
+- **"Verified server-side" is not "verified".** Three visual bugs shipped past every HTTP check this
+  session and were found in the first browser open. The automation tab boots the web client again
+  (the storage exception still logs, harmlessly) — use it before calling anything done.
+- **maplibre-gl.css loads after our sheet** (lazy `loadCSS`): any rule on a MapLibre-classed element
+  needs more than one class of specificity or it loses. Marker elements are positioned by MapLibre
+  with an inline transform — style their size and look, never their `position`.
 - **Rerun the check after every edit, not after the batch.** Heredoc edits can no-op silently; the Edit
   tool errors instead — prefer it.
 - **`post_init_hook` runs on install, never on `-u`**; `data/strataflow_crm_account_data.xml` is

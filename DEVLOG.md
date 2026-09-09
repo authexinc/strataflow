@@ -54,7 +54,20 @@ which is now the intent; `holdPageGround` is untouched. Light only: CE hard-code
 numerically (body 16:1, muted 5.7:1, navbar entries 9.6:1, accent fill 4.95:1); the light map label was
 4.46:1 and moved to `#5f666d` (5.3:1). `.o_sf_btn--primary` is accent.
 
-**Verified:** `-u` clean, no SCSS error in the served CSS, bundle carries `StratalineMap`,
+**Then seen, for real.** Stefan left auto mode and the automation tab booted the web client again.
+First open threw `Cannot read properties of undefined (reading 'lng')` — the selected-ticket label was
+added to the map before it had a position (`160019716c6`). Then the whole map drew in a strip at the
+top: maplibre-gl.css loads lazily *after* our sheet and its `.maplibregl-map { position: relative }`
+beat `.o_sf_map_gl`'s absolute inset at equal specificity — two-class selector now (`535d05a7446`).
+Then the label stretched to the right edge — it is its own marker element and forcing `position:
+relative` put it in flow as a full-width flex block (`af211077587`). Also in that commit: the Locator's
+on-site stage still had a large faux SVG; it is the live map at z16 now. Seen working: Dispatch light
+and dark, Satellite, zoom, pins, label, utility overlay with strataline's glyph labels, the Locator's
+on-site map and map mode, Settings, the Records list, the ticket form. A 403 pill on first open led to
+map-sys `932baab`: `/tiles/meta` now clamps zoom and bounds to the key's scope so MapLibre never asks
+for a tile the key cannot have; a source wholly above the cap (`addr`, z16) reports as unavailable.
+
+**Verified over HTTP:** `-u` clean, no SCSS error in the served CSS, bundle carries `StratalineMap`,
 `get_map_config`, the map styles, the `--NavBar-*` fallbacks, `--modal-border-radius: 22px`, Public Sans
 in `font-family`; `get_map_config` answers `{connected: false, base_url: http://localhost:8613}` over
 JSON-RPC. `scratchpad/bundlecheck.py` does the JS/CSS checks. **Not verified:** anything visual — the
