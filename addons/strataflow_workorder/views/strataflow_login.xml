@@ -14,6 +14,15 @@
                      in and arriving on Dispatch are visibly the same place. Geometry is this
                      module's own; nothing is pulled from map-sys. -->
                 <svg class="o_sf_login_map" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+                    <!-- the river runs under everything, as it does on the satellite basemap -->
+                    <path class="o_sf_login_water" stroke-width="26" d="M0 430 Q 500 400 900 440 T 1440 430"/>
+                    <g class="o_sf_login_line o_sf_login_line--fine" stroke-width="1">
+                        <line x1="0" y1="60" x2="1440" y2="60"/><line x1="0" y1="240" x2="1440" y2="240"/>
+                        <line x1="0" y1="610" x2="1440" y2="610"/><line x1="0" y1="770" x2="1440" y2="770"/>
+                        <line x1="90" y1="0" x2="90" y2="900"/><line x1="300" y1="0" x2="300" y2="900"/>
+                        <line x1="800" y1="0" x2="800" y2="900"/><line x1="1060" y1="0" x2="1060" y2="900"/>
+                        <line x1="1320" y1="0" x2="1320" y2="900"/>
+                    </g>
                     <g class="o_sf_login_line" stroke-width="2">
                         <line x1="0" y1="150" x2="1440" y2="150"/><line x1="0" y1="330" x2="1440" y2="330"/>
                         <line x1="0" y1="520" x2="1440" y2="520"/><line x1="0" y1="700" x2="1440" y2="700"/>
@@ -49,7 +58,9 @@
                     <circle r="3.5" class="o_sf_login_pulse o_sf_login_pulse--telecom"/>
                     <circle r="3" class="o_sf_login_pulse o_sf_login_pulse--telecom o_sf_login_pulse--b"/>
                 </svg>
+                <div class="o_sf_login_glow" aria-hidden="true"/>
                 <div class="o_sf_login_haze"/>
+                <div class="o_sf_login_vignette" aria-hidden="true"/>
 
                 <main class="o_sf_login_card">
                     <div class="o_sf_login_head">
@@ -67,12 +78,11 @@
 
                     <t t-out="0"/>
 
-                    <div class="o_sf_login_foot" t-if="not disable_footer">
-                        <t t-if="not disable_database_manager">
-                            <a class="border-end pe-2 me-1" href="/web/database/manager">Manage Databases</a>
-                        </t>
-                        <a href="https://www.odoo.com?utm_source=db&amp;utm_medium=auth" target="_blank">Powered by <span>Odoo</span></a>
-                    </div>
+                    <!-- Stock's footer carried "Manage Databases" and "Powered by Odoo". Both are
+                         dropped on Stefan's call (2026-09-08): a tenant signing in to their own
+                         subdomain has no business being pointed at the database manager, and the
+                         attribution link is not required by LGPL-3. -->
+                    <div class="o_sf_login_foot">Utility locate management · Strataline</div>
                 </main>
             </div>
         </xpath>

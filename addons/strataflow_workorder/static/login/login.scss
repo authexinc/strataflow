@@ -19,17 +19,60 @@
 // choice stored the page follows the device. Defaulting to the device rather than to light
 // keeps a dark-mode user from getting a white flash before login.js runs — the script only
 // ever stamps data-theme when localStorage actually holds a preference.
+// Two tokens the shell has no use for: the river, and the pool of light under the card.
+@mixin login-tokens-light { --login-water: rgba(15,110,216,.13); --login-pool: rgba(255,255,255,.55); }
+@mixin login-tokens-dark  { --login-water: rgba(63,198,255,.10); --login-pool: rgba(10,13,17,.55); }
+.o_sf_login { @include login-tokens-light; }
 @media (prefers-color-scheme: dark) {
-  .o_sf_login:not([data-theme="light"]) { @include tokens-dark; }
+  .o_sf_login:not([data-theme="light"]) { @include tokens-dark; @include login-tokens-dark; }
 }
-.o_sf_login[data-theme="dark"] { @include tokens-dark; }
+.o_sf_login[data-theme="dark"] { @include tokens-dark; @include login-tokens-dark; }
 
 // ---- background --------------------------------------------------------------
-// The same ground the app paints, so signing in doesn't cut to a different world.
-.o_sf_login_map { position: absolute; inset: 0; width: 100%; height: 100%; }
+// The same ground the app paints, so signing in doesn't cut to a different world — but with
+// more depth than a screen can afford, because here the map *is* the content.
+.o_sf_login_map {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  // a hair over 100% so the slow drift below never exposes an edge
+  transform: scale(1.06);
+  animation: o_sf_login_drift 96s ease-in-out infinite alternate;
+}
+@keyframes o_sf_login_drift {
+  from { transform: scale(1.06) translate3d(-0.8%, -0.6%, 0); }
+  to   { transform: scale(1.10) translate3d(0.8%, 0.6%, 0); }
+}
+
+// Three street weights rather than the app's two: at full-bleed size the grid needs a fine
+// layer to read as texture instead of as a wireframe.
 .o_sf_login_line { stroke: var(--map-line); fill: none; stroke-linecap: round; }
+.o_sf_login_line--fine { stroke: var(--map-line); opacity: .5; }
 .o_sf_login_block { fill: var(--map-block); }
 .o_sf_login_cadastral { stroke: var(--cadastral); }
+.o_sf_login_water { fill: none; stroke: var(--login-water); stroke-linecap: round; }
+
+// Ambient colour, the same two blurred blobs the app screens carry (.o_sf_glow), so the login
+// and Home share an atmosphere. Anchored off-corner, under the card, on long offset loops.
+.o_sf_login_glow {
+  position: absolute; inset: 0; pointer-events: none; overflow: hidden;
+  background:
+    radial-gradient(900px 600px at 12% -5%, rgba(15,110,216,.13), transparent 70%),
+    radial-gradient(1000px 700px at 95% 105%, rgba(242,183,5,.12), transparent 70%);
+  &::before, &::after { content: ""; position: absolute; border-radius: 50%; filter: blur(70px); }
+  &::before { width: 46vw; height: 46vw; left: -13vw; top: -15vw; background: radial-gradient(circle, rgba(232,150,190,.17), transparent 68%); animation: o_sf_login_drift_a 54s ease-in-out infinite alternate; }
+  &::after { width: 52vw; height: 52vw; right: -17vw; bottom: -19vw; background: radial-gradient(circle, rgba(120,170,240,.17), transparent 68%); animation: o_sf_login_drift_b 71s ease-in-out infinite alternate; }
+}
+@keyframes o_sf_login_drift_a { from { transform: translate3d(0,0,0) scale(1); } to { transform: translate3d(7vw, 6vh, 0) scale(1.14); } }
+@keyframes o_sf_login_drift_b { from { transform: translate3d(0,0,0) scale(1.1); } to { transform: translate3d(-6vw, -5vh, 0) scale(1); } }
+
+// A vignette centred on the card. This is the one addition that is not decoration: the guidance
+// on artwork behind translucent surfaces is to keep the area under them calm ("consider how
+// artwork and translucency affect nearby colors"). It pools light under the card, so the glass
+// has an even ground to sit on, and lets the geometry stay richer out at the edges where
+// nothing has to be read.
+.o_sf_login_vignette {
+  position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(58vw 58vh at 50% 48%, var(--login-pool) 0%, transparent 72%);
+}
 
 // Haze: the card sits on busy, moving geometry, and glass alone is not enough to hold
 // 4.5:1 over it. Guideline — Liquid Glass > Clear: bright underlying content needs a
@@ -72,6 +115,8 @@
 @media (prefers-reduced-motion: reduce) {
   .o_sf_login_pulse { animation: none; offset-distance: 40%; }
   .o_sf_login_pulse--b { offset-distance: 75%; }
+  .o_sf_login_map { animation: none; }
+  .o_sf_login_glow::before, .o_sf_login_glow::after { animation: none; }
 }
 
 // ---- card --------------------------------------------------------------------
@@ -139,6 +184,19 @@
     background: none; border: 0; color: var(--accent); font-size: 12px; font-weight: 600;
   }
   .oe_login_buttons { display: grid; gap: 8px; margin-top: 18px; }
+
+  // "Use a Passkey", and any OAuth provider, rendered by auth_passkey / web.login_oauth into
+  // a Bootstrap list-group. Secondary treatment on purpose: the accent fill is spoken for by
+  // the one primary action, and Liquid Glass > Color asks that only one control per context
+  // carry a coloured background.
+  .o_login_auth em { display: block; margin: 14px 0; font-style: normal; @include eyebrow; text-align: center; }
+  .list-group { display: grid; gap: 8px; }
+  .list-group-item {
+    display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 14px;
+    background: var(--chip-bg); border: 0.5px solid var(--hairline); border-radius: 999px;
+    color: var(--text); font-size: 13px; font-weight: 600; text-decoration: none;
+    &:hover { background: var(--chip-bg-hi); color: var(--text); }
+  }
 
   // alerts keep their words — colour is never the only carrier. Guideline —
   // Accessibility: don't rely on colour alone to convey information.
