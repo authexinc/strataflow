@@ -10,23 +10,32 @@
 
 // ---- shell -------------------------------------------------------------------
 // Screens are separate client actions, so switching one destroys the old `.o_sf` and mounts a new
-// one — a hard cut. Two things soften it, and they are mutually exclusive:
+// one. What made that read as a cut was fading the *whole* shell in from zero: the top bar, the
+// background map and the glow are byte-identical either side of a swap, so animating them made
+// the parts that never change blink, which is the most visible thing on screen.
 //
-// 1. Where the browser has the View Transitions API, `goNav` runs the swap inside one, so the old
-//    and new screens are both on screen and genuinely cross-fade. `.o_sf_swapping` is on <html>
-//    for the duration and stands the fallback down, or the incoming screen would fade in twice.
-// 2. Everywhere else, the incoming screen fades in on its own (o_sf_enter). Better than nothing,
-//    but there is still a frame with no screen at all, which is what "it just cuts" describes.
+// So the chrome is not animated at all — it is simply repainted in place and looks continuous —
+// and only the content region fades, fast. Nothing here waits on data: the incoming screen paints
+// its skeleton immediately and this fade runs over that, per Guideline — Loading, "show something
+// as soon as possible".
 //
-// Opacity only in both cases, deliberately: `.o_sf` hosts `position: fixed` children (the topbar
-// and footer when scrolling), and a transform here would make it their containing block
-// mid-animation and shift them.
+// Opacity only, deliberately: `.o_sf` hosts `position: fixed` children (the topbar and footer when
+// scrolling), and a transform would make it their containing block mid-animation and shift them.
 @keyframes o_sf_enter { from { opacity: 0; } to { opacity: 1; } }
-::view-transition-old(root), ::view-transition-new(root) { animation-duration: .26s; animation-timing-function: ease; }
-.o_sf_swapping .o_sf { animation: none; }
+.o_sf > :not(.o_sf_topbar):not(.o_sf_foot):not(.o_sf_skeleton):not(.o_sf_glow):not(.o_sf_bgmap) {
+  animation: o_sf_enter .16s ease-out;
+}
+
+// The ground under the web client while one screen swaps for the next (see `holdPageGround` in
+// core/shell.js). Literal values rather than the tokens: this sits on <html>, outside every
+// `.o_sf`, and pulling the token block up here would leak it onto stock Odoo pages. They are the
+// --bg of each theme and must be kept in step with it.
+html.o_sf_page, html.o_sf_page body, html.o_sf_page .o_action_manager { background: #f4f5f3; }
+html.o_sf_page[data-sf-theme="dark"],
+html.o_sf_page[data-sf-theme="dark"] body,
+html.o_sf_page[data-sf-theme="dark"] .o_action_manager { background: #14181d; }
 .o_sf {
   position: absolute; inset: 0; overflow: hidden;
-  animation: o_sf_enter .22s ease-out;
   background: var(--bg); color: var(--text);
   font-family: var(--font); font-size: 13px; line-height: 1.35;
   &--scroll { overflow-y: auto; overflow-x: hidden; }
@@ -326,7 +335,7 @@
   .o_sf_app, .o_sf_lead { transition: none; }
   .o_sf_app_icon { transition: none; }
   .o_sf_app:hover .o_sf_app_icon { transform: none; }
-  .o_sf { animation: none; }
+  .o_sf > * { animation: none; }
   .o_sf_glow::before, .o_sf_glow::after { animation: none; }
   .o_sf_skeleton { transition: none; .sk-sheen, .sk-bone, .sk-sect, .sk-row, .sk-tile { animation: none; } }
 }

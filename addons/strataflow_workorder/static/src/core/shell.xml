@@ -37,8 +37,8 @@
             <t t-if="props.slots and props.slots.nav"><t t-slot="nav"/></t>
             <nav t-else="" class="o_sf_pill o_sf_nav" aria-label="Strataflow">
                 <t t-foreach="nav" t-as="item" t-key="item.key">
-                    <button type="button" class="o_sf_navbtn" t-att-class="{ 'is-on': item.key === props.active }"
-                            t-att-aria-current="item.key === props.active ? 'page' : undefined"
+                    <button type="button" class="o_sf_navbtn" t-att-class="{ 'is-on': item.key === activeKey }"
+                            t-att-aria-current="item.key === activeKey ? 'page' : undefined"
                             t-on-click="() => this.goNav(item.key)"><t t-esc="item.label"/></button>
                 </t>
             </nav>

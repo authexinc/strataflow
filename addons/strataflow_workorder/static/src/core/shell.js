@@ -18,6 +18,29 @@ export const NAV = [
  * brand + nav + search pills, avatar, theme toggle, optional footer, generic
  * skeleton while the first payload loads.
  */
+// Swapping one client action for another unmounts the old screen before the new one mounts, so
+// for a moment nothing of ours is on the page and Odoo's own white shows through — the blank
+// flash between screens. Painting the same ground on <html> keeps something on screen across
+// that gap. The class has to come off when Strataflow is left entirely (otherwise a stock Odoo
+// page inherits our background), but removing it on unmount would reopen the very gap it exists
+// to cover — hence the deferred removal, which the next screen's mount cancels.
+let pageGroundTimer = null;
+
+function holdPageGround(theme) {
+    clearTimeout(pageGroundTimer);
+    const root = document.documentElement;
+    root.classList.add("o_sf_page");
+    root.dataset.sfTheme = theme;
+}
+
+function releasePageGround() {
+    clearTimeout(pageGroundTimer);
+    pageGroundTimer = setTimeout(() => {
+        document.documentElement.classList.remove("o_sf_page");
+        delete document.documentElement.dataset.sfTheme;
+    }, 600);
+}
+
 export class StrataflowShell extends Component {
     static template = "strataflow_workorder.Shell";
     static props = {
@@ -47,6 +70,14 @@ export class StrataflowShell extends Component {
         // A `t-if` alone unmounts the node instantly, so hold it one transition longer: mark it
         // done, let the opacity run, then drop it.
         this.sk = useState({ mounted: true, done: false });
+        this.pending = useState({ key: null });
+        // keep the ground painted across screen swaps, and in step with the theme toggle
+        useEffect(
+            () => {
+                holdPageGround(this.theme.theme);
+            },
+            () => [this.theme.theme]
+        );
         useEffect(
             () => {
                 if ((!this.props.loading || this.guard.expired) && !this.sk.done) {
@@ -59,6 +90,7 @@ export class StrataflowShell extends Component {
         onWillUnmount(() => {
             clearTimeout(this._skTimer);
             clearTimeout(this._skFade);
+            releasePageGround();
         });
     }
 
@@ -75,12 +107,20 @@ export class StrataflowShell extends Component {
         return NAV.filter((n) => dispatcher || !n.dispatcher);
     }
 
-    // Each screen is its own client action, so switching destroys the old `.o_sf` before the
-    // new one mounts. Fading the incoming screen in (o_sf_enter) does not hide that: for a
-    // frame or two there is no screen at all, which reads as a cut with a flash in it. The
-    // View Transitions API is the only way to have both frames on screen at once here — it
-    // snapshots the old DOM, runs the callback, then cross-fades to the new one. Where it is
-    // missing, the o_sf_enter fallback still runs and behaves exactly as before.
+    // Nav has to look pressed on the click, not when the next screen finishes mounting.
+    // `props.active` belongs to the screen that is on its way out, so on its own the pill
+    // does not move until the swap is over, and the click reads as having done nothing.
+    get activeKey() {
+        return this.pending.key || this.props.active;
+    }
+
+    // Switching screens swaps one client action for another. Deliberately not wrapped in a
+    // View Transition: that snapshots the outgoing screen and holds it frozen until the
+    // callback resolves, so every screen change sat on a dead frame for as long as the next
+    // action took to mount — no skeleton, no spinner, nothing. Guideline — Loading: "Show
+    // something as soon as possible. If you make people wait for loading to complete before
+    // displaying anything, they can interpret the lack of content as a problem." The new
+    // screen now mounts straight away and paints its own skeleton, which is that something.
     goNav(key) {
         if (key === this.props.active) {
             return;
@@ -90,17 +130,13 @@ export class StrataflowShell extends Component {
             this.notification.add(_t("%s is coming soon.", key), { type: "info" });
             return;
         }
-        const swap = () => this.action.doAction({ type: "ir.actions.client", tag }, { clearBreadcrumbs: true });
-        // Reduce Motion asks for cross-fades in place of movement, so the transition stays on;
-        // it is the incoming-only fade that gets switched off in the stylesheet.
-        if (!document.startViewTransition) {
-            swap();
-            return;
-        }
-        // suppress o_sf_enter for this swap, or the new screen fades in twice over
-        document.documentElement.classList.add("o_sf_swapping");
-        const transition = document.startViewTransition(() => swap());
-        transition.finished.finally(() => document.documentElement.classList.remove("o_sf_swapping"));
+        this.pending.key = key;
+        this.action
+            .doAction({ type: "ir.actions.client", tag }, { clearBreadcrumbs: true })
+            .catch((err) => {
+                this.pending.key = null;   // the pill must not lie about where we are
+                throw err;
+            });
     }
 
     toggleTheme() {
