@@ -230,7 +230,10 @@ html.o_sf_page[data-sf-theme="dark"] .o_action_manager { background: #14181d; }
 // The live map (core/strataline_map.js). The ground colour is painted before MapLibre has
 // loaded anything, so the first frame is the shell's own ground, not white.
 .o_sf_map { position: absolute; inset: 0; background: var(--bg); &.is-satellite { background: #232a22; } }
-.o_sf_map_gl { position: absolute; inset: 0; font: inherit; canvas:focus-visible { box-shadow: none; } }
+// two classes on purpose: maplibre-gl.css is loaded lazily *after* this sheet and sets
+// `.maplibregl-map { position: relative }`, which at equal specificity would win and collapse
+// the container to zero height (the whole map then draws in a strip at the top)
+.o_sf_map .o_sf_map_gl { position: absolute; inset: 0; width: 100%; height: 100%; font: inherit; canvas:focus-visible { box-shadow: none; } }
 .o_sf_map_note { position: absolute; left: 50%; bottom: 62px; transform: translateX(-50%); z-index: 12; white-space: nowrap; }
 // MapLibre positions the marker wrapper itself; the pin inside must not re-centre
 .o_sf_mk .o_sf_pin, .o_sf_map .o_sf_pin_label { position: relative; transform: none; }
