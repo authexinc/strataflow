@@ -37,10 +37,12 @@ Locked product decisions are in `ARCHITECTURE.md` › "Product decisions" and ar
       without `latitude`/`longitude` from auto-assign goes away — those are exactly the hand-entered
       tickets. `get_board_data` already ships each locator's `open` count, so the workload half needs no
       new data. **Zone representation decided 2026-09-08 (Stefan): a `strataflow.zone` model, many2many
-      on `res.users`, matched to the ticket by postal-code prefix** — locked in `ARCHITECTURE.md`. Still
-      open on the ticket side: a ticket has no postal code field today, so either add one (and have the
-      USP feed / "+ New ticket" populate it) or derive it from the address on the partner; decide with
-      the build.
+      on `res.users`, matched to the ticket by postal-code prefix** — locked in `ARCHITECTURE.md`.
+      **Ticket side decided 2026-09-09 (Stefan): a `postal_code` Char on `strataflow.workorder`**, on the
+      stock form, defaulted from the requester's `zip` only when empty; "+ New ticket" and the USP feed
+      populate it. Deriving from the partner was rejected: the dig site is not the billing address.
+      Also decided with the map: `crewAnchors` and `planRoutes` now feed the live map's route layer
+      (`routes[].coords`), so the drawn routes survive the rule change unchanged.
       The options that were weighed: (a) a `strataflow.zone` model, many2many
       on `res.users`, matched to the ticket by postal-code prefix; (b) the same model matched by ATS
       township/range off the existing `lld` field, which suits the rural dispatch this app is aimed at;
@@ -59,13 +61,28 @@ Locked product decisions are in `ARCHITECTURE.md` › "Product decisions" and ar
       check this** — stock Odoo fails to mount there too (`/odoo/settings` gives a 108-character body),
       so it is the extension racing Odoo's boot for storage, not our code and not a site-data setting.
       Handed to Stefan to look at in a normal tab.
-- [ ] Revamp every internal screen — individual invoices, the CRM record views, and the rest of the stock
-      form/list views — into the strataflow language. Swap Odoo styling out across all pages, not just the six
-      fullscreen OWL screens.
-- [ ] `.o_sf_btn--primary` (the in-page primary button: "Assign to X", "Confirm locate", "Create invoices
-      from tickets") still uses the `ink-btn` mixin, so ink continues to mean both "selected nav" and
-      "primary action" away from the top bar. The top-bar pill was split to accent on 2026-09-08; decide
-      whether these follow, ideally alongside the internal-screen revamp above.
+- [ ] **Look at the stock-view revamp in a normal tab** (built 2026-09-09, `160e5704463`, seen only as
+      compiled CSS — the automation tab cannot boot the web client). Walk `/odoo/settings`, a ticket form
+      via "+ New ticket", a CRM lead, an invoice, the Records list, one dialog (Discard changes) and one
+      dropdown. Things most likely to need a hand: the navbar app menu on the light ground, the
+      statusbar arrows, chatter density, and anything Bootstrap paints with `$primary` that should not
+      be accent (e.g. a selected row).
+- [ ] **Look at the live map in a normal tab** once `strataline.api_key` is set: pins, the selected
+      label, route lines with Auto-assign on, the Satellite toggle, the layers rail button, the
+      attribution pill, and the dark theme. Then the Locator's map mode. Console will show any 403 from
+      strataline (glyphs and style need `d8c6022` on the strataline side; tiles work without it).
+- [ ] **Stock views, dark.** Odoo CE serves one colour scheme (`ir.http.color_scheme()` is hard-coded to
+      `light`); the shell's dark toggle stops at the shell. Doing it means overriding `color_scheme()`
+      from a cookie the shell's toggle also sets, a `web.assets_web_dark` bundle with a
+      `backend_variables.dark.scss` prepended, and a dark `stock.scss` — the variable file already mirrors
+      `tokens-light`, so `tokens-dark` is the map. Also: `holdPageGround` paints `<html>` in the *shell's*
+      theme for 600 ms after leaving a dark screen, so a light stock page flashes dark once.
+- [ ] **Map follow-ups**, in no order: cluster overlapping pins at low zoom (Guideline — Maps); an ATS
+      section-grid layer for rural tickets (`ats` source is granted, nothing draws it yet); dark-theme
+      recolour of the grey *utility* layers (strataline's own `themedStyle` does this — only
+      `metadata.dark` overrides are applied here); a tile 429 arrives as a CORS error because strataline's
+      rate-limit path skips `cors()` (`serve.py` `serve_tile`, the `throttle` branch); the small faux-map
+      thumbnails in the Work Orders and Locator detail panes are still decorative SVG.
 
 Review UI work with the `apple-design` skill before and after (CLAUDE.md non-negotiable).
 
