@@ -1,3 +1,5 @@
+from werkzeug import urls
+
 from odoo import http
 from odoo.http import request
 from odoo.addons.web.controllers.home import Home
@@ -39,7 +41,12 @@ class StrataflowHome(Home):
 
     @http.route()
     def index(self, *args, **kw):
-        if self._is_strataflow_user(request.session.uid):
+        # Signed out too, not just signed in. Stock sends an anonymous visitor to /odoo, which
+        # bounces to /web/login?redirect=/odoo — and that redirect is then honoured after they
+        # sign in, landing them in the stock backend on whatever the first app happens to be.
+        # Sending them to /home instead means the login carries /home through as the redirect.
+        # A non-internal user who ends up there is handled by `web_client` exactly as before.
+        if self._is_strataflow_user(request.session.uid) or not request.session.uid:
             return request.redirect_query('/home', query=request.params)
         return super().index(*args, **kw)
 
@@ -50,15 +57,28 @@ class StrataflowHome(Home):
         opens the first app in the menu — which in this database is Discuss. Signing in
         to a locate desk should land on the locate desk.
 
-        Only when there is nothing better to honour: an explicit `redirect` is whatever
-        the user was actually trying to reach (`/web/login?redirect=/dispatch` is how a
-        signed-out visit to a screen comes back), and a session without `uid` is a
-        partial MFA session whose redirect is the second-factor URL, not a destination.
-        Both are left to stock.
+        Only when there is nothing better to honour. An explicit `redirect` is normally
+        whatever the user was actually trying to reach — `/web/login?redirect=/dispatch`
+        is how a signed-out visit to a screen comes back — and that is left alone. But
+        `/odoo` and `/web` arrive here as explicit redirects while meaning nothing more
+        than "the backend": stock's own `/` sends anonymous visitors to `/odoo`, which
+        bounces to `/web/login?redirect=/odoo?`. Honouring that is what put people in
+        Discuss. They are treated as no destination.
+
+        A session without `uid` is a partial MFA session whose redirect is the
+        second-factor URL rather than a destination, and is left to stock.
         """
-        if not redirect and request.session.uid and self._is_strataflow_user(uid):
+        if request.session.uid and self._is_strataflow_user(uid) and self._is_placeholder(redirect):
             return '/home'
         return super()._login_redirect(uid, redirect=redirect)
+
+    @staticmethod
+    def _is_placeholder(redirect):
+        """True when `redirect` carries no real destination — empty, or stock's backend entry."""
+        if not redirect:
+            return True
+        path = urls.url_parse(redirect).path.rstrip('/')
+        return path in ('', '/odoo', '/web')
 
     @http.route(['/' + p for p in SCREEN_PATHS], type='http', auth='none')
     def strataflow_screen(self, **kw):
