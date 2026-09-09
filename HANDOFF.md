@@ -11,19 +11,23 @@ Since the last handoff, four things landed and one decision was locked:
 - **The sign-in page** in the glass language, with a live map background. Passkeys turned out to already
   work (`auth_passkey` is `auto_install`); the button just needed skinning.
 - **`/odoo` is gone from the product URLs.** `/dispatch`, `/workorders`, `/pipeline`, `/invoices`,
-  `/locator`, `/home`, and `/` redirects to `/home`.
+  `/locator`, `/home`, and `/` redirects to `/home`. This took two goes — the first left the action
+  *tag* in the URL (`/odoo/strataflow_home`) and my check did not catch it.
 - **Screen switching was rebuilt twice** — I made it materially worse first (see Landmines) before it
   ended up genuinely responsive.
 - **Auto-assign is locked**: zone first, workload as the tiebreak, no locator GPS.
 
-Stefan reviewed the result in a normal browser tab and signed off ("Now we're talking").
+Stefan reviewed the transition work in a normal browser tab and signed off ("Now we're talking"),
+then caught that the URLs were still wrong. **The URL fix in `28d5087bf95` has not been seen in a
+browser by anyone** — it is verified only by `scratchpad/pathcheck.py` and by reading the served
+bundle. That is the first thing to confirm next session.
 
 ## What I was doing when this ended
 Nothing in flight; working tree clean. The session ended on a `/wrap` right after the last transition fix
 was verified and committed.
 
 ## Repo state
-- Branch `feat/strataflow-workorder`, working tree clean, **9 commits ahead of
+- Branch `feat/strataflow-workorder`, working tree clean, **11 commits ahead of
   `origin/feat/strataflow-workorder` — not pushed.**
 - This session's commits, oldest first:
   - `ff6cbb6f16c` [DOC] lock the auto-assign rule, park the USP feed
@@ -35,6 +39,9 @@ was verified and committed.
   - `c826ab246d2` [IMP] richer login background, and drop Odoo's login footer
   - `95868cd255a` [FIX] make screen changes respond instantly again  ← reverts the guts of `cd7d7390283`
   - `515bae96c1c` [FIX] stop the top bar fading in on every screen load
+  - `f6058106a12` [DOC] session wrap
+  - `28d5087bf95` [FIX] the clean URLs needed a third declaration  ← the URL work was **not**
+    actually working until this; see the landmine on the three declarations
 - Not merged into `19.0`. Merge is Stefan's call.
 - `~/map-sys` is on `feat/search-key-scope`, in sync with its origin, still awaiting Stefan's review.
   Untouched this session.
@@ -42,7 +49,7 @@ was verified and committed.
 
 ## Next steps
 `BACKLOG.md` is the queue. In the order I would take them:
-1. **Push this branch** — 9 commits sitting local.
+1. **Push this branch** — 11 commits sitting local.
 2. **Answer the USP feed question** (`BACKLOG.md` › Open questions). It now carries its dependent
    sub-question: under DB-per-tenant, does ingest run as an `ir.cron` per tenant DB, or as one
    strataline-side service writing in over JSON-RPC? Not answerable before the transport is known.
