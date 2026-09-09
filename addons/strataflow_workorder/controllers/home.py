@@ -31,13 +31,34 @@ class StrataflowHome(Home):
     into the stock backend, which the shell's avatar button relies on.
     """
 
+    def _is_strataflow_user(self, uid):
+        if not uid or not request.db or not is_user_internal(uid):
+            return False
+        user = request.env['res.users'].sudo().browse(uid)
+        return user.has_group('strataflow_workorder.group_strataflow_user')
+
     @http.route()
     def index(self, *args, **kw):
-        if request.db and request.session.uid and is_user_internal(request.session.uid):
-            user = request.env['res.users'].sudo().browse(request.session.uid)
-            if user.has_group('strataflow_workorder.group_strataflow_user'):
-                return request.redirect_query('/home', query=request.params)
+        if self._is_strataflow_user(request.session.uid):
+            return request.redirect_query('/home', query=request.params)
         return super().index(*args, **kw)
+
+    def _login_redirect(self, uid, redirect=None):
+        """Send a Strataflow user to their Home screen after signing in.
+
+        Stock sends internal users to `/odoo` with no action, and the web client then
+        opens the first app in the menu — which in this database is Discuss. Signing in
+        to a locate desk should land on the locate desk.
+
+        Only when there is nothing better to honour: an explicit `redirect` is whatever
+        the user was actually trying to reach (`/web/login?redirect=/dispatch` is how a
+        signed-out visit to a screen comes back), and a session without `uid` is a
+        partial MFA session whose redirect is the second-factor URL, not a destination.
+        Both are left to stock.
+        """
+        if not redirect and request.session.uid and self._is_strataflow_user(uid):
+            return '/home'
+        return super()._login_redirect(uid, redirect=redirect)
 
     @http.route(['/' + p for p in SCREEN_PATHS], type='http', auth='none')
     def strataflow_screen(self, **kw):
