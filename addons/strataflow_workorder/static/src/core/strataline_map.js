@@ -225,9 +225,15 @@ export class StratalineMap extends Component {
                 this.setUtilities(this.props.utilities);
             });
             map.on("error", (ev) => {
-                // a refused tile is a scope or quota problem on the key, not a crash
-                if (ev?.error?.status && ev.error.status !== 404) {
-                    this.state.message = _t("Strataline refused a request (%s) — check the key's scope", ev.error.status);
+                // a refused request is a key problem, not a crash: 401 means the key itself is bad
+                // and the user should hear it; a 403 is a scope refusal at the edge of the key's
+                // area or zoom (strataline's /tiles/meta clamps both, so it should be rare) and only
+                // worth the console; 404 is an empty tile.
+                const status = ev?.error?.status;
+                if (status === 401) {
+                    this.state.message = _t("Strataline rejected the API key — check Settings");
+                } else if (status && status !== 404) {
+                    console.warn("strataline", status, ev.error.url || "");
                 }
             });
             this.map = map;
