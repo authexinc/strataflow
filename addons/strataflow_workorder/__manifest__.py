@@ -16,6 +16,7 @@
         'data/strataflow_crm_account_data.xml',
         'views/strataflow_actions.xml',
         'views/strataflow_login.xml',
+        'views/strataflow_branding.xml',
         'views/strataflow_workorder_views.xml',
     ],
     'demo': [

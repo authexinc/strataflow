@@ -25,7 +25,7 @@
         <field name="name">Locator view</field><field name="tag">strataflow_locator</field><field name="path">locator</field>
     </record>
 
-    <menuitem id="menu_strataflow_root" name="Strataflow" sequence="5" groups="group_strataflow_user" action="action_strataflow_home"/>
+    <menuitem id="menu_strataflow_root" name="StrataFlow" sequence="5" groups="group_strataflow_user" action="action_strataflow_home"/>
     <menuitem id="menu_strataflow_home" name="Home" parent="menu_strataflow_root" action="action_strataflow_home" sequence="5"/>
     <menuitem id="menu_strataflow_dispatch" name="Dispatch" parent="menu_strataflow_root" action="action_strataflow_dispatch" sequence="10" groups="group_strataflow_manager"/>
     <menuitem id="menu_strataflow_workorders" name="Work Orders" parent="menu_strataflow_root" action="action_strataflow_workorders" sequence="20"/>

@@ -144,6 +144,6 @@ export class StrataflowShell extends Component {
     }
 
     openOdoo() {
-        this.action.doAction({ type: "ir.actions.act_url", url: "/odoo", target: "self" });
+        this.action.doAction({ type: "ir.actions.act_url", url: "/app", target: "self" });
     }
 }

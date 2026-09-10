@@ -1,0 +1,63 @@
+# StrataFlow at flow.strataline.co — nginx in front of Odoo.
+# Installed to /etc/nginx/sites-available by scripts/vps_bootstrap.sh; certbot --nginx
+# adds the TLS listener and the 80 → 443 redirect to this file on the server.
+#
+# Odoo's own URLs name the vendor (/odoo/…). The web client is served at /app
+# (addons/strataflow_workorder/controllers/home.py + static/src/core/app_url.js); anything
+# the server still emits under the stock prefix — redirects after sign-in, sign-out, the
+# bare /odoo escape hatch — is rewritten here so no browser ever shows it.
+
+upstream strataflow_http { server 127.0.0.1:8069; }
+upstream strataflow_ws   { server 127.0.0.1:8072; }
+
+server {
+    listen 80;
+    listen [::]:80;
+    server_name flow.strataline.co;
+
+    server_tokens off;
+    client_max_body_size 64m;
+    include /etc/nginx/conf.d/cloudflare-realip.conf;
+
+    proxy_read_timeout 720s;
+    proxy_connect_timeout 720s;
+    proxy_send_timeout 720s;
+    proxy_set_header X-Forwarded-Host $host;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header Host $host;
+
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    add_header X-Content-Type-Options nosniff always;
+    add_header X-Frame-Options DENY always;
+    add_header Referrer-Policy strict-origin-when-cross-origin always;
+    add_header Content-Security-Policy "frame-ancestors 'none'" always;
+
+    gzip on;
+    gzip_types text/css text/plain text/xml application/json application/javascript application/xml image/svg+xml;
+
+    # the stock prefix never reaches a browser: /odoo/dispatch → /app/dispatch (query kept)
+    location ~ ^/odoo(/|$) {
+        rewrite ^/odoo(.*)$ /app$1 permanent;
+    }
+
+    # the database manager is not a tenant screen (list_db = False in odoo.conf as well)
+    location ~ ^/web/database/ {
+        return 404;
+    }
+
+    location /websocket {
+        proxy_pass http://strataflow_ws;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "Upgrade";
+        proxy_redirect off;
+    }
+
+    location / {
+        proxy_pass http://strataflow_http;
+        # Location headers Odoo builds with its own prefix, absolute or relative
+        proxy_redirect ~^(https?://[^/]+)?/odoo((?:[/?].*)?)$ $1/app$2;
+    }
+}

@@ -3,6 +3,57 @@
 Newest first. Read the last 3–5 entries at session start. Failures are recorded on purpose; a
 workaround is labelled as one so it does not become permanent by accident.
 
+### 2026-09-10 (early morning) — StrataFlow at /app, favicon and name, deploy kit for flow.strataline.co; the VPS itself unreachable
+
+**Ask (Stefan):** deploy on `66.179.209.155` as `flow.strataline.co`, CI/CD like map-sys, no "odoo" in
+any URL, strataline logo as favicon, name StrataFlow. **Not deployed** — see the failures below. Everything
+else is in the repo and verified locally.
+
+**URLs.** The web client answers `/app` and `/app/<path>` (`controllers/home.py` repeats stock's route list —
+`@http.route()` with no arguments keeps the parent's rules and cannot add to them). `static/src/core/app_url.js`
+patches `router.stateToUrl` / `router.urlToState` (both on the exported `router` object, which stock marks
+patchable) and calls `startRouter()` again because router.js ran it at import, before the patch — without the
+second call an `/app/…` first load has an empty state and opens the default app. `HOME_URL` is `/app/desk`,
+the avatar escape hatch goes to `/app`, `_is_placeholder` treats `/app` like `/odoo`. Seen in the browser:
+`/app/dispatch` loads Dispatch; a nav pill click pushes `/app/invoices`; `/app/invoices/account.move/71` loads
+the invoice form on a cold load with `/app` breadcrumb hrefs and zero `/odoo` hrefs in the page. Not covered on
+purpose: stock's internal-link click guard only fires under `/odoo`, so an `<a href="/odoo/…">` click is a full
+load; the webmanifest's `scope`/`start_url`; `/web/session/logout` still 303s to `/odoo` (nginx's job in prod).
+This supersedes the 2026-09-08 "nginx rewrite at the edge only" decision — nginx alone cannot touch
+`history.pushState`, so the prefix had to be taught to the client. `ARCHITECTURE.md` row updated.
+
+**Name and favicon.** `views/strataflow_branding.xml` inherits `web.layout` (title fallback `StrataFlow`,
+`<link rel="icon">` → `static/description/favicon.svg`) and `web.webclient_bootstrap` (theme-color
+`#1c2124`, apple-touch-icon → `icon.png`), and sets `web.web_app_name` for the PWA manifest. `branding.js`
+wraps the title service so the JS-side fallback is also StrataFlow (the literal is inside a closure; the
+wrapper corrects `document.title` after each `setParts`/`setCounters`). Brand text in the shell, stock
+navbar, login and the root menu is now `StrataFlow`. The favicon is the shell's own 24-unit mark from
+`core/shell.xml` on a rounded `#1c2124` tile — drawn again as a file, not copied from map-sys (its
+`web/favicon.svg` is the same mark on a 32 grid); `icon.png` is a 180 px render of it via `qlmanage`.
+
+**Deploy kit** (mirrors map-sys): `deploy/nginx/flow.strataline.co` (80 only; certbot adds 443; `/odoo` →
+301 `/app` by `rewrite … permanent`, `proxy_redirect` regex for Location headers, `/web/database/*` 404,
+websocket to 8072, HSTS/nosniff/frame headers, Cloudflare real-ip include), `deploy/odoo.conf` (socket
+peer auth as `strataflow`, `dbfilter ^strataflow$`, `list_db False`, `proxy_mode`, 2 workers + gevent 8072,
+`__ADMIN_PASSWD__` placeholder), `deploy/strataflow.service`, `scripts/vps_bootstrap.sh` (one-time, root,
+idempotent: apt, user, clone, venv, DB `-i strataflow_workorder --without-demo`, unit, nginx, ufw, certbot,
+forced-command deploy key when `DEPLOY_PUBKEY` is set), `scripts/vps_deploy.sh` (fetch/reset to
+`origin/19.0`, pip if requirements changed, stop → `-u strataflow_workorder --stop-after-init` → start, curl
+`/web/login`), `.github/workflows/deploy.yml` (push to `19.0`, `DEPLOY_SSH_KEY` + `DEPLOY_KNOWN_HOSTS`).
+Only `bash -n` and a read-through verified the scripts — no box to run them on. Deploy keypair generated at
+`~/.ssh/strataflow_deploy_ed25519`; host key scanned (`OpenSSH_9.6p1 Ubuntu-3ubuntu13`, so 24.04). DNS:
+`flow.strataline.co` → `66.179.209.155` direct (DNS-only, not proxied); nothing listening on 443 yet.
+
+**FAILURES.**
+1. **No SSH into 66.179.209.155.** `root`, `ubuntu`, `debian`, `admin` × `id_ed25519` / `id_rsa` all
+   `Permission denied (publickey,password)`. The key Stefan added at the provider is not in any of those
+   users' `authorized_keys`, or the box wants a user I did not guess. Nothing server-side was done.
+2. **Classifier blocked `gh secret set`** (twice, with the private key on stdin) and one combined
+   keygen+secret command. The keypair exists; the two secrets are not set. Same class of block as DEVLOG
+   2026-09-09 (auto mode and `git push`).
+3. First JS probe after a nav-pill click read the old path: the router debounces `pushState` through a
+   `setTimeout`; read the URL a tick later, or from a screenshot's tab context.
+
 ### 2026-09-09 (night) — Stock-view sweep, commits 1–2 of 7; then the stock navbar became the shell's top bar
 
 **Brief:** `tasks/03-stock-view-sweep.md`. Landed in order and each one seen in the automation tab

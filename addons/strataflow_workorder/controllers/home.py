@@ -6,18 +6,19 @@ from odoo.addons.web.controllers.home import Home
 from odoo.addons.web.controllers.utils import is_user_internal
 
 # Where a Strataflow user lands when they have not asked for anywhere in particular.
-# The screens live at /odoo/<path> (`path` on each client action, views/strataflow_actions.xml);
-# the clean https://<slug>.strataflow.co/dispatch form is nginx's job at the tenant edge
-# (Phase 2), not the web client's. Serving the screens at the domain root was tried on
-# 2026-09-08 and reverted: Odoo's router assumes its own /odoo prefix in places it offers no
-# hook for (web/static/src/core/browser/router.js, the internal-link guard), and the web client
-# fell back to the default app. See DEVLOG 2026-09-08.
+# The screens live at /app/<path> (`path` on each client action, views/strataflow_actions.xml).
+# Stock serves the web client at /odoo/<path>; /app is the same client under a prefix that
+# does not name the vendor — `web_client` below answers both, and the client's router is
+# taught the prefix in static/src/core/app_url.js. In production nginx (deploy/nginx) turns
+# every /odoo URL the server still emits into /app before a browser sees it. Serving the
+# screens at the domain root was tried on 2026-09-08 and reverted (the router's internal-link
+# guard); a prefix the router is patched to know is the version that holds.
 #
 # The Home screen's path is `desk`, not `home`: stock Odoo registers a client action with the
 # *tag* `home` (web/static/src/webclient/actions/client_actions.js) that navigates to "/", and
 # the web client resolves a URL's action by registry tag before it tries action paths. So
 # /odoo/home ran stock's action, which went to "/", which came back here: a reload loop.
-HOME_URL = '/odoo/desk'
+HOME_URL = '/app/desk'
 
 
 class StrataflowHome(Home):
@@ -45,6 +46,15 @@ class StrataflowHome(Home):
         user = request.env['res.users'].sudo().browse(uid)
         return user.has_group('strataflow_workorder.group_strataflow_user')
 
+    # Stock's route list plus /app: the web client answers the vendor-free prefix as its own.
+    # The list is repeated rather than extended because `@http.route()` with no arguments
+    # keeps the parent's rules and offers no way to add to them.
+    @http.route(['/web', '/odoo', '/odoo/<path:subpath>', '/scoped_app/<path:subpath>',
+                 '/app', '/app/<path:subpath>'],
+                type='http', auth='none', readonly=Home._web_client_readonly)
+    def web_client(self, s_action=None, **kw):
+        return super().web_client(s_action=s_action, **kw)
+
     @http.route()
     def index(self, *args, **kw):
         # Signed out too, not just signed in. Stock sends an anonymous visitor to /odoo, which
@@ -66,7 +76,7 @@ class StrataflowHome(Home):
         Only when there is nothing better to honour. An explicit `redirect` is normally
         whatever the user was actually trying to reach — `/web/login?redirect=/odoo/dispatch`
         is how a signed-out visit to a screen comes back — and that is left alone. But
-        `/odoo` and `/web` arrive here as explicit redirects while meaning nothing more
+        `/app`, `/odoo` and `/web` arrive here as explicit redirects while meaning nothing more
         than "the backend": stock's own `/` sends anonymous visitors to `/odoo`, which
         bounces to `/web/login?redirect=/odoo?`. Honouring that is what put people in
         Discuss. They are treated as no destination.
@@ -84,4 +94,4 @@ class StrataflowHome(Home):
         if not redirect:
             return True
         path = urls.url_parse(redirect).path.rstrip('/')
-        return path in ('', '/odoo', '/web')
+        return path in ('', '/app', '/odoo', '/web')

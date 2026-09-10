@@ -30,12 +30,12 @@
                     <path d="M3 17.5c4-2.5 8 2.5 12 0s6-1.5 6-1.5" stroke="#0f6ed8" stroke-width="2" stroke-linecap="round"/>
                 </svg>
                 <span class="o_sf_brand_text">
-                    <span class="o_sf_brand_name">Strataflow</span>
+                    <span class="o_sf_brand_name">StrataFlow</span>
                     <span class="o_sf_brand_tag" aria-hidden="true">by Strataline</span>
                 </span>
             </div>
             <t t-if="props.slots and props.slots.nav"><t t-slot="nav"/></t>
-            <nav t-else="" class="o_sf_pill o_sf_nav" aria-label="Strataflow">
+            <nav t-else="" class="o_sf_pill o_sf_nav" aria-label="StrataFlow">
                 <t t-foreach="nav" t-as="item" t-key="item.key">
                     <button type="button" class="o_sf_navbtn" t-att-class="{ 'is-on': item.key === activeKey }"
                             t-att-aria-current="item.key === activeKey ? 'page' : undefined"

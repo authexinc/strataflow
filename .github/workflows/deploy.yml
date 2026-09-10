@@ -1,0 +1,24 @@
+name: deploy
+
+on:
+  push:
+    branches: [19.0]
+
+# one deploy at a time; a queued push waits for the running one
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to VPS
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          printf '%s\n' "${{ secrets.DEPLOY_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+          # authorized_keys on the VPS pins this key to scripts/vps_deploy.sh
+          # (forced command) — the trailing arg is ignored server-side.
+          ssh -i ~/.ssh/id_ed25519 -o BatchMode=yes root@66.179.209.155 deploy

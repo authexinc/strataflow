@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- The product is StrataFlow: window title, favicon, home-screen icon and the PWA
+         manifest name. `web.layout` is the root of every page Odoo renders — the web client,
+         the sign-in page (through web.frontend_layout) and the error pages — so one template
+         covers them all. The favicon is the brand mark from core/shell.xml, drawn again here
+         as a file so browsers can fetch it. -->
+    <template id="strataflow_layout" inherit_id="web.layout" name="StrataFlow layout">
+        <xpath expr="//title" position="replace">
+            <title t-esc="title or 'StrataFlow'"/>
+        </xpath>
+        <xpath expr="//link[@rel='shortcut icon']" position="replace">
+            <link rel="icon" t-att-href="x_icon or '/strataflow_workorder/static/description/favicon.svg'"/>
+        </xpath>
+    </template>
+
+    <template id="strataflow_webclient_bootstrap" inherit_id="web.webclient_bootstrap" name="StrataFlow web client head">
+        <xpath expr="//meta[@name='theme-color']" position="attributes">
+            <attribute name="content">#1c2124</attribute>
+        </xpath>
+        <xpath expr="//link[@rel='apple-touch-icon']" position="attributes">
+            <attribute name="href">/strataflow_workorder/static/description/icon.png</attribute>
+        </xpath>
+    </template>
+
+    <!-- web/controllers/webmanifest.py reads the PWA name from this parameter -->
+    <record id="web_app_name" model="ir.config_parameter">
+        <field name="key">web.web_app_name</field>
+        <field name="value">StrataFlow</field>
+    </record>
+</odoo>
