@@ -75,6 +75,13 @@ patch(NavBar.prototype, {
 
 NavBar.template = "strataflow_workorder.NavBar";
 
+// The user menu's odoo.com entries have no place on a tenant's page: "Help" opens Odoo's
+// documentation for chrome the tenant never sees, "Support" and "My Odoo.com Account" point at
+// odoo.com itself. Registered by web/static/src/webclient/user_menu/user_menu_items.js.
+for (const key of ["documentation", "support", "odoo_account"]) {
+    registry.category("user_menuitems").remove(key);
+}
+
 // Same rule as `strataflow.workorder._initials` on the server, so the disc in the corner of a
 // stock page reads the same letters as the one on Dispatch.
 patch(UserMenu.prototype, {

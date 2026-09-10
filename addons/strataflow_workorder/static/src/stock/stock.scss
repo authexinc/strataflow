@@ -36,6 +36,7 @@
   // size is pinned here at three classes where `.o_sf_round` alone loses
   .o_user_menu { padding: 0;
     > .dropdown-toggle { @include glass; width: 48px; height: 48px; min-width: 0; padding: 0; border-radius: 999px; color: var(--text-2);
+      display: grid; place-items: center; line-height: 1; // stock forces flex and a 72px line box, which threw the initials under the disc
       &:hover, &:focus-visible, &.show { background: var(--glass-80); } &::after { display: none; } } }
 }
 
@@ -69,6 +70,27 @@
 // scoped to the manager: web/static/src/core/notifications/notification.scss:15-17 paints
 // .o_notification_manager .o_notification, which a one-class rule loses to. The radius and the
 // shadow come from the `rounded shadow-lg` utilities on notification.xml:5 and cannot be moved.
+// A form inside a dialog is not a card inside a card: the modal is the surface, so the sheet
+// loses its own border, radius and shadow there. The nearest stock rule
+// (web/static/src/views/form/form_controller.scss:1072-1080) only fires below md on
+// .o_modal_full, so this is new ground. Without it the notebook, which pulls itself out to the
+// sheet's edge with a negative margin, pokes past the sheet's rounded corners.
+.modal .o_form_view .o_form_sheet { border: 0; border-radius: 0; box-shadow: none; background: transparent; }
+
+// Avatars are the shell's gradient disc, never a photo (Stefan, 2026-09-09): the chatter's
+// message avatar, the many2one avatar widgets and the contact image on Preferences and the
+// partner form. An <img> cannot be recoloured, so the bitmap is pushed out of its own box with
+// object-position and the disc is the element's background. The bar's own disc
+// (static/src/stock/user_menu.xml) draws initials; these carry no name for CSS to read.
+// `object-position` must be a length: a percentage is relative to (box - image), which for a
+// 128px avatar in a 130px box is 2px, and the photo never leaves. `!important` because the
+// chatter's img carries the `object-fit-cover` utility, which is emitted `!important`.
+%sf-avatar-disc { background: linear-gradient(135deg, #4a90d9, #0f6ed8); border-radius: 50% !important; object-fit: none !important; object-position: 9999px 9999px; }
+.o_web_client, .o-overlay-container {
+  img.o-mail-Message-avatar, .o-mail-Message-avatarContainer, img.o_m2o_avatar, .o_avatar_many2x_autocomplete img,
+  .o_field_many2one_avatar img, .o_field_many2many_tags_avatar img, .o_field_contact_image img, .o_field_image img.img-fluid { @extend %sf-avatar-disc; }
+}
+
 .o_notification_manager .o_notification { --Notification__background-color: var(--glass-80); @include glass(var(--glass-80)); }
 
 // ---- content layer ----------------------------------------------------------------
