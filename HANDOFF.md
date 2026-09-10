@@ -1,4 +1,4 @@
-# Handoff — 2026-09-10 (morning)
+# Handoff — 2026-09-10 (wrap, late morning)
 
 ## Start here: production is complete; one item is Stefan's, one is a look
 
@@ -31,17 +31,26 @@ Production layout is in `deploy/README.md`. The box follows `/etc/strataflow/dep
 without the module (that happened once tonight and was restored by hand).
 
 ## What I was doing when this ended
-Writing this after the `proxy_hide_header X-Frame-Options` tweak (in the repo and applied on the box).
-Local dev server on 8069 is up with `-u` applied; the Chrome automation tab is on the production login
-page, signed out. Everything is committed and pushed.
+`/wrap`. The last push (`4775359b97f`, docs) deployed itself through Actions — run `success`, prod
+`/web/login` 200 after. Nothing in flight. Local dev server on 8069 is up with `-u` applied
+(`scratchpad/odoo.log`); the Chrome automation tab is parked on
+`https://flow.strataline.co/strataflow_workorder/static/description/favicon.svg`, signed out.
 
 ## Repo state
-- Branch `feat/strataflow-workorder`, up to date with origin, deployed. Not merged into `19.0`.
-- `scratchpad/` untracked and not in `.gitignore`.
-- `~/.ssh/strataflow_deploy_ed25519{,.pub}` — the deploy key. Public half is in root's
-  `authorized_keys` on 74.208.133.70 with the forced command.
-- On the box: `/opt/strataflow` (owner `strataflow`), `/etc/strataflow/{odoo.conf,deploy_branch}`,
-  `/var/lib/strataflow`, `/var/log/strataflow/odoo.log`, `/root/strataflow-bootstrap.log`.
+- Branch `feat/strataflow-workorder` at `4775359b97f`, **up to date with origin**, deployed to
+  production by CI. Not merged into `19.0` — Stefan's call; at merge time write `19.0` into
+  `/etc/strataflow/deploy_branch` on the box.
+- This session's commits, oldest first: `aea590f61a8` (/app, branding, deploy kit), `ed48981ca28`
+  (shared-box bootstrap), `17010b13c40` (config dir group, init detection), `81137d1fa84` (git as owner,
+  conf without `False`), `5ebf94a18ab` (deploy_branch file), `3dc0484795b` (docs, frame header),
+  `32cafb87222` (b2b signup), `a85bd63e952`, `4775359b97f` (docs).
+- Untracked: `scratchpad/` only (dev logs, session cookies from curl — not in `.gitignore`).
+- `~/.ssh/strataflow_deploy_ed25519{,.pub}` — the deploy key; public half in root's `authorized_keys`
+  on 74.208.133.70 with the forced command; private half in the repo secret `DEPLOY_SSH_KEY`.
+- On the box: `/opt/strataflow` (owner `strataflow`, at `4775359b97f`), `/etc/strataflow/{odoo.conf,
+  deploy_branch}`, `/var/lib/strataflow`, `/var/log/strataflow/odoo.log`, `/root/strataflow-bootstrap.log`,
+  `/root/strataflow-admin-passwd`. Strataline key `k_3f7cf1e3` in `/opt/map-sys/data/api_keys.json`.
+- `~/map-sys` untouched (`main` at `4b08efb`, clean apart from `graphify-out/cache`).
 
 ## Next steps
 1. The two items above, then walk the six screens on production with him.

@@ -3,6 +3,18 @@
 Newest first. Read the last 3–5 entries at session start. Failures are recorded on purpose; a
 workaround is labelled as one so it does not become permanent by accident.
 
+### 2026-09-10 (wrap) — session closed with production self-deploying
+
+Nothing new built after the previous entry. The `[DOC]` push `4775359b97f` ran through
+`.github/workflows/deploy.yml` on its own: run completed `success`, `https://flow.strataline.co/web/login`
+200 afterwards — the third consecutive green deploy, so the pipeline is not a one-off. The session's
+ten commits are on `feat/strataflow-workorder`, up to date with origin; only `scratchpad/` is untracked.
+`/wrap` run at the end; nothing in flight.
+
+**Not done this session, on purpose or blocked:** admin password on prod (Stefan); Dispatch on prod seen in
+a browser (cookie plant blocked twice); Odoo's own demo data on prod (`dropdb` blocked); PWA manifest
+icons/scope; docs-only pushes still restart prod (`BACKLOG.md` › Platform).
+
 ### 2026-09-10 (later morning) — CI green, Cloudflare on, demo seeded, live map on strataline.co
 
 **Stefan left auto mode for the secrets; then: proxy the record, seed demo data, hook the map to the
