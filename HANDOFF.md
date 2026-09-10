@@ -23,7 +23,9 @@ Stefan still has to:
    (orange cloud) when you are ready to close that.
 
 ## Current state
-Module unchanged in function since the previous handoff except: web client at `/app/<path>` (router
+Sign-in is invitation-only now (`auth_signup.invitation_scope = b2b` on prod and dev, and in
+`data/strataflow_config_data.xml` for new databases — Odoo 19 defaults to b2c, which had `/web/signup` open
+on production). Module unchanged in function since the previous handoff except: web client at `/app/<path>` (router
 patch `static/src/core/app_url.js`, routes in `controllers/home.py`), StrataFlow title/favicon/PWA name
 (`views/strataflow_branding.xml`, `branding.js`, `static/description/`), brand text `StrataFlow`. Stock-view
 sweep still at step 2 of 7 (`tasks/03-stock-view-sweep.md`; `BACKLOG.md` › UI).

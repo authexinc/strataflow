@@ -37,6 +37,12 @@ Chrome. Cert by `certbot --nginx` after Stefan moved the A record (still DNS-onl
 **74.208.133.70** now); change `admin`/`admin` on production; decide whether to proxy the record through
 Cloudflare (the box's firewall intends that; the hold rule is what lets certbot and the world in today).
 
+**Public signup was open.** `auth_signup` ships `invitation_scope = b2c` (its own noupdate data), so
+`https://flow.strataline.co/web/signup` rendered a working form and the login page offered "Don't have
+an account?". Set to `b2b` on production and on `strataflow_dev` through `ir.config_parameter.set_param`
+over JSON-RPC (a raw SQL update would leave the ormcache stale); `data/strataflow_config_data.xml`
+(`32cafb87222`) does the same for every new database. The link is gone from the production login page.
+
 **FAILURES.** (1) Bootstrap run 1 died at DB init: `/etc/strataflow` mode 750 `root:root`. (2) My monitor's
 `pgrep -f strataflow_bootstrap.sh` matched its own ssh command line — "RUNNING" forever; anchor the
 pattern (`^bash /root/…`). (3) The forced-command test reset the box to `19.0` (above). (4) Classifier
