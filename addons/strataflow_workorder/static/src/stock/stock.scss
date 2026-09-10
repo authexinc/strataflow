@@ -51,16 +51,19 @@
   .modal-header { border-bottom: 0.5px solid var(--hairline-soft); .modal-title { font-weight: 800; letter-spacing: -.01em; } }
   .modal-footer { border-top: 0.5px solid var(--hairline-soft); } }
 
-.o_notification { @include glass(var(--glass-80)); border-radius: 16px; box-shadow: var(--shadow-hi); }
+// scoped to the manager: web/static/src/core/notifications/notification.scss:15-17 paints
+// .o_notification_manager .o_notification, which a one-class rule loses to. The radius and the
+// shadow come from the `rounded shadow-lg` utilities on notification.xml:5 and cannot be moved.
+.o_notification_manager .o_notification { --Notification__background-color: var(--glass-80); @include glass(var(--glass-80)); }
 
 // ---- content layer ----------------------------------------------------------------
 .o_form_view {
   .o_form_sheet_bg { background: transparent; }
   .o_form_sheet { background: var(--logo-bg); border: 0.5px solid var(--edge); border-radius: 22px; box-shadow: var(--shadow); }
-  .o_form_statusbar { background: transparent; border-bottom: 0; }
+  .o_form_statusbar { background: var(--bg); border-bottom: 0; }
   .oe_title h1, .oe_title .o_field_widget input { font-weight: 800; letter-spacing: -.01em; }
   .o_form_label { color: var(--muted); font-weight: 600; }
-  .o_horizontal_separator { @include eyebrow; margin-bottom: 8px; }
+  .o_horizontal_separator { @include eyebrow; font-weight: 800 !important; margin-bottom: 8px !important; }
   .o_notebook_headers .nav-link { border-radius: 999px 999px 0 0; font-weight: 600; }
   .oe_button_box .oe_stat_button { border-radius: 12px; background: var(--chip-bg); border: 0.5px solid var(--hairline); color: var(--text-2); &:hover { background: var(--chip-bg-hi); } }
 }
@@ -69,12 +72,15 @@
 .o-mail-Chatter { background: transparent; }
 
 .o_list_view .o_list_renderer { background: var(--logo-bg); border: 0.5px solid var(--edge); border-radius: 22px; box-shadow: var(--shadow); margin: 0 12px 12px;
-  .o_list_table thead th { @include eyebrow; background: var(--logo-bg); border-bottom: 0.5px solid var(--hairline); }
+  --ListRenderer-thead-bg-color: var(--logo-bg);
+  --ListRenderer-thead-border-end-color: var(--hairline);
+  .o_list_table thead th { @include eyebrow; border-bottom: 0.5px solid var(--hairline); }
   .o_list_table .o_group_header { background: var(--chip-bg); font-weight: 700; }
   .o_data_row.o_data_row_selected > td { background: var(--accent-soft); } }
 
-.o_kanban_view {
-  .o_kanban_group { background: transparent; }
+.o_kanban_renderer {
+  --Kanban-background: transparent;
+  --KanbanGroup-background: transparent;
   .o_kanban_header .o_column_title { font-weight: 800; letter-spacing: -.01em; }
   .o_kanban_record { background: var(--logo-bg); border: 0.5px solid var(--edge); border-radius: 16px; box-shadow: var(--shadow); &:hover { box-shadow: var(--shadow-hi); } }
   .o_kanban_quick_create { border-radius: 16px; }
