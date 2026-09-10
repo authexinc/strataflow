@@ -3,6 +3,19 @@
 Newest first. Read the last 3–5 entries at session start. Failures are recorded on purpose; a
 workaround is labelled as one so it does not become permanent by accident.
 
+### 2026-09-10 (wrap +1) — invoices seeded on production
+
+Stefan: "can you also seed invoice data?". The module already has the seeder — `_demo_seed_invoices`
+(`models/strataflow_workorder.py:244`), called by a `<function>` at the end of `demo/strataflow_workorder_demo.xml`.
+It never ran on prod because the demo was loaded in *update* mode (the demo-flag trick, previous entry)
+and Odoo skips `<function>` tags in noupdate data outside `init` (`odoo/tools/convert.py`,
+`_tag_function`). It cannot be called over JSON-RPC either (leading underscore). Ran it through
+`odoo-bin shell -c /etc/strataflow/odoo.conf --no-http` as `strataflow`, guarded on
+`account.move` `out_invoice` count == 0 (the method is not idempotent): **9 invoices, all posted, 2
+paid, 33,420.01 total**; `T-26-04159` linked to `INV/2026/00003`. Read back over the production API.
+Recipe for next time: `scratchpad/seed_inv.py` piped into the shell over ssh — worth keeping as
+`scripts/vps_seed_demo.sh` if prod ever gets re-seeded; not committed tonight.
+
 ### 2026-09-10 (wrap) — session closed with production self-deploying
 
 Nothing new built after the previous entry. The `[DOC]` push `4775359b97f` ran through

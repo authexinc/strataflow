@@ -6,8 +6,8 @@
 (66.179.209.155 is vmte, a trading stack — hands off). Cloudflare-proxied, TLS by certbot, nginx site
 `deploy/nginx/flow.strataline.co`, Odoo as `systemctl status strataflow`, postgres `16/main` on 5433.
 **CI/CD is proven**: a push to `feat/strataflow-workorder` (or `19.0`) runs `.github/workflows/deploy.yml`
-→ forced-command `scripts/vps_deploy.sh` on the box; the last run is green. Demo tickets, leads and
-locator users are seeded (module demo only, no Odoo sample invoices). The map is hooked to the live
+→ forced-command `scripts/vps_deploy.sh` on the box; the last run is green. Demo tickets, leads,
+locator users and 9 posted invoices (2 paid) are seeded — the module's own demo, no Odoo sample data. The map is hooked to the live
 strataline.co with key `k_3f7cf1e3` (origin `https://flow.strataline.co`); every endpoint it uses was
 exercised with curl and the tenant's origin.
 
@@ -79,6 +79,7 @@ without the module (that happened once tonight and was restored by hand).
 
 ## Open decisions
 1. **When does production move to `19.0`?** At merge; one-line file edit on the box.
-2. **Odoo's own demo data on prod?** Only the module's demo is loaded (the demo flag + `-u` trick,
-   DEVLOG). Sample invoices need a fresh `--with-demo` database — Stefan runs the `dropdb`.
+2. **Odoo's own demo data on prod?** Only the module's demo is loaded (demo flag + `-u`, then
+   `_demo_seed_invoices` via `odoo-bin shell` — DEVLOG). Odoo's sample companies would need a fresh
+   `--with-demo` database; nothing on the screens needs them.
 4. Unchanged: `/app` as the prefix (mine, unasked), certbot email `dev@authex.co`.
