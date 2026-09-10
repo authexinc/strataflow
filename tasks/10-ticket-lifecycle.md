@@ -99,7 +99,7 @@ Odoo `ir.attachment` rows, and this is the whole chain:
 4. **The bytes**: `ir.attachment._storage()` (`odoo/addons/base/models/ir_attachment.py:88-89`) reads the
    `ir_attachment.location` config parameter and **defaults to `'file'`**, so the content is written to the
    filesystem, named by its sha1 checksum, under `config.filestore(dbname)` =
-   `<data_dir>/filestore/<dbname>` (`odoo/tools/config.py:1031-1032`). On this machine that resolves to
+   `<data_dir>/filestore/<dbname>` (`odoo/tools/config.py:1030-1031`). On this machine that resolves to
    `/Users/stefan/Library/Application Support/Odoo/filestore/strataflow_dev` (87 MB, 678 files today), split
    into two-hex-character subdirectories. Postgres holds nothing but the metadata row unless
    `ir_attachment.location` is set to `db`.
@@ -162,7 +162,7 @@ Options: (a) block outright until the invoice is dealt with; (b) reopen and auto
   `move_id`/`invoice_line_id`, and if that leaves the move with no product lines, unlink the move. The ticket
   then re-enters `action_invoice_closed`'s domain (`:88`) naturally when it is next closed.
 - `move_id.state == 'posted'` → **block**, with a message telling the dispatcher to raise a credit note from
-  the invoice first (stock `account.move.action_reverse`, `addons/account/models/account_move.py:6178-6184`,
+  the invoice first (stock `account.move.action_reverse`, `addons/account/models/account_move.py:6179-6185`,
   which opens the `account.move.reversal` wizard, declared at
   `addons/account/wizard/account_move_reversal.py:11` and doing the work in `reverse_moves` at `:110`). A
   posted move carries a sequence number kept unique by an index on
