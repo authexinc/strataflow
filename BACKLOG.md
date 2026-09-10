@@ -98,7 +98,11 @@ push, or it becomes a history rewrite.
       check this** — stock Odoo fails to mount there too (`/odoo/settings` gives a 108-character body),
       so it is the extension racing Odoo's boot for storage, not our code and not a site-data setting.
       Handed to Stefan to look at in a normal tab.
-- [ ] **Stock-view sweep, steps 3–7 of `tasks/03-stock-view-sweep.md`.** Steps 1–2 landed
+- [ ] **Internal screen revamp (asks 3 and 10) — NOT done; Stefan, 2026-09-10: "there is still a lot
+      left to do".** `tasks/03-stock-view-sweep.md` is the next tranche, not the whole ask: when its
+      seven commits are in, walk every inner page again with Stefan before calling this closed —
+      the brief inventories what was known on 2026-09-09, and the navbar rebuild (`4fd32387e1c`)
+      already showed the inventory was short. Steps 1–2 of the brief landed
       2026-09-09 (`8c4fe820d7f`, `da725915429`) and were seen in the automation tab; the brief's
       step-6 dialog rule (`.modal .o_form_view .o_form_sheet` flat) landed early in `0fcaae22b48`.
       Remaining, in the brief's order: (3) statusbar arrows — five `--o-statusbar-*` variables on

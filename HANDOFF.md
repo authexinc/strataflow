@@ -22,7 +22,9 @@ checked over HTTP. Four commits this session, all on `feat/strataflow-workorder`
    gradient discs (chatter, many2one widgets, contact image), Help / Support / My Odoo.com Account
    removed from `user_menuitems`, initials centred in the disc.
 
-**Steps 3–7 of the brief are not done.** `BACKLOG.md` › UI › "Stock-view sweep, steps 3–7" lists
+**The internal screen revamp is not done — Stefan, at the wrap: "there is still a lot left to
+do".** Steps 3–7 of the brief are the next tranche, and the brief is not the whole ask: walk every
+inner page again with him after it. `BACKLOG.md` › UI › "Internal screen revamp" lists
 exactly what remains; the brief's Plan, Acceptance criteria and Verification sections still apply
 as written. Next thing to type is step 3 (the statusbar's five `--o-statusbar-*` variables).
 

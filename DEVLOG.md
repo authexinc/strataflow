@@ -12,7 +12,9 @@ horrible the navbar is. The user is not meant to see any of this stock odoo shit
 is the same as dispatch" — which became `4fd32387e1c` and `0fcaae22b48`, outside the brief. Steps
 3–7 of the brief (statusbar arrows, notebook/facets/search panel, kanban gaps + rot literals,
 Settings/chatter/empty states, `account.move`/`crm.lead` specifics, the ticket form `<header>`) are
-**not done** — see `BACKLOG.md` › UI. Pushed: `94f1a898537..0fcaae22b48`.
+**not done** — see `BACKLOG.md` › UI. Pushed: `94f1a898537..0fcaae22b48`. **Stefan at the wrap:
+the internal screen revamp is not to be marked done — "there is still a lot left to do"**; the
+brief is one tranche of ask 3/10, not its closure.
 
 **Commit 1, verified numerically in the browser.** Toast is `rgba(255,255,255,.8)` + blur where it
 painted solid `#fbfcfa`; `.o_kanban_renderer` now owns `--Kanban-background` /
