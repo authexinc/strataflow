@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+<!--
+  The user menu's toggler becomes the shell's round avatar button — initials in the same
+  blue-gradient disc the six screens draw (the `o_sf_avatar` lg modifier inside `o_sf_round`). The
+  dropdown behind it (Preferences, Log out, ...) is stock and already glass. This replaces the
+  whole button, which also drops the presence dot `mail` wraps around the stock photo.
+-->
+<t t-inherit="web.UserMenu" t-inherit-mode="extension">
+    <xpath expr="//button" position="replace">
+        <button class="o_sf_round" title="Account" aria-label="Account">
+            <span class="o_sf_avatar o_sf_avatar--lg"><t t-esc="sfInitials"/></span>
+        </button>
+    </xpath>
+</t>
+
+</templates>

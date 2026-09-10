@@ -62,9 +62,15 @@ $o-border-radius: o-to-rem(12px);
 $o-border-radius-sm: o-to-rem(8px);
 $o-border-radius-lg: o-to-rem(16px);
 
-// navbar: light ground, dark type — stock assumes the opposite
-$o-navbar-height: 48px;
-$o-navbar-border-bottom: 0.5px solid rgba(190, 193, 200, .7);
+// navbar: the bar itself is nothing. static/src/stock/navbar.xml rebuilds it as the shell's
+// top bar — a brand pill and a nav pill floating on the page ground — so the glass, the edge
+// and the height all belong to the pills. 72px = a 48px pill plus the 16px above and 8px below
+// that stock.scss gives the bar, the same air the shell leaves under its floating top bar.
+// $o-navbar-height is the one that has to move: stock reads it for the bar's own height and
+// again for where the toast stack starts (web/static/src/core/notifications/notification.scss:7).
+$o-navbar-height: 72px;
+$o-navbar-background: transparent;
+$o-navbar-border-bottom: 0;
 $o-navbar-entry-color: #3a4045;
 $o-navbar-entry-color--hover: #1a1d21;
 $o-navbar-entry-bg--hover: rgba(28, 33, 36, .06);

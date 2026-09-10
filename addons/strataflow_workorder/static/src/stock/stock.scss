@@ -17,11 +17,26 @@
 .o_web_client { @include tokens-light; }
 
 // ---- functional layer -----------------------------------------------------------
+// The navbar is not restyled, it is rebuilt: static/src/stock/navbar.xml renders the same
+// brand pill and nav pills as the shell (`strataflow_workorder.Shell`), and navbar.js filters
+// the systray down to the user menu. What is left here is the bar's own layout — it carries no
+// paint of its own, because the pills carry the glass. Height, ground and border come from
+// $o-navbar-* in backend_variables.scss.
 .o_main_navbar {
-  @include glass(var(--glass-72));
-  border: 0; border-bottom: 0.5px solid var(--edge); box-shadow: none;
-  .o_menu_brand { font-weight: 800; letter-spacing: -.01em; }
-  .o_nav_entry, .o_menu_sections > .dropdown > .dropdown-toggle { font-weight: 600; }
+  align-items: center; gap: 10px; padding: 16px 16px 8px; border: 0; box-shadow: none;
+  font-size: 13px; line-height: 1.35;
+  // the shell's zero-specificity button reset (strataflow.scss `.o_sf :where(button)`), which
+  // the pills rely on and which does not reach here: outside `.o_sf` they render as UA buttons
+  :where(button) { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; border-radius: 0; text-align: inherit; }
+  :where(button):focus-visible { outline: none; box-shadow: var(--focus); }
+  .o_menu_systray { gap: 10px; }
+  // the toggler is the shell's round avatar button (static/src/stock/user_menu.xml); the
+  // Dropdown component still stamps `dropdown-toggle` on it, and Bootstrap's caret with it
+  // stock sizes every navbar entry as a full-height strip; the toggler is a 48px disc, so the
+  // size is pinned here at three classes where `.o_sf_round` alone loses
+  .o_user_menu { padding: 0;
+    > .dropdown-toggle { @include glass; width: 48px; height: 48px; min-width: 0; padding: 0; border-radius: 999px; color: var(--text-2);
+      &:hover, &:focus-visible, &.show { background: var(--glass-80); } &::after { display: none; } } }
 }
 
 .o_control_panel {
