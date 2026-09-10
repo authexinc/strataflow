@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
-# One-time server setup for StrataFlow on a fresh Ubuntu 24.04 box. Run as root ON the VPS:
+# One-time server setup for StrataFlow on Ubuntu 24.04. Written for a shared box (74.208.133.70 also
+# runs map-sys behind nginx + certbot, with ufw locked to Cloudflare): it never touches an active ufw,
+# never overwrites an existing cloudflare-realip.conf, and uses whatever postgres cluster is there.
+# Run as root ON the VPS:
 #
 #   curl -fsSL https://raw.githubusercontent.com/authexinc/strataflow/19.0/scripts/vps_bootstrap.sh \
 #     | DEPLOY_PUBKEY='ssh-ed25519 AAAA… github-actions-deploy strataflow' bash
@@ -48,6 +51,10 @@ runuser -u strataflow -- "$REPO/.venv/bin/pip" install -q --upgrade pip wheel
 runuser -u strataflow -- "$REPO/.venv/bin/pip" install -q -r "$REPO/requirements.txt"
 
 echo "== postgres"
+PGPORT=$(pg_lsclusters -h | awk '$4=="online"{print $3; exit}')
+[ -n "$PGPORT" ] || { echo "no online postgres cluster"; exit 1; }
+export PGPORT
+echo "cluster port $PGPORT"
 runuser -u postgres -- psql -tAc "SELECT 1 FROM pg_roles WHERE rolname='strataflow'" | grep -q 1 \
   || runuser -u postgres -- createuser strataflow
 DB_EXISTS=$(runuser -u postgres -- psql -tAc "SELECT 1 FROM pg_database WHERE datname='strataflow'" || true)
@@ -56,7 +63,7 @@ DB_EXISTS=$(runuser -u postgres -- psql -tAc "SELECT 1 FROM pg_database WHERE da
 echo "== config"
 if [ ! -f /etc/strataflow/odoo.conf ]; then
   ADMIN_PASSWD=$(openssl rand -base64 30)
-  sed "s|__ADMIN_PASSWD__|$ADMIN_PASSWD|" "$REPO/deploy/odoo.conf" > /etc/strataflow/odoo.conf
+  sed -e "s|__ADMIN_PASSWD__|$ADMIN_PASSWD|" -e "s|__PGPORT__|$PGPORT|" "$REPO/deploy/odoo.conf" > /etc/strataflow/odoo.conf
   printf '%s\n' "$ADMIN_PASSWD" > /root/strataflow-admin-passwd
   chmod 600 /root/strataflow-admin-passwd
   echo "master password written to /root/strataflow-admin-passwd"
@@ -81,7 +88,8 @@ sleep 3
 systemctl is-active strataflow
 
 echo "== nginx"
-# Cloudflare edge ranges -> real visitor IP; harmless while the record is DNS-only
+# Cloudflare edge ranges -> real visitor IP. map-sys ships the same file; keep theirs when present.
+if [ ! -f /etc/nginx/conf.d/cloudflare-realip.conf ]; then
 {
   echo "# generated $(date -u +%F) by scripts/vps_bootstrap.sh from cloudflare.com/ips-v4 + ips-v6"
   for r in $(curl -fsS https://www.cloudflare.com/ips-v4) $(curl -fsS https://www.cloudflare.com/ips-v6); do
@@ -89,6 +97,7 @@ echo "== nginx"
   done
   echo "real_ip_header CF-Connecting-IP;"
 } > /etc/nginx/conf.d/cloudflare-realip.conf
+fi
 install -m 644 "$REPO/deploy/nginx/$DOMAIN" "/etc/nginx/sites-available/$DOMAIN"
 ln -sf "/etc/nginx/sites-available/$DOMAIN" "/etc/nginx/sites-enabled/$DOMAIN"
 rm -f /etc/nginx/sites-enabled/default
@@ -96,15 +105,20 @@ nginx -t
 systemctl reload nginx
 
 echo "== firewall"
-ufw default deny incoming >/dev/null
-ufw default allow outgoing >/dev/null
-ufw allow 22/tcp comment ssh >/dev/null
-ufw allow 80,443/tcp comment web >/dev/null
-ufw --force enable >/dev/null
+if ufw status | grep -q "Status: active"; then
+  echo "ufw already active - left alone (on the map-sys box 80/443 are Cloudflare-only on purpose)"
+else
+  ufw default deny incoming >/dev/null
+  ufw default allow outgoing >/dev/null
+  ufw allow 22/tcp comment ssh >/dev/null
+  ufw allow 80,443/tcp comment web >/dev/null
+  ufw --force enable >/dev/null
+fi
 
 echo "== tls"
 if [ ! -d "/etc/letsencrypt/live/$DOMAIN" ]; then
-  certbot --nginx -d "$DOMAIN" --non-interactive --agree-tos -m "$CERTBOT_EMAIL" --redirect
+  certbot --nginx -d "$DOMAIN" --non-interactive --agree-tos -m "$CERTBOT_EMAIL" --redirect \
+    || echo "WARN: certbot failed - is $DOMAIN pointed at this box and proxied through Cloudflare? Re-run this script once it is."
 fi
 
 if [ -n "${DEPLOY_PUBKEY:-}" ]; then

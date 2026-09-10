@@ -21,4 +21,4 @@ jobs:
           printf '%s\n' "${{ secrets.DEPLOY_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
           # authorized_keys on the VPS pins this key to scripts/vps_deploy.sh
           # (forced command) — the trailing arg is ignored server-side.
-          ssh -i ~/.ssh/id_ed25519 -o BatchMode=yes root@66.179.209.155 deploy
+          ssh -i ~/.ssh/id_ed25519 -o BatchMode=yes root@74.208.133.70 deploy

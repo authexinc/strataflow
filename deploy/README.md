@@ -1,7 +1,8 @@
 # Deploying StrataFlow
 
-Production is `flow.strataline.co` on `66.179.209.155` (Ubuntu 24.04). Same shape as
-map-sys: git is the source of truth, a push to `19.0` deploys.
+Production is `flow.strataline.co` on `74.208.133.70` — the map-sys box (Ubuntu 24.04), shared with
+strataline.co and others behind its nginx. Same shape as map-sys: git is the source of truth, a push
+to `19.0` deploys. The box's ufw only admits Cloudflare on 80/443, so the record must be proxied.
 
 | Piece | Where |
 |---|---|
