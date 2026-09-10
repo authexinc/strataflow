@@ -35,7 +35,7 @@ apt-get install -y -q git python3 python3-venv python3-dev build-essential \
 echo "== user and directories"
 id -u strataflow >/dev/null 2>&1 || useradd --system --create-home --home-dir /home/strataflow --shell /bin/bash strataflow
 install -d -o strataflow -g strataflow -m 750 "$REPO" /var/lib/strataflow /var/log/strataflow
-install -d -m 750 /etc/strataflow
+install -d -o root -g strataflow -m 750 /etc/strataflow
 
 echo "== code"
 if [ ! -d "$REPO/.git" ]; then
@@ -71,7 +71,9 @@ fi
 chown root:strataflow /etc/strataflow/odoo.conf
 chmod 640 /etc/strataflow/odoo.conf
 
-if [ "$DB_EXISTS" != "1" ]; then
+# initialise when the database has no Odoo tables yet (a previous run may have created it empty)
+INITIALISED=$(runuser -u strataflow -- psql -d strataflow -tAc "SELECT 1 FROM pg_tables WHERE tablename='ir_module_module'" || true)
+if [ "$INITIALISED" != "1" ]; then
   echo "== initialise database (demo: ${WITH_DEMO:-no})"
   DEMO_FLAG=--without-demo
   [ -n "${WITH_DEMO:-}" ] && DEMO_FLAG=--with-demo
