@@ -3,7 +3,7 @@
 # (.github/workflows/deploy.yml) over SSH via a forced-command key.
 #
 # Contract:
-# - git is the source of truth for code. /etc/strataflow/odoo.conf, the database and
+# - git is the source of truth for code; the branch is /etc/strataflow/deploy_branch. /etc/strataflow/odoo.conf, the database and
 #   /var/lib/strataflow (filestore) are never touched here.
 # - every deploy updates the module (-u strataflow_workorder) with the service stopped,
 #   then restarts it: Python, XML and asset changes all need it, and a plain restart can
@@ -11,7 +11,8 @@
 set -euo pipefail
 
 REPO=/opt/strataflow
-BRANCH=19.0
+# the branch this box follows: written by vps_bootstrap.sh from BRANCH, edit to switch
+BRANCH=$(cat /etc/strataflow/deploy_branch 2>/dev/null || echo 19.0)
 as_app() { runuser -u strataflow -- "$@"; }
 
 # every git call as the owner of the checkout: root is refused with "dubious ownership"

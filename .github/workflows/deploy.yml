@@ -2,7 +2,8 @@ name: deploy
 
 on:
   push:
-    branches: [19.0]
+    # the box only moves when the pushed branch is the one in its /etc/strataflow/deploy_branch
+    branches: [19.0, feat/strataflow-workorder]
 
 # one deploy at a time; a queued push waits for the running one
 concurrency:

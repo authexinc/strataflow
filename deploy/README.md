@@ -21,9 +21,10 @@ unit and the nginx site, gets a certificate, and pins the GitHub Actions key to
 
 ## Every deploy after that
 `.github/workflows/deploy.yml` SSHes to the VPS with `DEPLOY_SSH_KEY` (repo secret, paired
-with `DEPLOY_KNOWN_HOSTS`); the forced command runs `scripts/vps_deploy.sh`, which resets to
-`origin/19.0`, updates the module with the service stopped, restarts it and curls `/web/login`.
-Nothing on a feature branch deploys until it is merged into `19.0`.
+with `DEPLOY_KNOWN_HOSTS`); the forced command runs `scripts/vps_deploy.sh`, which resets to `origin/<branch>` — the branch in
+`/etc/strataflow/deploy_branch`, written by the bootstrap (`feat/strataflow-workorder` today) — updates
+the module with the service stopped, restarts it and curls `/web/login`. To move the box to `19.0`, edit
+that file. A push to any branch in the workflow triggers a run; the box only moves when it is its branch.
 
 ## URLs
 Odoo serves the web client at `/odoo/…`; the product serves it at `/app/…` as well

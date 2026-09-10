@@ -8,7 +8,8 @@
 #     | DEPLOY_PUBKEY='ssh-ed25519 AAAA… github-actions-deploy strataflow' bash
 #
 # Environment (all optional):
-#   BRANCH          branch to check out first (default 19.0; auto-deploy tracks 19.0 regardless)
+#   BRANCH          branch this box follows (default 19.0); written to /etc/strataflow/deploy_branch,
+#                   which scripts/vps_deploy.sh reads on every deploy
 #   DEPLOY_PUBKEY   public half of the GitHub Actions deploy key; installed in
 #                   /root/.ssh/authorized_keys pinned to scripts/vps_deploy.sh (forced command)
 #   CERTBOT_EMAIL   expiry notices for the TLS certificate (default dev@authex.co)
@@ -68,6 +69,7 @@ if [ ! -f /etc/strataflow/odoo.conf ]; then
   chmod 600 /root/strataflow-admin-passwd
   echo "master password written to /root/strataflow-admin-passwd"
 fi
+printf '%s\n' "$BRANCH" > /etc/strataflow/deploy_branch
 chown root:strataflow /etc/strataflow/odoo.conf
 chmod 640 /etc/strataflow/odoo.conf
 
