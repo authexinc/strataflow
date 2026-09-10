@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- A locate desk is invitation-only. auth_signup ships with b2c (anyone may create a portal
+             account at /web/signup) — found open on production on 2026-09-10. noupdate so a tenant
+             that turns it on deliberately keeps it. -->
+        <function model="ir.config_parameter" name="set_param" eval="('auth_signup.invitation_scope', 'b2b')"/>
+    </data>
+</odoo>

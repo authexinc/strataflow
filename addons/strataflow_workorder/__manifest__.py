@@ -11,6 +11,7 @@
     'data': [
         'security/strataflow_security.xml',
         'security/ir.model.access.csv',
+        'data/strataflow_config_data.xml',
         'data/strataflow_utility_data.xml',
         'data/ir_sequence_data.xml',
         'data/strataflow_crm_account_data.xml',
