@@ -14,20 +14,21 @@ REPO=/opt/strataflow
 BRANCH=19.0
 as_app() { runuser -u strataflow -- "$@"; }
 
+# every git call as the owner of the checkout: root is refused with "dubious ownership"
 cd "$REPO"
-OLD=$(git rev-parse HEAD)
+OLD=$(as_app git rev-parse HEAD)
 as_app git fetch -q origin "$BRANCH"
 as_app git reset --hard -q "origin/$BRANCH"
-NEW=$(git rev-parse HEAD)
+NEW=$(as_app git rev-parse HEAD)
 
 if [ "$OLD" = "$NEW" ]; then
   echo "already at $NEW - nothing to do"
   exit 0
 fi
 echo "deploying: $OLD -> $NEW"
-git log --oneline "$OLD..$NEW" 2>/dev/null || true
+as_app git log --oneline "$OLD..$NEW" 2>/dev/null || true
 
-if git diff --name-only "$OLD" "$NEW" -- requirements.txt | grep -q .; then
+if as_app git diff --name-only "$OLD" "$NEW" -- requirements.txt | grep -q .; then
   echo "requirements.txt changed -> pip install"
   as_app "$REPO/.venv/bin/pip" install -q -r "$REPO/requirements.txt"
 fi
