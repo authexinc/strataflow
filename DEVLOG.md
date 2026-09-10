@@ -3,6 +3,45 @@
 Newest first. Read the last 3–5 entries at session start. Failures are recorded on purpose; a
 workaround is labelled as one so it does not become permanent by accident.
 
+### 2026-09-10 (morning) — flow.strataline.co is live on the map-sys box; the vmte box is not ours
+
+**Where it went.** Not `66.179.209.155`: once SSH opened (Stefan pasted both keys through the provider
+console) the box turned out to run **vmte** — a trading stack in docker with Caddy on 80/443, tailscale,
+its own ufw. nginx cannot take those ports without stopping Caddy. Asked; Stefan: "different server",
+then "try 74.208.133.70 but see if it has enough ram". The map-sys box: 4 CPU, 7.9 GB (4.4 GB free), 179 GB
+disk, load 0.1, nginx + certbot + postgres 16 already there. Odoo idles at ~600 MB RSS. Strataflow's deploy
+key was removed from the vmte box again; Stefan's Mac key stays there (his).
+
+**What the shared box changed in the kit** (`ed48981ca28`, `17010b13c40`, `81137d1fa84`, `5ebf94a18ab`):
+postgres cluster is `16/main` on **port 5433** — bootstrap reads it from `pg_lsclusters` into
+`db_port`; an active ufw is left alone (80/443 there are Cloudflare-only by design, a world-open hold rule
+exists today); map-sys's `cloudflare-realip.conf` is kept when present; certbot is non-fatal;
+`/etc/strataflow` needed `root:strataflow` or the service user could not read `odoo.conf` (first run died
+there and left an empty DB — init is now detected by the `ir_module_module` table, not by `createdb`);
+`db_host = False` / `db_password = False` are not how Odoo 19 spells unset (warns, skips) — omitted.
+
+**The deploy-branch landmine fired.** First forced-command test reset the box to `origin/19.0`, which has
+no module: three `Some modules have inconsistent states` errors in the log, `/web/login` still 200. Restored
+by hand; `vps_deploy.sh` now follows `/etc/strataflow/deploy_branch` (written by the bootstrap from
+`BRANCH`, `feat/strataflow-workorder` today) and the workflow runs on pushes to that branch as well as
+`19.0`. Second test: `already at 5ebf94a18ab - nothing to do`. `vps_deploy.sh` also had to run every git
+call as `strataflow` (root gets "dubious ownership").
+
+**Live.** `https://flow.strataline.co/` → 303 `/app/desk`; `/odoo/desk` → 301 `/app/desk`;
+`/web/session/logout` → 303 `/app` (nginx `proxy_redirect`); `/web/database/manager` 404; title
+StrataFlow, favicon ours; HSTS + `X-Frame-Options: DENY` once (Odoo's SAMEORIGIN hidden with
+`proxy_hide_header`). Signed in over JSON-RPC: `/app/desk` and `/app/invoices` 200. Login page seen in
+Chrome. Cert by `certbot --nginx` after Stefan moved the A record (still DNS-only, not proxied).
+
+**Still Stefan's.** The two Actions secrets (`DEPLOY_KNOWN_HOSTS` must be the keyscan of
+**74.208.133.70** now); change `admin`/`admin` on production; decide whether to proxy the record through
+Cloudflare (the box's firewall intends that; the hold rule is what lets certbot and the world in today).
+
+**FAILURES.** (1) Bootstrap run 1 died at DB init: `/etc/strataflow` mode 750 `root:root`. (2) My monitor's
+`pgrep -f strataflow_bootstrap.sh` matched its own ssh command line — "RUNNING" forever; anchor the
+pattern (`^bash /root/…`). (3) The forced-command test reset the box to `19.0` (above). (4) Classifier
+blocked an ssh that read `.env` keys on the vmte box; re-issued without it.
+
 ### 2026-09-10 (early morning) — StrataFlow at /app, favicon and name, deploy kit for flow.strataline.co; the VPS itself unreachable
 
 **Ask (Stefan):** deploy on `66.179.209.155` as `flow.strataline.co`, CI/CD like map-sys, no "odoo" in

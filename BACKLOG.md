@@ -163,12 +163,13 @@ Review UI work with the `apple-design` skill before and after (CLAUDE.md non-neg
 - [x] **`/odoo` never in the address bar** (2026-09-10): the web client is served at `/app/<path>`
       (`controllers/home.py`, `static/src/core/app_url.js`) and `deploy/nginx/flow.strataline.co` 301s the
       stock prefix. See `ARCHITECTURE.md` › "Product URLs".
-- [ ] **Deploy to `flow.strataline.co` (66.179.209.155)** — everything is in the repo (`deploy/`,
-      `scripts/vps_bootstrap.sh`, `scripts/vps_deploy.sh`, `.github/workflows/deploy.yml`); blocked on SSH
-      access to the box and on the two repo secrets. Steps in `HANDOFF.md` › "Start here". Auto-deploy
-      tracks `19.0`, so the first real deploy is the merge of `feat/strataflow-workorder`.
-- [ ] Deploy follow-ups: Cloudflare-proxy the record and lock 80/443 to Cloudflare like map-sys
-      (`vps_cf_firewall.sh` equivalent); PWA manifest icons and `scope`/`start_url` still say odoo
+- [x] **Deployed to `flow.strataline.co`** (2026-09-10) on the map-sys box `74.208.133.70`; kit in
+      `deploy/`, `scripts/vps_bootstrap.sh`, `scripts/vps_deploy.sh`, `.github/workflows/deploy.yml`. The box
+      follows `/etc/strataflow/deploy_branch` (`feat/strataflow-workorder`); switch it to `19.0` at merge time.
+- [ ] **Deploy loose ends (Stefan):** Actions secrets `DEPLOY_SSH_KEY` + `DEPLOY_KNOWN_HOSTS` (keyscan of
+      74.208.133.70); change `admin`/`admin` on prod; proxy the `flow` record through Cloudflare (the box's
+      ufw intends Cloudflare-only on 80/443; a hold rule keeps them world-open today).
+- [ ] Deploy follow-ups: PWA manifest icons and `scope`/`start_url` still say odoo
       (`web/controllers/webmanifest.py`, needs a controller override); an `<a href="/odoo/…">` click under
       `/app` is a full page load (router's click guard, see ARCHITECTURE); `scratchpad/` still not in
       `.gitignore`.

@@ -1,87 +1,79 @@
-# Handoff — 2026-09-10 (early morning)
+# Handoff — 2026-09-10 (morning)
 
-## Start here: the deploy kit is done and verified locally; the box itself was never reached
+## Start here: flow.strataline.co is live; three loose ends are Stefan's
 
-Stefan asked for StrataFlow on `66.179.209.155` as `flow.strataline.co`, auto-deploy like map-sys, no
-"odoo" in any URL, the strataline mark as favicon, the name StrataFlow. All of it is in the repo except
-the server steps, which need SSH that no local key opens (see Failures in `DEVLOG.md` 2026-09-10). What
-Stefan has to do, in order:
+`https://flow.strataline.co/` runs tonight's `feat/strataflow-workorder` on the **map-sys box
+`74.208.133.70`** (not 66.179.209.155 — that one is vmte, a trading stack; hands off). TLS by certbot,
+nginx site `deploy/nginx/flow.strataline.co`, Odoo as `systemctl status strataflow`, postgres `16/main`
+on port 5433, deploy over a forced-command key that runs `scripts/vps_deploy.sh`. Verified from outside:
+`/` → `/app/desk`, `/odoo/…` → 301 `/app/…`, signed-in `/app/desk` 200, login page seen in Chrome.
 
-1. **Get me (or himself) onto the box.** `ssh root@66.179.209.155` refuses `~/.ssh/id_ed25519` and
-   `id_rsa` for root/ubuntu/debian/admin. Either add `~/.ssh/id_ed25519.pub` to the right user's
-   `authorized_keys` through the provider console, or tell me the user name the provider created.
-2. **Set the two Actions secrets** (classifier blocks me from doing it):
+Stefan still has to:
+1. **Set the Actions secrets** (classifier blocks me):
    ```
-   gh secret set DEPLOY_SSH_KEY   --repo authexinc/strataflow < ~/.ssh/strataflow_deploy_ed25519
-   ssh-keyscan -t ed25519 66.179.209.155 | gh secret set DEPLOY_KNOWN_HOSTS --repo authexinc/strataflow
+   gh secret set DEPLOY_SSH_KEY --repo authexinc/strataflow < ~/.ssh/strataflow_deploy_ed25519
+   ssh-keyscan -t ed25519 74.208.133.70 | gh secret set DEPLOY_KNOWN_HOSTS --repo authexinc/strataflow
    ```
-3. **Bootstrap the server** as root (one-time, idempotent; `WITH_DEMO=1` to seed demo data):
-   ```
-   curl -fsSL https://raw.githubusercontent.com/authexinc/strataflow/feat/strataflow-workorder/scripts/vps_bootstrap.sh \
-     | BRANCH=feat/strataflow-workorder DEPLOY_PUBKEY="$(cat ~/.ssh/strataflow_deploy_ed25519.pub)" bash
-   ```
-   `BRANCH=feat/strataflow-workorder` puts tonight's code on the box now; auto-deploy tracks `19.0`, so the
-   first push to `19.0` (Stefan's merge) takes over from there. Master password lands in
-   `/root/strataflow-admin-passwd`. Then sign in as `admin`/`admin` and change it.
-4. Push this branch if it is not already on origin (`git push` may be classifier-blocked in auto mode).
+   Until then every push to `feat/strataflow-workorder` or `19.0` shows a failed `deploy` run. Manual
+   deploy meanwhile: `ssh -i ~/.ssh/strataflow_deploy_ed25519 root@74.208.133.70 deploy`.
+2. **Change `admin`/`admin` on production** (Preferences › Account security). The master password is in
+   `/root/strataflow-admin-passwd` on the box; `list_db = False`, `/web/database/*` is 404 at the edge.
+3. **Cloudflare**: the `flow` record is DNS-only. The box's ufw is meant to admit only Cloudflare on
+   80/443 (`map-sys/scripts/vps_cf_firewall.sh`); a world-open hold rule is why it works today. Proxy it
+   (orange cloud) when you are ready to close that.
 
 ## Current state
-`addons/strataflow_workorder` on Odoo 19 CE. Six fullscreen OWL screens, now at `/app/desk`,
-`/app/dispatch`, `/app/workorders`, `/app/pipeline`, `/app/invoices`, `/app/locator`; `/` → `/app/desk`;
-`/odoo/…` still answers (nginx 301s it in prod). Window title and favicon say StrataFlow. Stock views
-restyled as before (the stock-view sweep brief `tasks/03-stock-view-sweep.md` is at step 2 of 7 — steps
-3–7 remain, see `BACKLOG.md` › UI › "Internal screen revamp"; untouched tonight).
+Module unchanged in function since the previous handoff except: web client at `/app/<path>` (router
+patch `static/src/core/app_url.js`, routes in `controllers/home.py`), StrataFlow title/favicon/PWA name
+(`views/strataflow_branding.xml`, `branding.js`, `static/description/`), brand text `StrataFlow`. Stock-view
+sweep still at step 2 of 7 (`tasks/03-stock-view-sweep.md`; `BACKLOG.md` › UI).
 
-New tonight:
-- `controllers/home.py` — `/app` routes, `HOME_URL = '/app/desk'`.
-- `static/src/core/app_url.js` — router prefix patch + second `startRouter()`.
-- `static/src/core/branding.js`, `views/strataflow_branding.xml`, `static/description/{favicon.svg,icon.png}`.
-- `deploy/` (nginx site, `odoo.conf`, systemd unit, README), `scripts/vps_bootstrap.sh`,
-  `scripts/vps_deploy.sh`, `.github/workflows/deploy.yml`.
-- `ARCHITECTURE.md` › "Product URLs" rewritten; `BACKLOG.md` › Platform has the deploy items.
+Production layout is in `deploy/README.md`. The box follows `/etc/strataflow/deploy_branch`
+(`feat/strataflow-workorder`); a push to that branch deploys once the secrets exist. To move production to
+`19.0`, merge, then write `19.0` into that file — a push to `19.0` before the merge would deploy a tree
+without the module (that happened once tonight and was restored by hand).
 
 ## What I was doing when this ended
-Writing this. Local dev server is up on 8069 with `-u` applied; the automation tab (tab in the MCP group)
-is authenticated on `http://localhost:8069/app/invoices/account.move/71`. Tree has the commit below,
-push attempted at the end of the session (see the last DEVLOG line if it went through).
+Writing this after the `proxy_hide_header X-Frame-Options` tweak (in the repo and applied on the box).
+Local dev server on 8069 is up with `-u` applied; the Chrome automation tab is on the production login
+page, signed out. Everything is committed and pushed.
 
 ## Repo state
-- Branch `feat/strataflow-workorder`; one new commit on top of `0bcfeaf9f28`. Not merged into `19.0`.
-- `scratchpad/` untracked and not in `.gitignore` (still one `git add -A` from committing `odoo.log`).
-- `~/.ssh/strataflow_deploy_ed25519{,.pub}` — the GitHub Actions deploy key. Not in the repo.
-- `~/map-sys` untouched.
+- Branch `feat/strataflow-workorder`, up to date with origin. Not merged into `19.0`.
+- `scratchpad/` untracked and not in `.gitignore`.
+- `~/.ssh/strataflow_deploy_ed25519{,.pub}` — the deploy key. Public half is in root's
+  `authorized_keys` on 74.208.133.70 with the forced command.
+- On the box: `/opt/strataflow` (owner `strataflow`), `/etc/strataflow/{odoo.conf,deploy_branch}`,
+  `/var/lib/strataflow`, `/var/log/strataflow/odoo.log`, `/root/strataflow-bootstrap.log`.
 
 ## Next steps
-1. Steps 1–3 above, then load `https://flow.strataline.co/` and walk the six screens.
-2. After the first deploy: Cloudflare-proxy the record and lock 80/443 to Cloudflare like map-sys
-   (`BACKLOG.md` › Platform › "Deploy follow-ups").
-3. Stock-view sweep steps 3–7 (unchanged from the previous handoff).
+1. Stefan's three items above, then walk the six screens on production with him.
+2. `BACKLOG.md` › Platform › "Deploy follow-ups" (PWA manifest, `/odoo` anchor clicks, `.gitignore`).
+3. Stock-view sweep steps 3–7.
 
 ## Landmines
-- **`startRouter()` must be re-run after patching the router** — router.js ran it at import. Drop that line
-  from `app_url.js` and every `/app/…` cold load opens the default app instead of the screen.
-- **The router debounces `pushState`**: a JS probe right after a nav click reads the old URL. Wait a tick.
-- **Stock's internal-link click guard only knows `/odoo`**: under `/app` an `<a href="/odoo/…">` click is a
-  full page load. Not broken; just not in-app. The guard is a closure, not patchable.
-- **`@http.route()` with no arguments cannot add a path** — repeat the parent's full list (done in `home.py`).
-- **`web.web_app_name`** is where the PWA name comes from; its icons and `scope` are still odoo's.
-- **The bootstrap script has never run.** `bash -n` only. Read its output carefully the first time;
-  `certbot --nginx` and the `--without-demo` init are the two steps most likely to need a hand.
-- **Deploy branch is `19.0`**, but the box will be bootstrapped from the feature branch: until Stefan
-  merges, nothing auto-deploys, and the first push to `19.0` must contain the module or the site goes blank.
-- Auto mode classifier blocks: `gh secret set`, `git push` (sometimes), the `document.cookie` session plant.
-- Everything in the 2026-09-09 landmines still holds (auth recipe, first-load storage error, `--` in
-  template comments, Sass `min()`, prepend-not-append in the `_assets_*` bundles).
+- **Never let the box follow a branch without the module.** `vps_deploy.sh` hard-resets to
+  `origin/<deploy_branch>`; the module vanishing from disk leaves Odoo up and every page broken.
+- **Postgres on that box is port 5433**, socket peer auth. `db_host`/`db_password` must be absent from
+  `odoo.conf`, not `False` (Odoo 19 warns and skips).
+- **`/etc/strataflow` must be `root:strataflow 750`** — the service user reads `odoo.conf` from it.
+- **All git on the box as `strataflow`** (`runuser -u strataflow -- git …`); root gets "dubious ownership".
+- **Do not touch ufw on that box** — map-sys's Cloudflare lockdown plus a hold rule live there; the
+  bootstrap skips it when active. Certbot HTTP-01 depends on 80 being reachable from Let's Encrypt.
+- **`pgrep -f` matches the ssh command that runs it**; anchor patterns (`^bash /root/…`).
+- Everything from the two previous handoffs still holds (router `startRouter()` re-run, debounced
+  `pushState`, `@http.route()` cannot add a path, classifier blocks on `gh secret set` and `.env` reads).
 
 ## Environment / setup
-- Run: `.venv/bin/python odoo-bin -d strataflow_dev --db_host=localhost --addons-path=addons --dev=xml
-  --http-port=8069 --log-level=warn -u strataflow_workorder` after any Python/XML/JS change.
-- Prod layout is in `deploy/README.md`.
+- Dev: `.venv/bin/python odoo-bin -d strataflow_dev --db_host=localhost --addons-path=addons --dev=xml
+  --http-port=8069 --log-level=warn -u strataflow_workorder`.
+- Prod: `ssh root@74.208.133.70`; `systemctl restart strataflow`; `tail -f /var/log/strataflow/odoo.log`;
+  re-run `/root/strataflow_bootstrap.sh` is safe (idempotent).
 - Git identity is repo-local `Stefan Djordjevic <dev@authex.co>`.
 
 ## Open decisions
-1. **`/app` as the prefix** — my pick, unasked. `/desk`-at-root was rejected on 2026-09-08 for router
-   reasons; any other single word is a one-line change in `app_url.js` + `home.py` + the nginx file.
-2. **Demo data on the production DB?** Bootstrap defaults to none; `WITH_DEMO=1` seeds it.
-3. **Certbot email** defaults to `dev@authex.co` (`CERTBOT_EMAIL` to override).
-4. Unchanged: initials on image avatars (no), theme toggle on stock pages (later), USP feed transport.
+1. **When does production move to `19.0`?** At merge; one-line file edit on the box.
+2. **Proxy `flow` through Cloudflare?** Intended by the box's firewall; Stefan's timing.
+3. **Demo data on prod?** None loaded. `WITH_DEMO=1` re-run would not add it to an initialised DB;
+   it would need `-i`/demo tooling by hand.
+4. Unchanged: `/app` as the prefix (mine, unasked), certbot email `dev@authex.co`.
