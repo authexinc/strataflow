@@ -1,148 +1,134 @@
-# Handoff — 2026-09-09 (midday)
+# Handoff — 2026-09-09 (night)
 
-## Start here: the map is live end-to-end, with strataline's layers and geo-referenced locate prints
+## Start here: the stock-view sweep is two commits in, and the stock navbar is now the app's
 
-Everything below was **seen working in the automation tab** (it boots Odoo's web client again), not
-just checked over HTTP. Four things landed this session, in order:
+Everything below was **seen in the automation tab** (auth recipe under Landmines), not just
+checked over HTTP. Four commits this session, all on `feat/strataflow-workorder`, pushed:
 
-1. **Live Strataline map** (`80aa39b9542` + fixes) on Dispatch, the Locator's map mode and the
-   Locator's on-site stage: MapLibre in the web client, strataline over its API with the tenant's
-   key as `?key=`. Pins, selected label, routes, Satellite, zoom, attribution, both themes.
-2. **Stock views in the Strataline language** (`160e5704463`): Settings, lists, forms, dialogs,
-   menus, toasts. Tenant-wide, light only. Primary buttons are accent, shell and stock alike.
-3. **Strataline's layer panel** (`6323645be97`, `core/layers.js` + `core/layer_panel.js`): the
-   rail's layers button on Dispatch and the Locator's map mode. Rows from strataline's
-   `layers.json` (keys may fetch it since map-sys `4b08efb`), presets, filter, tri-state groups,
-   safety layers pinned on, choices remembered per device.
-4. **Locate drawings are geo-referenced** (same commit, Stefan's decision): `[lng, lat]` per line
-   end and note, drawn as a layer on the live map, drawn *on* by dragging with a utility tool.
-   Preview, PNG, CSV, PDF and the audit re-project north-up with a printed scale. Old pixel
-   drawings read as empty; demo data never had any.
+1. `8c4fe820d7f` — brief `tasks/03-stock-view-sweep.md` **step 1**: the six dead declarations in
+   `static/src/stock/stock.scss` (toast rescoped to `.o_notification_manager .o_notification`,
+   kanban block on `.o_kanban_renderer` with the `--Kanban*` variables, list `thead` via
+   `--ListRenderer-thead-*`, separator `!important`, statusbar `var(--bg)`).
+2. `da725915429` — **step 2**: `$nav-tabs-link-active-bg`, `$dropdown-link-hover-bg`,
+   `$table-striped-bg-factor`, `$table-hover-bg-factor` in `static/scss/backend_bootstrap.scss`.
+   The notebook's white-on-off-white seam is closed by this alone.
+3. `4fd32387e1c` — **off-brief, Stefan's call mid-session**: the stock navbar is rebuilt as the
+   shell's top bar. `static/src/stock/navbar.xml` replaces `web.NavBar`'s template (brand pill, nav
+   pills from the shell's `NAV`, `.o_navbar_breadcrumbs` kept, systray filtered to the user menu);
+   `navbar.js` patches `NavBar` (lit pill from the controller's `res_model`, `pending` on click,
+   `sfGoNav`) and `UserMenu` (initials); `user_menu.xml` makes the toggler the round disc.
+   `$o-navbar-height: 72px`, bar transparent, pills carry the glass.
+4. `0fcaae22b48` — Preferences dialog flat sheet (brief step 6's dialog rule, early), avatars as
+   gradient discs (chatter, many2one widgets, contact image), Help / Support / My Odoo.com Account
+   removed from `user_menuitems`, initials centred in the disc.
 
-Dev environment is fully wired: local strataline on 8613, dev key `k_17c57c69` in
-`strataline.api_key`, `strataline.base_url` = `http://localhost:8613`. Open
-`http://localhost:8069/odoo/dispatch`.
+**Steps 3–7 of the brief are not done.** `BACKLOG.md` › UI › "Stock-view sweep, steps 3–7" lists
+exactly what remains; the brief's Plan, Acceptance criteria and Verification sections still apply
+as written. Next thing to type is step 3 (the statusbar's five `--o-statusbar-*` variables).
 
 ## Current state
-`addons/strataflow_workorder` on Odoo 19 CE. Six fullscreen OWL screens at `/odoo/desk`, `/odoo/dispatch`,
-`/odoo/workorders`, `/odoo/pipeline`, `/odoo/invoices`, `/odoo/locator`; `/` → `/odoo/desk`; `/odoo`
-reaches the stock backend, restyled. Backed by stock `crm.lead`, `account.move`, `mail.thread`.
+`addons/strataflow_workorder` on Odoo 19 CE. Six fullscreen OWL screens at `/odoo/desk`,
+`/odoo/dispatch`, `/odoo/workorders`, `/odoo/pipeline`, `/odoo/invoices`, `/odoo/locator`; `/` →
+`/odoo/desk`; `/odoo` reaches the stock backend, restyled — and since tonight every stock page
+carries the same brand pill, nav pills and avatar disc as the six screens, so leaving a screen for
+an invoice, a lead or the ticket form no longer changes chrome. Map stack unchanged from the
+previous handoff (`static/src/core/strataline_map.js`, `layers.js`, `layer_panel.js`,
+`locate_geo.js`, `locate_canvas.js`; strataline over its API with the tenant's key).
 
-Map stack, all in `static/src/core/`:
-- `strataline_map.js` — the component: style assembly (own basemap palette from the shell tokens,
-  strataline's utility style fetched at runtime, ATS grid, house numbers, Esri satellite), markers,
-  routes, layer visibility, the drawing layer and draw interaction. MapLibre 5.24.0 vendored in
-  `static/lib/maplibre-gl/` and lazy-loaded (6.x is ESM-only, unloadable here).
-- `layers.js` — visibility store (rows, overrides in localStorage `strataflow.layers`, presets,
-  `hiddenState()` for the map); `layer_panel.js/.xml` — the glass panel.
-- `locate_geo.js` — drawing format `{v: 2, segments: [{a, b, util}], notes: [{at, text}]}`,
-  `segMetres`, `projectDrawing` (north-up print); `controllers/export.py` mirrors it for the PDF.
-- `locate_canvas.js` — toolbar (Pan, utilities, Note, Undo, Clear) around a `StratalineMap` at z18;
-  `locate_preview.js` — the projected print; `audit.js` — measures with haversine.
-- Server seam: `get_map_config` (`models/strataflow_workorder.py`) reads `ir.config_parameter`
-  `strataline.base_url` / `strataline.api_key`; Phase 2's provisioner writes them.
-
-Strataline side (map-sys `feat/search-key-scope`, 5 unpushed commits, tests green): keys may fetch
-`/style.json`, `/layers.json`, `/fonts/*` with CORS (`160338c`, `4b08efb`); `/tiles/meta` is clamped
-to the key's zoom and bbox, a source wholly above the cap reports null (`932baab`).
+Stock-view files, all under `addons/strataflow_workorder/static/`:
+- `scss/backend_variables.scss` — prepended to `web._assets_primary_variables`; palette, radii,
+  navbar metrics (`$o-navbar-height: 72px`, ground and border zero).
+- `scss/backend_bootstrap.scss` — prepended to `web._assets_backend_helpers`; literals only.
+- `src/stock/stock.scss` — the material: navbar layout + button reset, control panel, buttons,
+  dropdowns, modal, dialog-sheet rule, gradient avatars, toast, form, list, kanban, settings.
+- `src/stock/navbar.js`, `navbar.xml`, `user_menu.xml` — the bar and the user menu.
 
 ## What I was doing when this ended
-Wrapping after the Note tool check. Nothing in flight. Working tree clean.
+Stefan said "commit, push, and /wrap" after the Preferences fixes. Tree clean, pushed, nothing in
+flight. The automation tab (`localhost:8069`, tab in the MCP group) is authenticated and sitting on
+`/odoo/invoices/account.move/71`; the dev server is up with `-u` applied.
 
 ## Repo state
-- Branch `feat/strataflow-workorder` at `14e1a880e2f`, **12 commits ahead of origin**, working tree
-  clean, not pushed. Not merged into `19.0`. Push and merge are Stefan's call.
-- `~/map-sys` on `feat/search-key-scope` at `4b08efb`, 5 unpushed commits on top of what Stefan
-  had seen, working tree clean. `main` there self-deploys — merging is the deploy. Until it deploys,
-  a keyed map against strataline.co draws tiles with no labels, no utility overlay and no layer panel.
-  `data/api_keys.json` (gitignored) holds dev key `k_17c57c69` and a revoked duplicate `k_b0d0818e`.
+- Branch `feat/strataflow-workorder` at `0fcaae22b48`, **up to date with origin** (pushed
+  `94f1a898537..0fcaae22b48`). Not merged into `19.0` — Stefan's call. Only `scratchpad/` is
+  untracked (dev logs; still not in `.gitignore`, see Landmines).
+- `~/map-sys` untouched this session (still `feat/search-key-scope` at `4b08efb`, 5 unpushed).
+- Dev servers: Odoo on 8069 (`scratchpad/odoo.log`, `--log-level=warn`); strataline was **not**
+  started this session, so Dispatch shows the skeleton ground rather than tiles.
 - Still no automated tests for this module.
-- Dev servers: Odoo on 8069 (`--log-level=info --log-handler=werkzeug:INFO`, log at
-  `scratchpad/odoo.log`); strataline on 8613 (`bash ~/map-sys/scripts/app.sh status|stop`, log at
-  `~/map-sys/data/serve.log`).
 
 ## Next steps
-1. **Look at what is still unseen**, `BACKLOG.md` › UI: Satellite under a drawing, the drawing canvas
-   on Work Orders (same component as the Locator's), the layer panel on the Locator's map mode, route
-   lines with Auto-assign (demo has 0 `new` tickets — set one back to `new`), a CRM lead, an invoice,
-   a dialog. Settings' section title bands could be lighter (`--settings__title-bg`).
-2. **Basemap data question** for Stefan: a broad straight NW–SE band paints in the water colour
-   across Calgary at z10–12; it is a `water` polygon in the `basemap` extract, gone by z13.
-3. **Zone-first auto-assign** — fully decided (zone model, postal-code prefix, `postal_code` on the
-   ticket), not built. `planRoutes` (`core/geo.js:45`) is the place; keep `routes[].coords`.
-4. **Layer panel follow-ups**: company filter (`owners.json` needs a key grant), exclusions as a
-   `layers.json` flag on strataline's side, per-user rather than per-device persistence.
-5. **Stock views, dark**; **USP feed**; **README.md** — unchanged, see `BACKLOG.md`.
+1. **Step 3 of the brief** — statusbar arrows. One rule inside `.o_form_view` in `stock.scss`:
+   `.o_field_statusbar > .o_statusbar_status { --o-statusbar-radius: 10px; --o-statusbar-border:
+   var(--bg); --o-statusbar-background-hover: var(--chip-bg); --o-statusbar-background-active:
+   var(--accent-soft); --o-statusbar-border-active: var(--accent); > .o_arrow_button { font-weight:
+   600; } }`. `--o-statusbar-border` must equal what `.o_form_statusbar` paints (`var(--bg)` since
+   step 1) or the arrow outlines halo. Check on a `crm.lead` and an invoice.
+2. **Steps 4–7** in order, each restarted with `-u` and looked at. The searchview caret's square
+   corner (step 4) is visible on every list right now and is the cheapest win.
+3. **BACKLOG › "Stock navbar follow-ups"**: phone width, theme toggle once dark stock views exist.
+4. Unchanged from before: zone-first auto-assign, layer-panel follow-ups, USP feed, README, and
+   Stefan's pushes/merges (`feat/search-key-scope` in map-sys is what makes the map work against
+   strataline.co).
 
 ## Landmines
-- **`map.isStyleLoaded()` is not "the style is ready"** — it is false while any tile streams. Guard
-  layer/source work on the `styleReady` flag set in the `style.load` handler, never on that call.
-  Drawings saved to the DB but never drew until this was found.
-- **The Sass `min()` landmine bit again**: `min(52%, 460px)` broke the whole bundle ("Incompatible
-  units: 'px' and '%'"), and Odoo served the *previous* CSS with only a red banner at the bottom of
-  the page. Grep new SCSS for `min(`/`max(` with mixed units before restarting.
-- **maplibre-gl.css loads after our sheet** (lazy `loadCSS`): any rule on a MapLibre-classed element
-  needs more than one class of specificity or it loses. Marker elements are positioned by MapLibre
-  with an inline transform — style their size and look, never their `position` (the label stretched
-  to the map's edge that way).
-- **`setFilter` replaces a layer's baked filter.** Strataline's merged layers bake the abandoned
-  split; `applyVisibility` composes `["all", baked, clause]` from the filters captured at style
-  assembly (`this.baked`). Never call `setFilter` on a utility layer with the clause alone.
-- **Strataline has no `OPTIONS` handler**: a custom header triggers a preflight and fails from the
-  browser. Everything goes as `?key=`. `origins` only governs the CORS echo, not access;
-  `localhost:8069` and `127.0.0.1:8069` are two origins. A 429 (tile throttle) arrives as an opaque
-  CORS error — `serve_tile`'s `throttle` branch skips `cors()`.
-- **A drawing without `v: 2` is empty.** Consumers never see pixel coordinates again; the PDF
-  mirror in `controllers/export.py` must stay in step with `projectDrawing`.
-- **`line-dasharray` cannot vary per feature** in MapLibre — gas is its own line layer.
-- **The ticket pin swallows drags that start on it** unless `.is-drawing` sets
-  `pointer-events: none` on `.o_sf_mk` — keep that rule.
-- **Prepend, don't append, in the `_assets_*_variables` bundles.** Odoo's declarations are `!default`.
-- **Odoo's compiled CSS is not whitespace-minified** — check with regexes, not exact substrings.
-- **The token block is on `.o_web_client` on purpose** (the old "never hoist" landmine was about
-  leaking; leaking is the intent now). `holdPageGround` still paints `<html>` in the *shell's* theme
-  for 600 ms — a light stock page flashes dark once after a dark screen.
-- **Odoo CE has no dark mode**: `ir.http.color_scheme()` returns `"light"`.
-- **In auto mode, anything executed inside `~/map-sys` is classifier-denied**; leaving auto mode
-  (shift+tab) unblocked it. Run pytest there as `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python3 -m pytest …`
-  (miniconda's `dash` plugin dies on `import flask`); `test_descent.py` needs `mercantile`.
-- **Quote grep globs in zsh** — `--include=*.xml` unquoted expands and the flag vanishes.
-- **The three path declarations must agree** (`path`, `static path`, `HOME_URL`) and **a path may
-  never equal a stock client-action tag** (`home` → `desk`).
-- **Never plant a `session_id` cookie on `localhost` with `document.cookie`.**
-- **"Verified server-side" is not "verified"** — six visual bugs shipped past every HTTP check this
-  session and were found in the first minute of looking. Use the automation tab.
-- **`post_init_hook` runs on install, never on `-u`**; `data/strataflow_crm_account_data.xml` is
-  `noupdate="1"`. **Action `path` is unique across every action table.** **Odoo forbids `@import`
-  between asset files.** **No `document.startViewTransition` around async swaps.**
-- Odoo 19 renames: `res.groups.privilege_id`, `crm.lead.recurring_plan`, luxon is a global.
+- **Auth for the automation tab, current recipe.** Mint a session over JSON-RPC against
+  `localhost` (`curl -c /tmp/sfc3.txt … /web/session/authenticate`), navigate the tab to
+  `http://localhost:8069/web/static/img/favicon.ico` (static → no cookie of its own), run
+  `document.cookie = "session_id=<value>; path=/; SameSite=Lax"`, then navigate to the page. **Not
+  `127.0.0.1` any more** — its httponly cookie got planted by a login redirect this session and
+  `document.cookie` cannot replace it. **Auto mode blocks the plant**: `[BLOCKED: Cookie/query
+  string data]`; Stefan has to shift+tab out first. The classifier also blocked one JS call with no
+  cookie in it, so a block is not proof the call was wrong.
+- **First load after a `-u` restart usually fails to boot** (`Access to storage is not allowed from
+  this context.`); navigate again and wait 7–10 s. Once it took three tries and ~40 s. While it is
+  failing, `odoo.__WOWL_DEBUG__` is undefined and a JS probe sees an empty body even when a
+  screenshot shows the bar — trust `document.title` changing to the record name.
+- **`--` inside an XML template comment kills the whole template bundle.** Browser: `OwlError:
+  Missing template: "web.WebClient"`. Cause only in `scratchpad/odoo.log`: `Invalid XML template:
+  Comment must not contain '--'`. Check the log before touching anything else.
+- **The shell's button reset does not reach stock pages.** `.o_sf :where(button)` is scoped; anything
+  of ours rendered outside `.o_sf` (the navbar) needs the same reset or renders as a UA button.
+  `stock.scss` scopes a copy to `.o_main_navbar`.
+- **Stock's navbar entry rules beat one-class rules.** Height strip, `display: flex`, 72px
+  line-height, `background` on `.dropdown-toggle` — pin at three classes
+  (`.o_main_navbar .o_user_menu > .dropdown-toggle`).
+- **`object-position` percentages are relative to (box − image).** For a 128px avatar in a 130px box
+  that is 2px; use lengths. `object-fit-cover` and the other `object-fit-*` utilities are
+  `!important`.
+- **`user_menuitems` removals live in `navbar.js`** (`documentation`, `support`, `odoo_account`).
+  If Odoo adds another odoo.com entry, that is the place.
+- Still true from earlier handoffs: Sass eats `min()`/`max()` with mixed units and Odoo serves the
+  *previous* CSS with only a red banner; prepend (never append) in the `_assets_*` variable bundles;
+  `backend_bootstrap.scss` may not name Bootstrap variables; Bootstrap utilities are `!important`;
+  Odoo's compiled CSS is not whitespace-minified (verify with regexes); quote grep globs in zsh
+  (`--include='*.scss'`, unquoted it silently vanishes — bit again tonight); Odoo CE has no dark
+  mode; `holdPageGround` flashes a light stock page dark once after a dark screen; a `path` may never
+  equal a stock client-action tag; `post_init_hook` runs on install only; never `document.cookie` a
+  `session_id` onto an origin that already has one.
+- `scratchpad/` is untracked and **not in `.gitignore`** — one `git add -A` away from committing
+  `odoo.log`.
 
 ## Environment / setup
-- Read `CLAUDE.md`, `BACKLOG.md`, then `ARCHITECTURE.md`.
-- `~/strataflow/.venv` (gitignored). Postgres via Homebrew; DB `strataflow_dev` with demo.
-- Run: `.venv/bin/python odoo-bin -d strataflow_dev --db_host=localhost --addons-path=addons --dev=xml --http-port=8069 --log-level=warn`
-  plus `-u strataflow_workorder` after any Python/XML/JS/SCSS change. Fresh DB: `dropdb strataflow_dev`,
-  then `-i strataflow_workorder --with-demo` (~4 min); then re-insert the two `strataline.*`
-  `ir_config_parameter` rows (base_url `http://localhost:8613`, api_key from
-  `python3 ~/map-sys/scripts/manage_access.py key list`, or mint a new one with
-  `--origins http://localhost:8069,http://127.0.0.1:8069`).
-- Strataline dev: `bash ~/map-sys/scripts/app.sh start 8613`. `~/map-sys` is an additional working
-  directory (`/add-dir`, saved).
-- Scratchpad checks worth re-creating in-repo: `bundlecheck.py` (JSON-RPC login, pull
-  `web.assets_web` JS + CSS, count needles, call `get_map_config`).
-- Git identity is repo-local `Stefan Djordjevic <dev@authex.co>`; map-sys commits use
-  `-c user.name/-c user.email`.
+- Read `CLAUDE.md`, `BACKLOG.md`, then `ARCHITECTURE.md`; the brief for the current work is
+  `tasks/03-stock-view-sweep.md` — read it whole, every citation in it was verified against the
+  merged 19.0 tree this session and held.
+- `~/strataflow/.venv`. Postgres via Homebrew; DB `strataflow_dev` with demo.
+- Run: `.venv/bin/python odoo-bin -d strataflow_dev --db_host=localhost --addons-path=addons
+  --dev=xml --http-port=8069 --log-level=warn -u strataflow_workorder` after any SCSS/XML/JS
+  change (`--dev=xml` does not rebuild SCSS). `scratchpad/csscheck.sh` logs in over JSON-RPC and
+  pulls the compiled `web.assets_web.min.css` to `/tmp/sf_backend.css` for the brief's greps.
+- Strataline dev, if the map is needed: `bash ~/map-sys/scripts/app.sh start 8613`; keys unchanged
+  (`strataline.base_url` = `http://localhost:8613`, `strataline.api_key` in `ir_config_parameter`).
+- Git identity is repo-local `Stefan Djordjevic <dev@authex.co>`.
 
 ## Open decisions
-1. **USP feed transport** — unchanged, `BACKLOG.md` › Open questions.
-2. **Stock views in dark** — do it, or accept light stock pages under a dark shell?
-3. **Layer choices per device or per user** — localStorage today; per user means a field on
-   `res.users` and one more RPC on boot.
-4. **Satellite from Esri** — the one third-party call the tenant UI makes; same source strataline uses.
+1. **Initials on the image avatars?** Today they are plain gradient discs (CSS cannot read the
+   name). Letters mean a small avatar widget or a patch of `o-mail-Avatar`. Stefan asked for "just a
+   gradient circle", so the default is no.
+2. **Theme toggle on stock pages** — omitted on purpose until "Stock views, dark" (BACKLOG) exists.
+3. Unchanged: USP feed transport; layer choices per device or per user; Satellite from Esri.
 
-Locked this session (`ARCHITECTURE.md`): tenant-wide light stock styling; accent primaries;
-`postal_code` on the ticket; the map integration shape; strataline's layer panel rebuilt from its
-manifest; geo-referenced drawings.
-
-Still waiting on Stefan: pushes and merges (`feat/search-key-scope` in `~/map-sys` — deploying it is
-what makes the map work against strataline.co — and this branch into `19.0`); the basemap band.
+Locked earlier (`ARCHITECTURE.md`): tenant-wide light stock styling; accent primaries; the map
+integration; geo-referenced drawings. Nothing new was locked tonight; the navbar rebuild is a
+build decision under the existing "Strataline language, tenant-wide" row.

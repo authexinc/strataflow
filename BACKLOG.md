@@ -98,11 +98,26 @@ push, or it becomes a history rewrite.
       check this** — stock Odoo fails to mount there too (`/odoo/settings` gives a 108-character body),
       so it is the extension racing Odoo's boot for storage, not our code and not a site-data setting.
       Handed to Stefan to look at in a normal tab.
-- [ ] **Finish looking at the stock-view revamp.** → **`tasks/03-stock-view-sweep.md`** turns this into
-      a finite seven-commit inventory. Seen 2026-09-09 in the automation tab (it boots the
-      web client again): Settings, the Records list, the ticket form + chatter — all fine. Not yet seen:
-      a CRM lead, an invoice, a kanban, a dialog, a dropdown, the statusbar arrows. Settings' section
-      title bands (`--settings__title-bg`) are heavier than the rest; consider `var(--chip-bg)`.
+- [ ] **Stock-view sweep, steps 3–7 of `tasks/03-stock-view-sweep.md`.** Steps 1–2 landed
+      2026-09-09 (`8c4fe820d7f`, `da725915429`) and were seen in the automation tab; the brief's
+      step-6 dialog rule (`.modal .o_form_view .o_form_sheet` flat) landed early in `0fcaae22b48`.
+      Remaining, in the brief's order: (3) statusbar arrows — five `--o-statusbar-*` variables on
+      `.o_field_statusbar > .o_statusbar_status`, radius 10px, hover `--chip-bg` (today `#b9bec2`);
+      (4) notebook variables + `.nav` transparent, facets `bg-200 !important`, the searchview caret
+      toggler's right radius (visible square seam on every list today), search panel border;
+      (5) kanban: `--KanbanRecord-margin-v: 8px` + cancel the `-1px` card margin, the four highlight
+      colours (`#d1ecf1` still live), quick-create, the two rot literals in `rotting_mixin.scss`
+      (a rotting CRM card is still pink); (6) Settings title bands, chatter top band, empty-state
+      faces, (7) `o_section_and_note_list_view` hairline, `.gray_ribbon`, and the ticket form
+      `<header>` with `widget="statusbar" clickable="0"` (Decision 2 in the brief). Every acceptance
+      criterion in the brief still applies. The invoice form's "outstanding credits" `alert-info` band
+      is off-brief and stock blue — fold it into step 7 or leave it.
+- [ ] **Stock navbar follow-ups.** The bar is the shell's top bar since `4fd32387e1c`
+      (`static/src/stock/navbar.js`, `navbar.xml`, `user_menu.xml`). Not carried over on purpose: the
+      theme toggle (see "Stock views, dark" — adding it back is one button in `navbar.xml` once stock
+      pages can go dark) and the search pill. Small screens: the `burger_menu` systray item is kept but
+      the pills have no wrap rule in `stock.scss` — check a phone width. The gradient-disc avatars are
+      a CSS trick (bitmap pushed out with `object-position`); initials on them need a widget.
 - [ ] **Finish looking at the live map.** Seen 2026-09-09: Dispatch in both themes, Satellite, zoom,
       pins + label, utility overlay with labels, the Locator's on-site stage and map mode. Not seen:
       route lines (demo data has 0 `new` tickets, so Auto-assign draws nothing — set one ticket back to

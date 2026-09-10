@@ -3,6 +3,87 @@
 Newest first. Read the last 3–5 entries at session start. Failures are recorded on purpose; a
 workaround is labelled as one so it does not become permanent by accident.
 
+### 2026-09-09 (night) — Stock-view sweep, commits 1–2 of 7; then the stock navbar became the shell's top bar
+
+**Brief:** `tasks/03-stock-view-sweep.md`. Landed in order and each one seen in the automation tab
+before the next: **commit 1** `8c4fe820d7f` (the six dead declarations) and **commit 2**
+`da725915429` (four Bootstrap variables). Then Stefan, on seeing the invoice form: "Look at how
+horrible the navbar is. The user is not meant to see any of this stock odoo shit, fix it so the view
+is the same as dispatch" — which became `4fd32387e1c` and `0fcaae22b48`, outside the brief. Steps
+3–7 of the brief (statusbar arrows, notebook/facets/search panel, kanban gaps + rot literals,
+Settings/chatter/empty states, `account.move`/`crm.lead` specifics, the ticket form `<header>`) are
+**not done** — see `BACKLOG.md` › UI. Pushed: `94f1a898537..0fcaae22b48`.
+
+**Commit 1, verified numerically in the browser.** Toast is `rgba(255,255,255,.8)` + blur where it
+painted solid `#fbfcfa`; `.o_kanban_renderer` now owns `--Kanban-background` /
+`--KanbanGroup-background: transparent` (the old `.o_kanban_view .o_kanban_group` rule lost to a
+three-class stock selector and only looked right because `$o-kanban-background` equalled `--bg`);
+`--ListRenderer-thead-bg-color` resolves to `#fbfcfa` on the list; `.o_form_statusbar` paints
+`var(--bg)` again so the sticky bar is opaque. Kanban card `margin-bottom` is still `-1px` and
+`--KanbanColumn__highlight-selected` still `#d1ecf1` — those are step 5.
+
+**Commit 2.** `$nav-tabs-link-active-bg: #fbfcfa` closed the white-on-off-white notebook seam by
+itself: active tab and sheet both `rgb(251,252,250)` on an invoice. `$dropdown-link-hover-bg`
+reaches `.dropdown-toggle` submenu rows our own selector never named. Striped `.02`, hover `.04`.
+
+**The navbar, rebuilt not restyled** (`static/src/stock/navbar.js`, `navbar.xml`, `user_menu.xml`).
+`web.NavBar` gets a replacement template rendering the shell's brand pill and nav pills from the
+shell's own `NAV`; the pill for the record's screen is lit from the current controller's
+`res_model` (`strataflow.workorder` → Work Orders, `crm.lead` → CRM, `account.move` → Invoices) on
+`ACTION_MANAGER:UI-UPDATED`; the systray is filtered to `web.user_menu` + `burger_menu`; the user
+menu's toggler is the shell's round disc with initials (same rule as the server's `_initials`).
+Deliberately not carried over: the search pill (nothing to search on a stock page) and the theme
+toggle (stock is light-only per `ARCHITECTURE.md`; a toggle that recolours the pills and nothing
+else would lie). `$o-navbar-height` → 72px because stock reads it for the bar *and* for where the
+toast stack starts. Seen: invoice → Dispatch pill → shell; `+ New ticket` → form with Work Orders
+lit; Preferences, Log out behind the disc.
+
+**Then Preferences, avatars, the user menu** (`0fcaae22b48`): initials centred in the disc; every
+avatar image (chatter, many2one widgets, the 130px contact image) is the gradient disc; Help /
+Support / My Odoo.com Account removed from `user_menuitems`; `.modal .o_form_view .o_form_sheet`
+flat (the brief's step 6 dialog rule, pulled forward — the notebook poked past the sheet's 22px
+corners on Preferences).
+
+**FAILURES, in order hit.**
+1. **Auth in the automation tab.** In auto mode the classifier refused the cookie plant:
+   `javascript_tool` returned `[BLOCKED: Cookie/query string data]` and the tab landed on
+   `/web/login`. Stefan left auto mode; then `127.0.0.1` no longer worked as the "fresh origin" from
+   DEVLOG 2026-09-08 because the failed attempt's login redirect had already planted an httponly
+   `session_id` there. **What works now:** mint over JSON-RPC against `localhost`, load
+   `http://localhost:8069/web/static/img/favicon.ico`, `document.cookie = "session_id=…; path=/;
+   SameSite=Lax"`, navigate. Also: the classifier blocked one JS call that contained no cookie at
+   all (a toast probe with `sticky: true`) — the block is pattern-based and can misfire.
+2. **First load after every `-u` restart fails to boot** with `Error: Access to storage is not
+   allowed from this context.` (the known extension race, DEVLOG 2026-09-08). A second navigate
+   usually boots; once it took three navigates and ~40 s, during which `odoo.__WOWL_DEBUG__` was
+   undefined and the JS probe saw no DOM while a screenshot still showed the bar — the probe misleads
+   exactly as the old entry says. Not our code: `theme.js` wraps `localStorage` in try/catch.
+3. **An XML comment killed the whole template bundle.** `user_menu.xml`'s comment named
+   `o_sf_avatar--lg`; Odoo logged `Invalid XML template: Comment must not contain '--'
+   (double-hyphen)` and served *no* templates — the browser only said `OwlError: Missing template:
+   "web.WebClient"`. The real cause is only in `scratchpad/odoo.log`. Never write `--` inside a
+   template comment.
+4. **The pills rendered as UA buttons** (`2px outset rgb(0,0,0)`, `#efefef`): the shell's
+   zero-specificity reset `.o_sf :where(button)` does not reach `.o_main_navbar`. Same reset now
+   scoped there.
+5. **The avatar toggler came out 54×72 with the initials under the disc:** stock sizes every
+   navbar entry as a full-height strip, forces `display: flex`, and its 72px line-height leaked into
+   the 32px span. Pinned at three classes (`.o_main_navbar .o_user_menu > .dropdown-toggle`) with
+   `display: grid; place-items: center; line-height: 1`.
+6. **`object-position: 300% 300%` did nothing** on the Preferences photo: a percentage is relative
+   to (box − image), 2px for a 128px avatar in a 130px box. And the chatter img carries the
+   `object-fit-cover` utility, emitted `!important`. Now `object-fit: none !important;
+   object-position: 9999px 9999px`.
+
+**WORKAROUND, labelled:** the gradient-disc avatars are an `<img>` with its bitmap pushed out of
+its own box by `object-position` and a gradient background. It reads right and touches no stock
+template, but it is a CSS trick, not an avatar widget: the disc carries no initials because CSS
+cannot read the name. The proper fix is an initials avatar field widget / a patched
+`o-mail-Avatar`, if Stefan wants letters on them.
+
+**Seen off-brief, not touched:** the invoice form's "You have outstanding credits" band is a stock
+`alert-info` in Odoo blue (`account.view_move_form`). Backlogged.
+
 ### 2026-09-09 (later) — Strataline's layer panel in the shell; locate drawings become a geo layer on the map
 
 **Built and seen working.** Stefan's two follow-ups on seeing the map: "all the layer filtering
