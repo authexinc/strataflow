@@ -36,6 +36,14 @@ $badge-border-radius: 999px;
 $tooltip-border-radius: 8px;
 $nav-pills-border-radius: 999px;
 
+// Literals, not variables: this file runs at web/__manifest__.py:51, before Bootstrap's own
+// _variables.scss at :53, so $white / $gray-200 / $border-color do not exist yet and an
+// "Undefined variable" here would fail the whole bundle.
+$nav-tabs-link-active-bg: #fbfcfa;      // was $white — the active notebook tab has to match the sheet
+$dropdown-link-hover-bg: rgba(28, 33, 36, .06);  // was rgba($black, .08) — the keyboard `.focus` tint, now --chip-bg
+$table-striped-bg-factor: 0.02;         // was 0.01, invisible on #fbfcfa
+$table-hover-bg-factor: 0.04;           // was .055, heavier than --chip-bg
+
 $box-shadow-sm: 0 1px 1px rgba(0, 0, 0, .04), 0 4px 14px rgba(0, 0, 0, .06);
 $box-shadow: 0 1px 1px rgba(0, 0, 0, .04), 0 4px 14px rgba(0, 0, 0, .06), 0 16px 40px rgba(0, 0, 0, .08);
 $box-shadow-lg: 0 1px 1px rgba(0, 0, 0, .05), 0 6px 20px rgba(0, 0, 0, .10), 0 24px 60px rgba(0, 0, 0, .14);
